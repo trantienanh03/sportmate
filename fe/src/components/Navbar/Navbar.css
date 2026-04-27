@@ -1,0 +1,81 @@
+.sportmatcher-nav {
+  background: transparent;
+  padding: 20px 0;
+  transition: background var(--transition), padding var(--transition), box-shadow var(--transition);
+  z-index: 1000;
+}
+
+.sportmatcher-nav.scrolled {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 12px 0;
+  box-shadow: var(--shadow-md);
+}
+
+.sportmatcher-nav .navbar-brand { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; }
+.brand-sport    { color: #fff; transition: color var(--transition); }
+.brand-matcher  { color: var(--primary); }
+
+.sportmatcher-nav.scrolled .brand-sport { color: var(--text-primary); }
+
+/* Nav links */
+.nav-link-custom {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85) !important;
+  padding: 6px 14px !important;
+  border-radius: 20px;
+  transition: color var(--transition), background var(--transition);
+}
+.nav-link-custom:hover,
+.nav-link-custom.active {
+  color: #fff !important;
+  background: rgba(255,255,255,0.15);
+}
+
+.sportmatcher-nav.scrolled .nav-link-custom       { color: var(--text-secondary) !important; }
+.sportmatcher-nav.scrolled .nav-link-custom:hover,
+.sportmatcher-nav.scrolled .nav-link-custom.active {
+  color: var(--primary) !important;
+  background: rgba(37,99,235,0.08);
+}
+
+/* Nav buttons */
+.btn-nav-login {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.9) !important;
+  padding: 7px 20px;
+  border: 1.5px solid rgba(255,255,255,0.4);
+  border-radius: 50px;
+  transition: all var(--transition);
+}
+.btn-nav-login:hover { color: #fff !important; border-color: #fff; background: rgba(255,255,255,0.1); }
+
+.sportmatcher-nav.scrolled .btn-nav-login {
+  color: var(--text-primary) !important;
+  border-color: var(--border);
+}
+.sportmatcher-nav.scrolled .btn-nav-login:hover {
+  border-color: var(--primary);
+  color: var(--primary) !important;
+}
+
+.btn-nav-signup {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff !important;
+  background: var(--primary);
+  padding: 7px 22px;
+  border-radius: 50px;
+  border: none;
+  transition: all var(--transition);
+  box-shadow: 0 2px 12px rgba(37,99,235,0.35);
+}
+.btn-nav-signup:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(37,99,235,0.45);
+  color: #fff !important;
+}
