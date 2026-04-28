@@ -67,7 +67,7 @@ const HeroSection: React.FC = () => {
           <p className="hero-sub">
             Whatever your sport, from football and basketball to badminton and tennis, there are thousands of players who share it on SportMate. Matches are happening every day—sign up to play.
           </p>
-          <a href="#matches" className="btn btn-hero-primary">
+          <a href="" className="btn btn-hero-primary">
             Join SportMate
           </a>
         </div>
