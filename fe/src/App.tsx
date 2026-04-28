@@ -4,6 +4,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Navbar from './components/Navbar/Navbar';
 import HeroSection from './components/HeroSection/HeroSection';
 import HowItWorksSection from './components/HowItWorksSection/HowItWorksSection';
+import MatchesSection from './components/MatchesSection/MatchesSection';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       <Navbar />
       <HeroSection />
       <HowItWorksSection />
+      <MatchesSection />
     </>
   );
 }
