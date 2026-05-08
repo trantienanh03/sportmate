@@ -1,23 +1,18 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-import Navbar from './components/Navbar/Navbar';
-import HeroSection from './components/HeroSection/HeroSection';
-import HowItWorksSection from './components/HowItWorksSection/HowItWorksSection';
-import MatchesSection from './components/MatchesSection/MatchesSection';
-import StepsSection from './components/StepsSection/StepsSection';
-import Footer from './components/Footer/Footer';
+import LandingPage from './pages/LandingPage/LandingPage';
+import UserHome from './pages/UserHome/UserHome';
 
 function App() {
   return (
-    <>
-      <Navbar />
-      <HeroSection />
-      <HowItWorksSection />
-      <MatchesSection />
-      <StepsSection />
-      <Footer />
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/home" element={<UserHome />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
