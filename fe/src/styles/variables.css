@@ -1,41 +1,37 @@
-/* ================================================================
-   SportMatcher — Design Tokens & Variables
-================================================================ */
-
 :root {
   /* Colors */
-  --primary:        #2563eb;
-  --primary-light:  #3b82f6;
-  --primary-dark:   #1d4ed8;
-  --accent:         #f97316;
-  --accent-light:   #fb923c;
-  --success:        #22c55e;
-  --warning:        #f59e0b;
-  --danger:         #ef4444;
-  
+  --primary: #2563eb;
+  --primary-light: #3b82f6;
+  --primary-dark: #1d4ed8;
+  --accent: #f97316;
+  --accent-light: #fb923c;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
   /* Surfaces & Backgrounds */
-  --surface:        #ffffff;
-  --surface-2:      #f8fafc;
-  --surface-3:      #f1f5f9;
-  
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+
   /* Borders */
-  --border:         #e2e8f0;
-  
+  --border: #e2e8f0;
+
   /* Typography Colors */
-  --text-primary:   #0f172a;
+  --text-primary: #0f172a;
   --text-secondary: #64748b;
-  --text-muted:     #94a3b8;
-  
+  --text-muted: #94a3b8;
+
   /* Radii */
-  --radius-sm:      8px;
-  --radius-md:      14px;
-  --radius-lg:      22px;
-  
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+
   /* Shadows */
-  --shadow-sm:      0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
-  --shadow-md:      0 4px 16px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.06);
-  --shadow-lg:      0 20px 40px rgba(0,0,0,.12), 0 8px 16px rgba(0,0,0,.08);
-  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08);
+
   /* Animation */
-  --transition:     .25s cubic-bezier(.4,0,.2,1);
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
