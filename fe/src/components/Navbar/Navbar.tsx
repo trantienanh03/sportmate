@@ -1,9 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import './Navbar.css';
+import AuthModal from '../AuthModal/AuthModal';
 
 const Navbar: React.FC = () => {
   const navRef = useRef<HTMLElement>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,53 +30,73 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const openLogin = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setAuthMode('login');
+    setIsAuthModalOpen(true);
+  };
+
+  const openSignup = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setAuthMode('signup');
+    setIsAuthModalOpen(true);
+  };
+
   return (
-    <nav
-      ref={navRef}
-      className="navbar navbar-expand-lg sportmatcher-nav fixed-top"
-    >
-      <div className="container">
-        <a className="navbar-brand fw-bold nav-item-anim" href="#">
-          <span className="brand-sport">Sport</span>
-          <span className="brand-matcher">Mate</span>
-        </a>
+    <>
+      <nav
+        ref={navRef}
+        className="navbar navbar-expand-lg sportmatcher-nav fixed-top"
+      >
+        <div className="container">
+          <a className="navbar-brand fw-bold nav-item-anim" href="#">
+            <span className="brand-sport">Sport</span>
+            <span className="brand-matcher">Mate</span>
+          </a>
 
-        {/* Mobile toggler */}
-        <button
-          className="navbar-toggler border-0"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
+          {/* Mobile toggler */}
+          <button
+            className="navbar-toggler border-0"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span className="navbar-toggler-icon"></span>
+          </button>
 
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav mx-auto gap-1">
-            <li className="nav-item nav-item-anim">
-              <a className="nav-link nav-link-custom active" href="#hero">Find Matches</a>
-            </li>
-            <li className="nav-item nav-item-anim">
-              <a className="nav-link nav-link-custom" href="#how-it-works">How it Works</a>
-            </li>
-            <li className="nav-item nav-item-anim">
-              <a className="nav-link nav-link-custom" href="#categories">Categories</a>
-            </li>
-            <li className="nav-item nav-item-anim">
-              <a className="nav-link nav-link-custom" href="#matches">Teams</a>
-            </li>
-          </ul>
+          <div className="collapse navbar-collapse" id="navbarNav">
+            <ul className="navbar-nav mx-auto gap-1">
+              <li className="nav-item nav-item-anim">
+                <a className="nav-link nav-link-custom active" href="#hero">Find Matches</a>
+              </li>
+              <li className="nav-item nav-item-anim">
+                <a className="nav-link nav-link-custom" href="#how-it-works">How it Works</a>
+              </li>
+              <li className="nav-item nav-item-anim">
+                <a className="nav-link nav-link-custom" href="#categories">Categories</a>
+              </li>
+              <li className="nav-item nav-item-anim">
+                <a className="nav-link nav-link-custom" href="#matches">Teams</a>
+              </li>
+            </ul>
 
-          <div className="d-flex align-items-center gap-3 nav-item-anim">
-            <a href="#" className="btn btn-nav-login">Log In</a>
-            <a href="#" className="btn btn-nav-signup">Sign Up</a>
+            <div className="d-flex align-items-center gap-3 nav-item-anim">
+              <a href="#" className="btn btn-nav-login" onClick={openLogin}>Log In</a>
+              <a href="#" className="btn btn-nav-signup" onClick={openSignup}>Sign Up</a>
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        initialMode={authMode} 
+      />
+    </>
   );
 };
 
