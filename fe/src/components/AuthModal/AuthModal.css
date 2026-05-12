@@ -24,8 +24,14 @@
 }
 
 @keyframes modalPop {
-  0% { transform: scale(0.9); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .auth-modal-close {
@@ -67,7 +73,9 @@
   font-weight: 600;
   color: #495057;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
 }
 
 .auth-social-btn:hover {
@@ -97,11 +105,11 @@
 }
 
 .auth-divider:not(:empty)::before {
-  margin-right: .5em;
+  margin-right: 0.5em;
 }
 
 .auth-divider:not(:empty)::after {
-  margin-left: .5em;
+  margin-left: 0.5em;
 }
 
 .auth-form-group {
@@ -187,22 +195,26 @@
   padding: 12px;
   background-color: #f1f3f5;
   color: #adb5bd;
-  border: none;
+  border: 1px solid #fff;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
   cursor: not-allowed;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .auth-submit-btn.active {
-  background-color: #e83e8c; /* Example pink color */
+  background-color: var(--primary);
   color: white;
   cursor: pointer;
 }
 
 .auth-submit-btn.active:hover {
-  background-color: #d63384;
+  background-color: #fff;
+  color: var(--primary);
+  border: 1px solid var(--primary);
 }
 
 .auth-footer-links {

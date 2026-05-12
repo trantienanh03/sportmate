@@ -44,12 +44,12 @@ public class AuthController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<?> getUserProfile(HttpServletRequest httpRequest) {
+    public ResponseEntity<AuthResponseDto> getUserProfile(HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
         if (session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).body("Chưa đăng nhập");
+            return ResponseEntity.status(401).build();
         }
         Integer userId = (Integer) session.getAttribute("userId");
-        return ResponseEntity.ok("UserId: " + userId);
+        return ResponseEntity.ok(authService.getProfile(userId));
     }
 }

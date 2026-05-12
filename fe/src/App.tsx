@@ -4,15 +4,26 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import LandingPage from './pages/LandingPage/LandingPage';
 import UserHome from './pages/UserHome/UserHome';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
   return (
-    <BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/home" element={<UserHome />} />
+        <Route 
+          path="/home" 
+          element={
+            <ProtectedRoute>
+              <UserHome />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </BrowserRouter>
+    </AuthProvider>
   );
 }
 

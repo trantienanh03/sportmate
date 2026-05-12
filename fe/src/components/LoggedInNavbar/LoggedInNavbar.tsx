@@ -1,8 +1,18 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './LoggedInNavbar.css';
 
 const LoggedInNavbar: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await logout();
+    navigate('/');
+  };
+
   return (
     <nav className="navbar navbar-expand-lg logged-in-nav sticky-top">
       <div className="container">
@@ -70,14 +80,22 @@ const LoggedInNavbar: React.FC = () => {
                   aria-expanded="false"
                 >
                   <div className="user-avatar">
-                    <span>T</span>
+                    {user?.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.fullName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <span>{user?.fullName?.charAt(0).toUpperCase() || 'U'}</span>
+                    )}
                   </div>
                 </a>
                 <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                  <li className="px-3 py-2 border-bottom">
+                    <span className="fw-bold d-block text-truncate" style={{ maxWidth: '150px' }}>{user?.fullName}</span>
+                    <small className="text-muted d-block text-truncate" style={{ maxWidth: '150px' }}>{user?.email}</small>
+                  </li>
                   <li><Link className="dropdown-item" to="/profile">Profile</Link></li>
                   <li><Link className="dropdown-item" to="/settings">Settings</Link></li>
                   <li><hr className="dropdown-divider" /></li>
-                  <li><Link className="dropdown-item text-danger" to="/">Log out</Link></li>
+                  <li><a className="dropdown-item text-danger" href="#" onClick={handleLogout}>Log out</a></li>
                 </ul>
               </div>
             </li>
