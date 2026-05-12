@@ -61,4 +61,18 @@ public class AuthService {
                 .avatarUrl(user.getAvatarUrl())
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public AuthResponseDto getProfile(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
+
+        return AuthResponseDto.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .avatarUrl(user.getAvatarUrl())
+                .build();
+    }
 }
