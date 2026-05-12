@@ -50,4 +50,36 @@ export const authService = {
 
     return response.json();
   },
+
+  getProfile: async () => {
+    const response = await fetch(`${API_URL}/profile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Not authenticated");
+    }
+
+    return response.json();
+  },
+
+  logout: async () => {
+    const response = await fetch(`${API_URL}/logout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Logout failed");
+    }
+
+    return response.text();
+  },
 };
