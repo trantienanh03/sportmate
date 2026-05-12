@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './AuthModal.css';
+import { authService } from '../../services/authService';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -8,6 +10,7 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [signupStep, setSignupStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
@@ -15,9 +18,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isRobotChecked, setIsRobotChecked] = useState(false);
   const [isAgeChecked, setIsAgeChecked] = useState(false);
   const [keepLoggedIn, setKeepLoggedIn] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setMode(initialMode);
@@ -26,28 +30,47 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     setPassword('');
     setName('');
     setLocation('');
-    setIsRobotChecked(false);
     setIsAgeChecked(false);
     setKeepLoggedIn(false);
+    setError(null);
   }, [initialMode, isOpen]);
 
   if (!isOpen) return null;
 
   const isLoginFormValid = email.trim() !== '' && password.trim() !== '';
-  const isSignupFormValid = email.trim() !== '' && password.trim().length >= 10 && name.trim() !== '' && location.trim() !== '' && isAgeChecked && isRobotChecked;
+  const isSignupFormValid = email.trim() !== '' && password.trim().length >= 10 && name.trim() !== '' && location.trim() !== '' && isAgeChecked;
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoginFormValid) return;
-    console.log('Submitting login with', { email, password, keepLoggedIn });
-    onClose();
+    
+    setIsLoading(true);
+    setError(null);
+    try {
+      await authService.login({ email, password });
+      onClose();
+      navigate('/home');
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSignupFormValid) return;
-    console.log('Submitting signup with', { name, email, password, location });
-    onClose();
+    
+    setIsLoading(true);
+    setError(null);
+    try {
+      await authService.register({ fullName: name, email, password });
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Registration failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -87,6 +110,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             </div>
 
             <div className="auth-divider">or</div>
+
+            {error && <div className="alert alert-danger p-2 mb-3" style={{ fontSize: '14px' }}>{error}</div>}
 
             <form onSubmit={handleLoginSubmit}>
               <div className="auth-form-group">
@@ -130,10 +155,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
               <button
                 type="submit"
-                className={`auth-submit-btn ${isLoginFormValid ? 'active' : ''}`}
-                disabled={!isLoginFormValid}
+                className={`auth-submit-btn ${isLoginFormValid && !isLoading ? 'active' : ''}`}
+                disabled={!isLoginFormValid || isLoading}
               >
-                Log in
+                {isLoading ? 'Logging in...' : 'Log in'}
               </button>
 
               <div className="auth-footer-links">
@@ -193,6 +218,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             </>
           ) : (
             <form onSubmit={handleSignupSubmit}>
+              {error && <div className="alert alert-danger p-2 mb-3" style={{ fontSize: '14px' }}>{error}</div>}
+
               <div className="auth-form-group mb-4">
                 <label className="auth-form-label">Your name</label>
                 <input
@@ -280,10 +307,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
               <button
                 type="submit"
-                className={`auth-submit-btn ${isSignupFormValid ? 'active' : ''}`}
-                disabled={!isSignupFormValid}
+                className={`auth-submit-btn ${isSignupFormValid && !isLoading ? 'active' : ''}`}
+                disabled={!isSignupFormValid || isLoading}
               >
-                Sign up
+                {isLoading ? 'Signing up...' : 'Sign up'}
               </button>
 
               <div className="auth-footer-links mt-4">
