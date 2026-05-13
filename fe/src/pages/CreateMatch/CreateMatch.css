@@ -1,0 +1,259 @@
+.create-match-page {
+  background-color: #fff;
+  min-height: 100vh;
+}
+
+.cm-shell {
+  max-width: 960px;
+}
+
+/* ── Progress Bar ─────────────────────────────── */
+.cm-progress-bar {
+  display: flex;
+  gap: 6px;
+}
+.cm-progress-segment {
+  flex: 1;
+  height: 4px;
+  border-radius: 99px;
+  background-color: #e5e7eb;
+  transition: background-color 0.3s ease;
+}
+.cm-progress-segment.filled {
+  background-color: #212529;
+}
+
+/* ── Back button ──────────────────────────────── */
+.cm-back-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.9rem;
+  color: #495057;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+.cm-back-btn:hover {
+  color: #212529;
+}
+
+/* ── Step title ───────────────────────────────── */
+.cm-step-title {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #212529;
+  letter-spacing: -0.5px;
+}
+
+/* ── Sport Grid ───────────────────────────────── */
+.cm-sport-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.cm-sport-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  gap: 8px;
+}
+.cm-sport-card:hover {
+  border-color: #adb5bd;
+  transform: translateY(-2px);
+}
+.cm-sport-card.selected {
+  border-color: #212529;
+  background-color: #f8f9fa;
+}
+.cm-sport-emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+.cm-sport-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+/* ── Form fields ──────────────────────────────── */
+.cm-field-group {
+  display: flex;
+  flex-direction: column;
+}
+.cm-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 8px;
+}
+.cm-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #dee2e6;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: #212529;
+  outline: none;
+  transition: border-color 0.2s;
+  background-color: #fff;
+}
+.cm-input:focus {
+  border-color: #212529;
+}
+.cm-textarea {
+  resize: none;
+  font-family: inherit;
+}
+
+/* ── Time row ─────────────────────────────────── */
+.cm-time-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+.cm-time-row .cm-field-group {
+  flex: 1;
+}
+.cm-time-separator {
+  font-weight: 600;
+  color: #6c757d;
+  padding-bottom: 14px;
+  white-space: nowrap;
+}
+
+/* ── Stepper ──────────────────────────────────── */
+.cm-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.cm-stepper-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid #dee2e6;
+  background: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.cm-stepper-btn:hover {
+  border-color: #212529;
+  background: #f8f9fa;
+}
+.cm-stepper-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  width: 56px;
+  text-align: center;
+  color: #212529;
+}
+
+/* ── Chip Group ───────────────────────────────── */
+.cm-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cm-chip {
+  padding: 8px 20px;
+  border-radius: 99px;
+  border: 1.5px solid #dee2e6;
+  background: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cm-chip:hover {
+  border-color: #6c757d;
+  color: #212529;
+}
+.cm-chip.selected {
+  border-color: #212529;
+  background-color: #212529;
+  color: #fff;
+}
+
+/* ── Fee input ────────────────────────────────── */
+.cm-fee-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.cm-fee-input-wrapper .cm-input {
+  padding-right: 120px;
+}
+.cm-fee-suffix {
+  position: absolute;
+  right: 16px;
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Next / Submit Buttons ────────────────────── */
+.cm-next-btn,
+.cm-submit-btn {
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  color: #fff;
+  background-color: #adb5bd;
+  cursor: not-allowed;
+  transition: background-color 0.2s;
+}
+.cm-next-btn.active,
+.cm-submit-btn.active {
+  background-color: #212529;
+  cursor: pointer;
+}
+.cm-next-btn.active:hover,
+.cm-submit-btn.active:hover {
+  background-color: #343a40;
+}
+
+/* ── Tip Card ─────────────────────────────────── */
+.cm-tip-card {
+  background: #f8f9fa;
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 80px;
+  border: 1px solid #e9ecef;
+}
+.cm-tip-icon {
+  font-size: 1.5rem;
+}
+
+/* ── Letter spacing utility ───────────────────── */
+.letter-spacing {
+  letter-spacing: 0.08em;
+}
+
+/* ── Responsive ───────────────────────────────── */
+@media (max-width: 576px) {
+  .cm-sport-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .cm-step-title {
+    font-size: 1.6rem;
+  }
+}

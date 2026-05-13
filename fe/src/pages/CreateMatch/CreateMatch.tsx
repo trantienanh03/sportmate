@@ -1,0 +1,323 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
+import './CreateMatch.css';
+
+const SPORTS = [
+  { id: 'football',    label: 'Football',    emoji: '⚽' },
+  { id: 'badminton',   label: 'Badminton',   emoji: '🏸' },
+  { id: 'tennis',      label: 'Tennis',      emoji: '🎾' },
+  { id: 'pickleball',  label: 'Pickleball',  emoji: '🏓' },
+  { id: 'basketball',  label: 'Basketball',  emoji: '🏀' },
+  { id: 'running',     label: 'Running',     emoji: '🏃' },
+  { id: 'cycling',     label: 'Cycling',     emoji: '🚴' },
+  { id: 'swimming',    label: 'Swimming',    emoji: '🏊' },
+];
+
+const SKILL_LEVELS = [
+  { id: 'newbie',       label: 'Newbie' },
+  { id: 'beginner',     label: 'Beginner' },
+  { id: 'intermediate', label: 'Intermediate' },
+  { id: 'advanced',     label: 'Advanced' },
+  { id: 'all',          label: 'All Levels' },
+];
+
+const TIPS = [
+  {
+    icon: '🏆',
+    title: 'Pick your sport',
+    body: 'Choose the sport you want to play. This helps players with the right skill set find your match quickly.',
+  },
+  {
+    icon: '📅',
+    title: 'Schedule it right',
+    body: 'Weekday evenings (6–9 PM) and weekend mornings are peak times. Pick a slot when most players are free.',
+  },
+  {
+    icon: '⚡',
+    title: 'Almost there!',
+    body: 'Keep your match title short and clear (e.g. "5v5 Football – Quận 1"). A short description helps players know what to expect.',
+  },
+];
+
+interface FormData {
+  sport: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  title: string;
+  maxPlayers: number;
+  skillLevel: string;
+  feeType: 'free' | 'paid';
+  fee: string;
+  description: string;
+}
+
+const INITIAL_FORM: FormData = {
+  sport: '',
+  date: '',
+  startTime: '19:00',
+  endTime: '21:00',
+  location: '',
+  title: '',
+  maxPlayers: 4,
+  skillLevel: 'beginner',
+  feeType: 'free',
+  fee: '',
+  description: '',
+};
+
+const CreateMatch: React.FC = () => {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState<FormData>(INITIAL_FORM);
+
+  const set = (key: keyof FormData, value: string | number) =>
+    setForm(prev => ({ ...prev, [key]: value }));
+
+  const canGoNext = () => {
+    if (step === 1) return form.sport !== '';
+    if (step === 2) return form.date !== '' && form.startTime !== '' && form.endTime !== '';
+    return form.title.trim() !== '';
+  };
+
+  const handleSubmit = () => {
+    console.log('Submitting match:', form);
+    navigate('/home');
+  };
+
+  const tip = TIPS[step - 1];
+
+  return (
+    <div className="create-match-page">
+      <LoggedInNavbar />
+
+      <div className="cm-shell container py-5">
+        <div className="row justify-content-center">
+
+          <div className="col-lg-6 col-md-8">
+            <div className="cm-progress-bar mb-5">
+              {[1, 2, 3].map(s => (
+                <div
+                  key={s}
+                  className={`cm-progress-segment ${s <= step ? 'filled' : ''}`}
+                />
+              ))}
+            </div>
+
+            {step > 1 && (
+              <button className="cm-back-btn mb-4" onClick={() => setStep(s => s - 1)}>
+                <i className="fa-solid fa-arrow-left me-2"></i> Back
+              </button>
+            )}
+
+            {step === 1 && <Step1 form={form} set={set} />}
+            {step === 2 && <Step2 form={form} set={set} />}
+            {step === 3 && <Step3 form={form} set={set} />}
+
+            <div className="mt-4">
+              {step < 3 ? (
+                <button
+                  className={`btn cm-next-btn w-100 ${canGoNext() ? 'active' : ''}`}
+                  disabled={!canGoNext()}
+                  onClick={() => setStep(s => s + 1)}
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  className={`btn cm-submit-btn w-100 ${canGoNext() ? 'active' : ''}`}
+                  disabled={!canGoNext()}
+                  onClick={handleSubmit}
+                >
+                  Create Match
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="col-lg-3 col-md-4 d-none d-md-block ps-lg-5">
+            <div className="cm-tip-card">
+              <div className="cm-tip-icon">{tip.icon}</div>
+              <h6 className="fw-bold mt-2 mb-1">{tip.title}</h6>
+              <p className="text-muted small mb-0">{tip.body}</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Step1: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
+  <div>
+    <p className="text-muted small fw-bold text-uppercase letter-spacing mb-1">Step 1 of 3</p>
+    <h2 className="cm-step-title">What sport do you want to play?</h2>
+    <div className="cm-sport-grid mt-4">
+      {SPORTS.map(sport => (
+        <button
+          key={sport.id}
+          className={`cm-sport-card ${form.sport === sport.id ? 'selected' : ''}`}
+          onClick={() => set('sport', sport.id)}
+        >
+          <span className="cm-sport-emoji">{sport.emoji}</span>
+          <span className="cm-sport-label">{sport.label}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
+  <div>
+    <p className="text-muted small fw-bold text-uppercase letter-spacing mb-1">Step 2 of 3</p>
+    <h2 className="cm-step-title">When and where?</h2>
+
+    <div className="cm-field-group mt-4">
+      <label className="cm-label">
+        <i className="fa-regular fa-calendar me-2 text-muted"></i>Date
+      </label>
+      <input
+        type="date"
+        className="cm-input"
+        value={form.date}
+        min={new Date().toISOString().split('T')[0]}
+        onChange={e => set('date', e.target.value)}
+      />
+    </div>
+
+    <div className="cm-time-row mt-3">
+      <div className="cm-field-group">
+        <label className="cm-label">
+          <i className="fa-regular fa-clock me-2 text-muted"></i>Start time
+        </label>
+        <input
+          type="time"
+          className="cm-input"
+          value={form.startTime}
+          onChange={e => set('startTime', e.target.value)}
+        />
+      </div>
+      <span className="cm-time-separator">to</span>
+      <div className="cm-field-group">
+        <label className="cm-label">End time</label>
+        <input
+          type="time"
+          className="cm-input"
+          value={form.endTime}
+          onChange={e => set('endTime', e.target.value)}
+        />
+      </div>
+    </div>
+
+    <div className="cm-field-group mt-3">
+      <label className="cm-label">
+        <i className="fa-solid fa-location-dot me-2 text-muted"></i>Venue / Location
+      </label>
+      <input
+        type="text"
+        className="cm-input"
+        placeholder="e.g. Sân Cầu Lông Phú Nhuận, 123 Phan Xích Long"
+        value={form.location}
+        onChange={e => set('location', e.target.value)}
+      />
+    </div>
+  </div>
+);
+
+const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
+  <div>
+    <p className="text-muted small fw-bold text-uppercase letter-spacing mb-1">Step 3 of 3</p>
+    <h2 className="cm-step-title">Match details</h2>
+
+    <div className="cm-field-group mt-4">
+      <label className="cm-label">Match title</label>
+      <input
+        type="text"
+        className="cm-input"
+        placeholder={`e.g. ${form.sport ? form.sport.charAt(0).toUpperCase() + form.sport.slice(1) : 'Football'} match in District 1`}
+        value={form.title}
+        maxLength={100}
+        onChange={e => set('title', e.target.value)}
+      />
+    </div>
+
+    <div className="cm-field-group mt-3">
+      <label className="cm-label">
+        <i className="fa-solid fa-users me-2 text-muted"></i>Players needed
+      </label>
+      <div className="cm-stepper">
+        <button
+          className="cm-stepper-btn"
+          onClick={() => set('maxPlayers', Math.max(2, Number(form.maxPlayers) - 1))}
+        >−</button>
+        <span className="cm-stepper-value">{form.maxPlayers}</span>
+        <button
+          className="cm-stepper-btn"
+          onClick={() => set('maxPlayers', Math.min(100, Number(form.maxPlayers) + 1))}
+        >+</button>
+        <span className="text-muted small ms-3">players total (including you)</span>
+      </div>
+    </div>
+
+    <div className="cm-field-group mt-3">
+      <label className="cm-label">Skill level</label>
+      <div className="cm-chip-group">
+        {SKILL_LEVELS.map(lvl => (
+          <button
+            key={lvl.id}
+            className={`cm-chip ${form.skillLevel === lvl.id ? 'selected' : ''}`}
+            onClick={() => set('skillLevel', lvl.id)}
+          >
+            {lvl.label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div className="cm-field-group mt-3">
+      <label className="cm-label">
+        <i className="fa-solid fa-dollar-sign me-2 text-muted"></i>Entry fee
+      </label>
+      <div className="cm-chip-group mb-2">
+        <button
+          className={`cm-chip ${form.feeType === 'free' ? 'selected' : ''}`}
+          onClick={() => set('feeType', 'free')}
+        >Free</button>
+        <button
+          className={`cm-chip ${form.feeType === 'paid' ? 'selected' : ''}`}
+          onClick={() => set('feeType', 'paid')}
+        >Paid</button>
+      </div>
+      {form.feeType === 'paid' && (
+        <div className="cm-fee-input-wrapper">
+          <input
+            type="number"
+            className="cm-input"
+            placeholder="50000"
+            value={form.fee}
+            onChange={e => set('fee', e.target.value)}
+          />
+          <span className="cm-fee-suffix">VND / person</span>
+        </div>
+      )}
+    </div>
+
+    <div className="cm-field-group mt-3">
+      <label className="cm-label">
+        Description <span className="text-muted fw-normal">(optional)</span>
+      </label>
+      <textarea
+        className="cm-input cm-textarea"
+        rows={3}
+        placeholder="Tell players what to expect, what to bring, any rules..."
+        value={form.description}
+        onChange={e => set('description', e.target.value)}
+      />
+    </div>
+  </div>
+);
+
+export default CreateMatch;
