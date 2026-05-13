@@ -26,24 +26,23 @@ const UserHome: React.FC = () => {
                   <i className="fa-solid fa-chevron-right ms-auto text-muted"></i>
                 </div>
 
-                <hr className="divider" />
-
-                <ul className="profile-stats list-unstyled mb-0">
-                  <li className="d-flex justify-content-between align-items-center py-2">
-                    <span className="fw-medium">Going</span>
-                  </li>
-                  <li className="d-flex justify-content-between align-items-center py-2">
-                    <span className="fw-medium">Saved</span>
-                    <a href="#" className="text-primary text-decoration-none small fw-bold">See all</a>
-                  </li>
-                </ul>
               </div>
 
-              <div className="sidebar-card text-center mb-4 p-4">
-                <h6 className="fw-bold mb-3">Looks like you're free</h6>
-                <button className="btn btn-dark rounded-pill px-4 py-2 fw-bold w-100">
-                  Find events
-                </button>
+              <div className="sidebar-card mb-4 p-4">
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                  <div className="d-flex gap-3">
+                    <span className="fw-bold" style={{ cursor: 'pointer', borderBottom: '2px solid #212529', paddingBottom: '4px' }}>Going</span>
+                    <span className="text-muted fw-medium" style={{ cursor: 'pointer' }}>Saved</span>
+                  </div>
+                  <a href="#" className="text-primary text-decoration-none small fw-bold">See all</a>
+                </div>
+                
+                <div className="text-center py-3">
+                  <h6 className="fw-bold mb-3">Looks like you're free</h6>
+                  <button className="btn btn-dark rounded-pill px-4 py-2 fw-bold w-100">
+                    Find events
+                  </button>
+                </div>
               </div>
 
               <div className="sidebar-card mb-4 p-4">
