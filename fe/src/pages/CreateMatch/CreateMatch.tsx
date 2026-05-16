@@ -3,38 +3,44 @@ import { useNavigate } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import './CreateMatch.css';
 
+import footballIcon from '../../assets/ion--football.svg';
+import badmintonIcon from '../../assets/mdi--badminton.svg';
+import tennisIcon from '../../assets/emojione--tennis.svg';
+import pickleballIcon from '../../assets/material-symbols--pickleball.svg';
+import basketballIcon from '../../assets/emojione--basketball.svg';
+import tableTennisIcon from '../../assets/uil--table-tennis.svg';
+import esportsIcon from '../../assets/material-symbols--sports-esports.svg';
+import volleyballIcon from '../../assets/mdi--volleyball.svg';
+
 const SPORTS = [
-  { id: 'football',   label: 'Football',   emoji: '⚽' },
-  { id: 'badminton',  label: 'Badminton',  emoji: '🏸' },
-  { id: 'tennis',     label: 'Tennis',     emoji: '🎾' },
-  { id: 'pickleball', label: 'Pickleball', emoji: '🏓' },
-  { id: 'basketball', label: 'Basketball', emoji: '🏀' },
-  { id: 'running',    label: 'Running',    emoji: '🏃' },
-  { id: 'cycling',    label: 'Cycling',    emoji: '🚴' },
-  { id: 'swimming',   label: 'Swimming',   emoji: '🏊' },
+  { id: 'football', label: 'Football', icon: footballIcon },
+  { id: 'badminton', label: 'Badminton', icon: badmintonIcon },
+  { id: 'tennis', label: 'Tennis', icon: tennisIcon },
+  { id: 'pickleball', label: 'Pickleball', icon: pickleballIcon },
+  { id: 'basketball', label: 'Basketball', icon: basketballIcon },
+  { id: 'tabletennis', label: 'Table Tennis', icon: tableTennisIcon },
+  { id: 'esports', label: 'Esports', icon: esportsIcon },
+  { id: 'volleyball', label: 'Volleyball', icon: volleyballIcon },
 ];
 
 const SKILL_LEVELS = [
-  { id: 'newbie',       label: 'Newbie' },
-  { id: 'beginner',     label: 'Beginner' },
+  { id: 'newbie', label: 'Newbie' },
+  { id: 'beginner', label: 'Beginner' },
   { id: 'intermediate', label: 'Intermediate' },
-  { id: 'advanced',     label: 'Advanced' },
-  { id: 'all',          label: 'All Levels' },
+  { id: 'advanced', label: 'Advanced' },
+  { id: 'all', label: 'All Levels' },
 ];
 
 const TIPS = [
   {
-    icon: '🏆',
     title: 'Pick your sport',
     body: 'Choose the sport you want to play. This helps players with the right skill set find your match quickly.',
   },
   {
-    icon: '📅',
     title: 'Schedule it right',
     body: 'Weekday evenings (6–9 PM) and weekend mornings are peak times. Pick a slot when most players are free.',
   },
   {
-    icon: '⚡',
     title: 'Almost there!',
     body: 'Keep your title short and clear. A good description helps players know what to expect.',
   },
@@ -94,7 +100,7 @@ const PreviewCard: React.FC<{ form: FormData; step: number }> = ({ form, step })
         <div>
           <div className="cm-preview-row-label">Sport</div>
           <span className="cm-preview-sport-badge">
-            {sport.emoji} {sport.label}
+            {sport.label}
           </span>
         </div>
       </div>
@@ -178,7 +184,6 @@ const CreateMatch: React.FC = () => {
       <div className="cm-shell container py-5">
         <div className="row justify-content-center g-5">
 
-          {/* ── Form Column ── */}
           <div className="col-lg-6 col-md-8">
             <div className="cm-form-card">
               <div className="cm-progress-bar mb-5">
@@ -219,20 +224,14 @@ const CreateMatch: React.FC = () => {
             </div>
           </div>
 
-          {/* ── Right Panel ── */}
           <div className="col-lg-4 d-none d-lg-block">
             <div className="cm-right-panel">
-
-              {/* Tip Card */}
               <div className="cm-tip-card">
-                <div className="cm-tip-icon">{tip.icon}</div>
-                <h6 className="fw-bold mt-2 mb-1">{tip.title}</h6>
+                <h6 className="fw-bold mb-1">{tip.title}</h6>
                 <p className="mb-0" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{tip.body}</p>
               </div>
 
-              {/* Match Preview (shows once sport is selected) */}
               {showPreview && <PreviewCard form={form} step={step} />}
-
             </div>
           </div>
 
@@ -255,7 +254,13 @@ const Step1: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
           className={`cm-sport-card ${form.sport === sport.id ? 'selected' : ''}`}
           onClick={() => set('sport', sport.id)}
         >
-          <span className="cm-sport-emoji">{sport.emoji}</span>
+          <span className="cm-sport-icon-wrapper">
+            <img
+              src={sport.icon}
+              alt={sport.label}
+              style={{ width: '36px', height: '36px', objectFit: 'contain' }}
+            />
+          </span>
           <span className="cm-sport-label">{sport.label}</span>
         </button>
       ))}

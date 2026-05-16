@@ -48,7 +48,6 @@
   letter-spacing: -0.5px;
 }
 
-/* ── Sport Grid ───────────────────────────────── */
 .cm-sport-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -59,13 +58,18 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px 12px;
+  padding: 16px 8px;
+  height: 100px;
   border: 2px solid var(--border);
   border-radius: var(--radius-md);
   background: #fff;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.15s;
   gap: 8px;
+  width: 100%;
 }
 .cm-sport-card:hover {
   border-color: #94a3b8;
@@ -76,9 +80,23 @@
   border-color: var(--primary);
   background-color: #eff6ff;
 }
-.cm-sport-emoji {
-  font-size: 2rem;
-  line-height: 1;
+.cm-sport-card.selected .cm-sport-label {
+  color: var(--primary);
+  font-weight: 700;
+}
+.cm-sport-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cm-sport-icon-wrapper img {
+  transition: transform 0.2s;
+}
+.cm-sport-card:hover .cm-sport-icon-wrapper img,
+.cm-sport-card.selected .cm-sport-icon-wrapper img {
+  transform: scale(1.1);
 }
 .cm-sport-label {
   font-size: 0.8rem;
@@ -108,7 +126,9 @@
   font-size: 0.95rem;
   color: var(--text-primary);
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   background-color: #fff;
 }
 .cm-input:focus {
@@ -153,7 +173,10 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    color 0.2s;
   color: var(--text-primary);
 }
 .cm-stepper-btn:hover {
@@ -225,7 +248,10 @@
   color: #fff;
   background-color: #cbd5e1;
   cursor: not-allowed;
-  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    border-color 0.2s;
 }
 .cm-next-btn.active,
 .cm-submit-btn.active {
