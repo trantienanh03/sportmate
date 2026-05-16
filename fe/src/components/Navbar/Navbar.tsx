@@ -20,7 +20,6 @@ const Navbar: React.FC = () => {
     };
     window.addEventListener('scroll', handleScroll);
 
-    // Animate nav items load
     gsap.fromTo(
       '.nav-item-anim',
       { opacity: 0, y: -16 },
@@ -54,7 +53,6 @@ const Navbar: React.FC = () => {
             <span className="brand-matcher">Mate</span>
           </a>
 
-          {/* Mobile toggler */}
           <button
             className="navbar-toggler border-0"
             type="button"

@@ -29,7 +29,6 @@ const StepsSection: React.FC = () => {
         </div>
 
         <div className="position-relative">
-          {/* Connecting Line Vector (Visible on Desktop) */}
           <svg className="d-none d-lg-block position-absolute steps-line-vector" height="120" viewBox="0 0 1000 120" fill="none" preserveAspectRatio="none">
             <path d="M0 60C150 60 150 10 300 10C450 10 450 110 600 110C750 110 750 60 1000 60" stroke="#E2E8F0" strokeWidth="2" strokeDasharray="8 8" />
             <circle cx="300" cy="10" r="6" fill="#3B82F6" />
