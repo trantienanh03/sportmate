@@ -4,14 +4,14 @@ import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import './CreateMatch.css';
 
 const SPORTS = [
-  { id: 'football',    label: 'Football',    emoji: '⚽' },
-  { id: 'badminton',   label: 'Badminton',   emoji: '🏸' },
-  { id: 'tennis',      label: 'Tennis',      emoji: '🎾' },
-  { id: 'pickleball',  label: 'Pickleball',  emoji: '🏓' },
-  { id: 'basketball',  label: 'Basketball',  emoji: '🏀' },
-  { id: 'running',     label: 'Running',     emoji: '🏃' },
-  { id: 'cycling',     label: 'Cycling',     emoji: '🚴' },
-  { id: 'swimming',    label: 'Swimming',    emoji: '🏊' },
+  { id: 'football',   label: 'Football',   emoji: '⚽' },
+  { id: 'badminton',  label: 'Badminton',  emoji: '🏸' },
+  { id: 'tennis',     label: 'Tennis',     emoji: '🎾' },
+  { id: 'pickleball', label: 'Pickleball', emoji: '🏓' },
+  { id: 'basketball', label: 'Basketball', emoji: '🏀' },
+  { id: 'running',    label: 'Running',    emoji: '🏃' },
+  { id: 'cycling',    label: 'Cycling',    emoji: '🚴' },
+  { id: 'swimming',   label: 'Swimming',   emoji: '🏊' },
 ];
 
 const SKILL_LEVELS = [
@@ -36,7 +36,7 @@ const TIPS = [
   {
     icon: '⚡',
     title: 'Almost there!',
-    body: 'Keep your match title short and clear (e.g. "5v5 Football – Quận 1"). A short description helps players know what to expect.',
+    body: 'Keep your title short and clear. A good description helps players know what to expect.',
   },
 ];
 
@@ -68,6 +68,87 @@ const INITIAL_FORM: FormData = {
   description: '',
 };
 
+const formatDate = (d: string) => {
+  if (!d) return null;
+  const date = new Date(d + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+};
+
+const formatTime = (t: string) => {
+  if (!t) return null;
+  const [h, m] = t.split(':');
+  const hour = parseInt(h);
+  return `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+};
+
+const PreviewCard: React.FC<{ form: FormData; step: number }> = ({ form, step }) => {
+  const sport = SPORTS.find(s => s.id === form.sport);
+  if (!sport) return null;
+
+  return (
+    <div className="cm-preview-card">
+      <p className="cm-preview-title">Match Preview</p>
+
+      <div className="cm-preview-row">
+        <i className="fa-solid fa-futbol"></i>
+        <div>
+          <div className="cm-preview-row-label">Sport</div>
+          <span className="cm-preview-sport-badge">
+            {sport.emoji} {sport.label}
+          </span>
+        </div>
+      </div>
+
+      {step >= 2 && form.date && (
+        <div className="cm-preview-row">
+          <i className="fa-regular fa-calendar"></i>
+          <div>
+            <div className="cm-preview-row-label">Date & Time</div>
+            <div className="cm-preview-row-value">{formatDate(form.date)}</div>
+            {form.startTime && form.endTime && (
+              <div className="cm-preview-row-label">
+                {formatTime(form.startTime)} → {formatTime(form.endTime)}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {step >= 2 && form.location && (
+        <div className="cm-preview-row">
+          <i className="fa-solid fa-location-dot"></i>
+          <div>
+            <div className="cm-preview-row-label">Location</div>
+            <div className="cm-preview-row-value" style={{ fontSize: '0.82rem' }}>{form.location}</div>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && form.maxPlayers && (
+        <div className="cm-preview-row">
+          <i className="fa-solid fa-users"></i>
+          <div>
+            <div className="cm-preview-row-label">Players</div>
+            <div className="cm-preview-row-value">{form.maxPlayers} players · {form.skillLevel}</div>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="cm-preview-row">
+          <i className="fa-solid fa-tag"></i>
+          <div>
+            <div className="cm-preview-row-label">Entry fee</div>
+            <div className="cm-preview-row-value">
+              {form.feeType === 'free' ? 'Free' : (form.fee ? `${Number(form.fee).toLocaleString()} VND` : 'Paid')}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const CreateMatch: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -88,60 +169,70 @@ const CreateMatch: React.FC = () => {
   };
 
   const tip = TIPS[step - 1];
+  const showPreview = form.sport !== '';
 
   return (
     <div className="create-match-page">
       <LoggedInNavbar />
 
       <div className="cm-shell container py-5">
-        <div className="row justify-content-center">
+        <div className="row justify-content-center g-5">
 
+          {/* ── Form Column ── */}
           <div className="col-lg-6 col-md-8">
-            <div className="cm-progress-bar mb-5">
-              {[1, 2, 3].map(s => (
-                <div
-                  key={s}
-                  className={`cm-progress-segment ${s <= step ? 'filled' : ''}`}
-                />
-              ))}
-            </div>
+            <div className="cm-form-card">
+              <div className="cm-progress-bar mb-5">
+                {[1, 2, 3].map(s => (
+                  <div key={s} className={`cm-progress-segment ${s <= step ? 'filled' : ''}`} />
+                ))}
+              </div>
 
-            {step > 1 && (
-              <button className="cm-back-btn mb-4" onClick={() => setStep(s => s - 1)}>
-                <i className="fa-solid fa-arrow-left me-2"></i> Back
-              </button>
-            )}
-
-            {step === 1 && <Step1 form={form} set={set} />}
-            {step === 2 && <Step2 form={form} set={set} />}
-            {step === 3 && <Step3 form={form} set={set} />}
-
-            <div className="mt-4">
-              {step < 3 ? (
-                <button
-                  className={`btn cm-next-btn w-100 ${canGoNext() ? 'active' : ''}`}
-                  disabled={!canGoNext()}
-                  onClick={() => setStep(s => s + 1)}
-                >
-                  Next
-                </button>
-              ) : (
-                <button
-                  className={`btn cm-submit-btn w-100 ${canGoNext() ? 'active' : ''}`}
-                  disabled={!canGoNext()}
-                  onClick={handleSubmit}
-                >
-                  Create Match
+              {step > 1 && (
+                <button className="cm-back-btn mb-4" onClick={() => setStep(s => s - 1)}>
+                  <i className="fa-solid fa-arrow-left me-2"></i> Back
                 </button>
               )}
+
+              {step === 1 && <Step1 form={form} set={set} />}
+              {step === 2 && <Step2 form={form} set={set} />}
+              {step === 3 && <Step3 form={form} set={set} />}
+
+              <div className="mt-4">
+                {step < 3 ? (
+                  <button
+                    className={`btn cm-next-btn w-100 ${canGoNext() ? 'active' : ''}`}
+                    disabled={!canGoNext()}
+                    onClick={() => setStep(s => s + 1)}
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    className={`btn cm-submit-btn w-100 ${canGoNext() ? 'active' : ''}`}
+                    disabled={!canGoNext()}
+                    onClick={handleSubmit}
+                  >
+                    Create Match
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="col-lg-3 col-md-4 d-none d-md-block ps-lg-5">
-            <div className="cm-tip-card">
-              <div className="cm-tip-icon">{tip.icon}</div>
-              <h6 className="fw-bold mt-2 mb-1">{tip.title}</h6>
-              <p className="text-muted small mb-0">{tip.body}</p>
+          {/* ── Right Panel ── */}
+          <div className="col-lg-4 d-none d-lg-block">
+            <div className="cm-right-panel">
+
+              {/* Tip Card */}
+              <div className="cm-tip-card">
+                <div className="cm-tip-icon">{tip.icon}</div>
+                <h6 className="fw-bold mt-2 mb-1">{tip.title}</h6>
+                <p className="mb-0" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{tip.body}</p>
+              </div>
+
+              {/* Match Preview (shows once sport is selected) */}
+              {showPreview && <PreviewCard form={form} step={step} />}
+
             </div>
           </div>
 
@@ -153,7 +244,9 @@ const CreateMatch: React.FC = () => {
 
 const Step1: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
   <div>
-    <p className="text-muted small fw-bold text-uppercase letter-spacing mb-1">Step 1 of 3</p>
+    <p className="letter-spacing mb-1" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+      Step 1 of 3
+    </p>
     <h2 className="cm-step-title">What sport do you want to play?</h2>
     <div className="cm-sport-grid mt-4">
       {SPORTS.map(sport => (
@@ -172,12 +265,14 @@ const Step1: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
 
 const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
   <div>
-    <p className="text-muted small fw-bold text-uppercase letter-spacing mb-1">Step 2 of 3</p>
+    <p className="letter-spacing mb-1" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+      Step 2 of 3
+    </p>
     <h2 className="cm-step-title">When and where?</h2>
 
     <div className="cm-field-group mt-4">
       <label className="cm-label">
-        <i className="fa-regular fa-calendar me-2 text-muted"></i>Date
+        <i className="fa-regular fa-calendar me-2" style={{ color: 'var(--text-muted)' }}></i>Date
       </label>
       <input
         type="date"
@@ -191,30 +286,20 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
     <div className="cm-time-row mt-3">
       <div className="cm-field-group">
         <label className="cm-label">
-          <i className="fa-regular fa-clock me-2 text-muted"></i>Start time
+          <i className="fa-regular fa-clock me-2" style={{ color: 'var(--text-muted)' }}></i>Start time
         </label>
-        <input
-          type="time"
-          className="cm-input"
-          value={form.startTime}
-          onChange={e => set('startTime', e.target.value)}
-        />
+        <input type="time" className="cm-input" value={form.startTime} onChange={e => set('startTime', e.target.value)} />
       </div>
       <span className="cm-time-separator">to</span>
       <div className="cm-field-group">
         <label className="cm-label">End time</label>
-        <input
-          type="time"
-          className="cm-input"
-          value={form.endTime}
-          onChange={e => set('endTime', e.target.value)}
-        />
+        <input type="time" className="cm-input" value={form.endTime} onChange={e => set('endTime', e.target.value)} />
       </div>
     </div>
 
     <div className="cm-field-group mt-3">
       <label className="cm-label">
-        <i className="fa-solid fa-location-dot me-2 text-muted"></i>Venue / Location
+        <i className="fa-solid fa-location-dot me-2" style={{ color: 'var(--text-muted)' }}></i>Venue / Location
       </label>
       <input
         type="text"
@@ -229,7 +314,9 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
 
 const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
   <div>
-    <p className="text-muted small fw-bold text-uppercase letter-spacing mb-1">Step 3 of 3</p>
+    <p className="letter-spacing mb-1" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+      Step 3 of 3
+    </p>
     <h2 className="cm-step-title">Match details</h2>
 
     <div className="cm-field-group mt-4">
@@ -246,19 +333,13 @@ const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
 
     <div className="cm-field-group mt-3">
       <label className="cm-label">
-        <i className="fa-solid fa-users me-2 text-muted"></i>Players needed
+        <i className="fa-solid fa-users me-2" style={{ color: 'var(--text-muted)' }}></i>Players needed
       </label>
       <div className="cm-stepper">
-        <button
-          className="cm-stepper-btn"
-          onClick={() => set('maxPlayers', Math.max(2, Number(form.maxPlayers) - 1))}
-        >−</button>
+        <button className="cm-stepper-btn" onClick={() => set('maxPlayers', Math.max(2, Number(form.maxPlayers) - 1))}>−</button>
         <span className="cm-stepper-value">{form.maxPlayers}</span>
-        <button
-          className="cm-stepper-btn"
-          onClick={() => set('maxPlayers', Math.min(100, Number(form.maxPlayers) + 1))}
-        >+</button>
-        <span className="text-muted small ms-3">players total (including you)</span>
+        <button className="cm-stepper-btn" onClick={() => set('maxPlayers', Math.min(100, Number(form.maxPlayers) + 1))}>+</button>
+        <span className="ms-3" style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>players total (including you)</span>
       </div>
     </div>
 
@@ -279,17 +360,11 @@ const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
 
     <div className="cm-field-group mt-3">
       <label className="cm-label">
-        <i className="fa-solid fa-dollar-sign me-2 text-muted"></i>Entry fee
+        <i className="fa-solid fa-tag me-2" style={{ color: 'var(--text-muted)' }}></i>Entry fee
       </label>
       <div className="cm-chip-group mb-2">
-        <button
-          className={`cm-chip ${form.feeType === 'free' ? 'selected' : ''}`}
-          onClick={() => set('feeType', 'free')}
-        >Free</button>
-        <button
-          className={`cm-chip ${form.feeType === 'paid' ? 'selected' : ''}`}
-          onClick={() => set('feeType', 'paid')}
-        >Paid</button>
+        <button className={`cm-chip ${form.feeType === 'free' ? 'selected' : ''}`} onClick={() => set('feeType', 'free')}>Free</button>
+        <button className={`cm-chip ${form.feeType === 'paid' ? 'selected' : ''}`} onClick={() => set('feeType', 'paid')}>Paid</button>
       </div>
       {form.feeType === 'paid' && (
         <div className="cm-fee-input-wrapper">
@@ -307,7 +382,7 @@ const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
 
     <div className="cm-field-group mt-3">
       <label className="cm-label">
-        Description <span className="text-muted fw-normal">(optional)</span>
+        Description <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
       </label>
       <textarea
         className="cm-input cm-textarea"
