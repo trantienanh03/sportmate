@@ -107,6 +107,60 @@
   color: var(--primary);
 }
 
+/* ── Other Card ───────────────────────────────── */
+.cm-other-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  color: var(--text-secondary);
+}
+.cm-other-card:hover {
+  border-color: #94a3b8;
+  color: var(--text-primary);
+}
+.cm-other-card.selected {
+  border-color: var(--primary);
+  border-style: solid;
+  background-color: #eff6ff;
+}
+.cm-other-plus {
+  font-size: 0.85rem;
+  color: inherit;
+}
+.cm-other-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.cm-other-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+.cm-other-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.cm-other-card.selected .cm-other-input {
+  color: var(--primary);
+  font-weight: 600;
+}
+.cm-other-card.selected .cm-other-input::placeholder {
+  color: rgba(37, 99, 235, 0.5); /* Primary color with opacity */
+}
+
 /* ── Form fields ──────────────────────────────── */
 .cm-field-group {
   display: flex;

@@ -48,6 +48,7 @@ const TIPS = [
 
 interface FormData {
   sport: string;
+  customSport: string;
   date: string;
   startTime: string;
   endTime: string;
@@ -62,6 +63,7 @@ interface FormData {
 
 const INITIAL_FORM: FormData = {
   sport: '',
+  customSport: '',
   date: '',
   startTime: '19:00',
   endTime: '21:00',
@@ -89,7 +91,10 @@ const formatTime = (t: string) => {
 
 const PreviewCard: React.FC<{ form: FormData; step: number }> = ({ form, step }) => {
   const sport = SPORTS.find(s => s.id === form.sport);
-  if (!sport) return null;
+  const sportLabel = form.sport === 'other'
+    ? (form.customSport.trim() || 'Other')
+    : sport?.label;
+  if (!form.sport) return null;
 
   return (
     <div className="cm-preview-card">
@@ -99,9 +104,7 @@ const PreviewCard: React.FC<{ form: FormData; step: number }> = ({ form, step })
         <i className="fa-solid fa-futbol"></i>
         <div>
           <div className="cm-preview-row-label">Sport</div>
-          <span className="cm-preview-sport-badge">
-            {sport.label}
-          </span>
+          <span className="cm-preview-sport-badge">{sportLabel}</span>
         </div>
       </div>
 
@@ -164,7 +167,10 @@ const CreateMatch: React.FC = () => {
     setForm(prev => ({ ...prev, [key]: value }));
 
   const canGoNext = () => {
-    if (step === 1) return form.sport !== '';
+    if (step === 1) {
+      if (form.sport === 'other') return form.customSport.trim() !== '';
+      return form.sport !== '';
+    }
     if (step === 2) return form.date !== '' && form.startTime !== '' && form.endTime !== '';
     return form.title.trim() !== '';
   };
@@ -264,6 +270,24 @@ const Step1: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
           <span className="cm-sport-label">{sport.label}</span>
         </button>
       ))}
+    </div>
+
+    <div
+      className={`cm-other-card mt-3 ${form.sport === 'other' ? 'selected' : ''}`}
+      onClick={() => set('sport', 'other')}
+    >
+      <i className="fa-solid fa-plus cm-other-plus"></i>
+      <input
+        className="cm-other-input"
+        placeholder="Other sport (e.g. Archery, Climbing, Yoga...)"
+        value={form.customSport}
+        onClick={(e) => {
+          e.stopPropagation();
+          set('sport', 'other');
+        }}
+        onFocus={() => set('sport', 'other')}
+        onChange={e => set('customSport', e.target.value)}
+      />
     </div>
   </div>
 );
