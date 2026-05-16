@@ -1,0 +1,41 @@
+.match-title {
+  font-size: 2.5rem;
+  letter-spacing: -0.5px;
+}
+
+.match-description {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #212529;
+}
+
+.attendee-item:hover img {
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.action-icon-btn {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: 1px solid #e2e2e2;
+  transition: background-color 0.2s;
+}
+
+.action-icon-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #d2d2d2;
+}
+
+.sticky-bottom-bar {
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+@media (max-width: 768px) {
+  .match-title {
+    font-size: 2rem;
+  }
+}

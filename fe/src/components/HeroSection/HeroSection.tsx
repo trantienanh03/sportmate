@@ -9,7 +9,6 @@ const HeroSection: React.FC = () => {
     if (!containerRef.current) return;
 
     const ctx = gsap.context(() => {
-      // Basic entry animation
       gsap.from('.hero-center-content', {
         y: 30,
         opacity: 0,
@@ -41,7 +40,6 @@ const HeroSection: React.FC = () => {
     <section id="hero" className="hero-section" ref={containerRef}>
       <div className="container hero-container">
 
-        {/* Left Images */}
         <div className="hero-left-images">
           <div className="hero-img-blob blob-1">
             <div className="img-wrapper blob-shape-1">
@@ -57,7 +55,6 @@ const HeroSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Center Content */}
         <div className="hero-center-content">
           <h1 className="hero-title">
             The sports platform.<br />
@@ -72,7 +69,6 @@ const HeroSection: React.FC = () => {
           </a>
         </div>
 
-        {/* Right Images */}
         <div className="hero-right-images">
           <div className="hero-img-blob blob-3">
             <div className="img-wrapper blob-shape-3">
