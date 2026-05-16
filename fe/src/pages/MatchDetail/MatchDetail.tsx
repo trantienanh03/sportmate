@@ -4,7 +4,7 @@ import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import './MatchDetail.css';
 
 const MatchDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: _id } = useParams<{ id: string }>();
 
   const match = {
     title: 'Ham Pick Social Club',
