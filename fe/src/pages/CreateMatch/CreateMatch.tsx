@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import './CreateMatch.css';
@@ -46,9 +46,18 @@ const TIPS = [
   },
 ];
 
+const MOCK_VENUES = [
+  { id: 1, name: 'Sân Cầu Lông Phú Nhuận', address: '123 Phan Xích Long, Phú Nhuận, HCM', sport: 'badminton', image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=100&h=100&fit=crop' },
+  { id: 2, name: 'Amber Pickleball Club', address: '326 Võ Văn Kiệt, Quận 1, HCM', sport: 'pickleball', image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=100&h=100&fit=crop' },
+  { id: 3, name: 'Sân Bóng Đá Chảo Lửa', address: '30 Phan Thúc Duyện, Tân Bình, HCM', sport: 'football', image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=100&h=100&fit=crop' },
+  { id: 4, name: 'Sân Cầu Lông Viettel', address: 'Hẻm 285 CMT8, Quận 10, HCM', sport: 'badminton', image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=100&h=100&fit=crop' },
+  { id: 5, name: 'Sân Tennis Lan Anh', address: '291 CMT8, Quận 10, HCM', sport: 'tennis', image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=100&h=100&fit=crop' }
+];
+
 interface FormData {
   sport: string;
   customSport: string;
+  venueId: number | null;
   date: string;
   startTime: string;
   endTime: string;
@@ -64,6 +73,7 @@ interface FormData {
 const INITIAL_FORM: FormData = {
   sport: '',
   customSport: '',
+  venueId: null,
   date: '',
   startTime: '19:00',
   endTime: '21:00',
@@ -292,54 +302,161 @@ const Step1: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
   </div>
 );
 
-const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
-  <div>
-    <p className="letter-spacing mb-1" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-      Step 2 of 3
-    </p>
-    <h2 className="cm-step-title">When and where?</h2>
+const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void }> = ({ form, set }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [isCustom, setIsCustom] = useState(form.venueId === null && form.location !== '');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-    <div className="cm-field-group mt-4">
-      <label className="cm-label">
-        <i className="fa-regular fa-calendar me-2" style={{ color: 'var(--text-muted)' }}></i>Date
-      </label>
-      <input
-        type="date"
-        className="cm-input"
-        value={form.date}
-        min={new Date().toISOString().split('T')[0]}
-        onChange={e => set('date', e.target.value)}
-      />
-    </div>
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
-    <div className="cm-time-row mt-3">
-      <div className="cm-field-group">
+  const filteredVenues = MOCK_VENUES.filter(v => {
+    if (form.sport && form.sport !== 'other' && v.sport !== form.sport) return false;
+    if (search && !v.name.toLowerCase().includes(search.toLowerCase()) && !v.address.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const handleSelectVenue = (venue: any) => {
+    set('venueId', venue.id);
+    set('location', `${venue.name}, ${venue.address}`);
+    setIsOpen(false);
+    setIsCustom(false);
+    setSearch('');
+  };
+
+  const handleCustomMode = () => {
+    setIsCustom(true);
+    setIsOpen(false);
+    set('venueId', null);
+    set('location', '');
+  };
+
+  const handleClearVenue = () => {
+    set('venueId', null);
+    set('location', '');
+    setIsCustom(false);
+  };
+
+  return (
+    <div>
+      <p className="letter-spacing mb-1" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+        Step 2 of 3
+      </p>
+      <h2 className="cm-step-title">When and where?</h2>
+
+      <div className="cm-field-group mt-4">
         <label className="cm-label">
-          <i className="fa-regular fa-clock me-2" style={{ color: 'var(--text-muted)' }}></i>Start time
+          <i className="fa-regular fa-calendar me-2" style={{ color: 'var(--text-muted)' }}></i>Date
         </label>
-        <input type="time" className="cm-input" value={form.startTime} onChange={e => set('startTime', e.target.value)} />
+        <input
+          type="date"
+          className="cm-input"
+          value={form.date}
+          min={new Date().toISOString().split('T')[0]}
+          onChange={e => set('date', e.target.value)}
+        />
       </div>
-      <span className="cm-time-separator">to</span>
-      <div className="cm-field-group">
-        <label className="cm-label">End time</label>
-        <input type="time" className="cm-input" value={form.endTime} onChange={e => set('endTime', e.target.value)} />
-      </div>
-    </div>
 
-    <div className="cm-field-group mt-3">
-      <label className="cm-label">
-        <i className="fa-solid fa-location-dot me-2" style={{ color: 'var(--text-muted)' }}></i>Venue / Location
-      </label>
-      <input
-        type="text"
-        className="cm-input"
-        placeholder="e.g. Sân Cầu Lông Phú Nhuận, 123 Phan Xích Long"
-        value={form.location}
-        onChange={e => set('location', e.target.value)}
-      />
+      <div className="cm-time-row mt-3">
+        <div className="cm-field-group">
+          <label className="cm-label">
+            <i className="fa-regular fa-clock me-2" style={{ color: 'var(--text-muted)' }}></i>Start time
+          </label>
+          <input type="time" className="cm-input" value={form.startTime} onChange={e => set('startTime', e.target.value)} />
+        </div>
+        <span className="cm-time-separator">to</span>
+        <div className="cm-field-group">
+          <label className="cm-label">End time</label>
+          <input type="time" className="cm-input" value={form.endTime} onChange={e => set('endTime', e.target.value)} />
+        </div>
+      </div>
+
+      <div className="cm-field-group mt-3 position-relative" ref={dropdownRef}>
+        <label className="cm-label">
+          <i className="fa-solid fa-location-dot me-2" style={{ color: 'var(--text-muted)' }}></i>Venue / Location
+        </label>
+        
+        {!isCustom && form.venueId ? (
+          <div className="cm-selected-venue">
+            <div className="cm-selected-venue-info">
+              <span className="fw-bold text-dark text-truncate d-block">{form.location.split(',')[0]}</span>
+              <span className="text-muted small text-truncate d-block">{form.location.split(',').slice(1).join(',')}</span>
+            </div>
+            <button className="cm-selected-venue-clear" onClick={handleClearVenue}>
+              <i className="fa-solid fa-times"></i>
+            </button>
+          </div>
+        ) : isCustom ? (
+          <div>
+            <input
+              type="text"
+              className="cm-input"
+              autoFocus
+              placeholder="Enter exact address or area..."
+              value={form.location}
+              onChange={e => set('location', e.target.value)}
+            />
+            <button 
+              className="btn btn-link text-primary p-0 mt-2 text-decoration-none" 
+              style={{ fontSize: '0.85rem', fontWeight: 600 }}
+              onClick={handleClearVenue}
+            >
+              <i className="fa-solid fa-arrow-left me-1"></i> Back to venue search
+            </button>
+          </div>
+        ) : (
+          <div>
+            <input
+              type="text"
+              className="cm-input"
+              placeholder="Search venues..."
+              value={search}
+              onFocus={() => setIsOpen(true)}
+              onChange={e => {
+                setSearch(e.target.value);
+                setIsOpen(true);
+              }}
+            />
+            
+            {isOpen && (
+              <div className="cm-venue-dropdown">
+                {filteredVenues.length > 0 ? (
+                  <div className="cm-venue-list">
+                    {filteredVenues.map(venue => (
+                      <div key={venue.id} className="cm-venue-item" onClick={() => handleSelectVenue(venue)}>
+                        <img src={venue.image} alt={venue.name} className="cm-venue-img" />
+                        <div className="cm-venue-details">
+                          <span className="cm-venue-name">{venue.name}</span>
+                          <span className="cm-venue-address">{venue.address}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 text-center text-muted small">
+                    No venues found for {form.sport || 'this search'}
+                  </div>
+                )}
+                <div className="cm-venue-dropdown-footer" onClick={handleCustomMode}>
+                  <i className="fa-solid fa-map-pin me-2"></i>
+                  Can't find your venue? Enter custom address
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
   <div>
