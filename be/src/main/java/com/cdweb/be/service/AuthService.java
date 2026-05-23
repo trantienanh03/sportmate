@@ -2,6 +2,7 @@ package com.cdweb.be.service;
 
 import com.cdweb.be.dto.request.LoginRequestDto;
 import com.cdweb.be.dto.request.RegisterRequestDto;
+import com.cdweb.be.dto.request.UpdateProfileRequestDto;
 import com.cdweb.be.dto.response.AuthResponseDto;
 import com.cdweb.be.entity.User;
 import com.cdweb.be.exception.AppException;
@@ -37,6 +38,14 @@ public class AuthService {
                 .email(savedUser.getEmail())
                 .role(savedUser.getRole().name())
                 .avatarUrl(savedUser.getAvatarUrl())
+            .bio(savedUser.getBio())
+            .district(savedUser.getDistrict())
+            .lat(savedUser.getLat())
+            .lng(savedUser.getLng())
+            .isActive(savedUser.getIsActive())
+            .isBanned(savedUser.getIsBanned())
+            .createdAt(savedUser.getCreatedAt())
+            .updatedAt(savedUser.getUpdatedAt())
                 .build();
     }
 
@@ -59,6 +68,14 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .avatarUrl(user.getAvatarUrl())
+            .bio(user.getBio())
+            .district(user.getDistrict())
+            .lat(user.getLat())
+            .lng(user.getLng())
+            .isActive(user.getIsActive())
+            .isBanned(user.getIsBanned())
+            .createdAt(user.getCreatedAt())
+            .updatedAt(user.getUpdatedAt())
                 .build();
     }
 
@@ -73,6 +90,45 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .avatarUrl(user.getAvatarUrl())
+            .bio(user.getBio())
+            .district(user.getDistrict())
+            .lat(user.getLat())
+            .lng(user.getLng())
+            .isActive(user.getIsActive())
+            .isBanned(user.getIsBanned())
+            .createdAt(user.getCreatedAt())
+            .updatedAt(user.getUpdatedAt())
+                .build();
+    }
+
+    @Transactional
+    public AuthResponseDto updateProfile(Integer userId, UpdateProfileRequestDto request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
+
+        user.setFullName(request.getFullName().trim());
+        user.setAvatarUrl(request.getAvatarUrl() == null || request.getAvatarUrl().isBlank() ? null : request.getAvatarUrl().trim());
+        user.setBio(request.getBio() == null || request.getBio().isBlank() ? null : request.getBio().trim());
+        user.setDistrict(request.getDistrict() == null || request.getDistrict().isBlank() ? null : request.getDistrict().trim());
+        user.setLat(request.getLat());
+        user.setLng(request.getLng());
+
+        User savedUser = userRepository.save(user);
+
+        return AuthResponseDto.builder()
+                .id(savedUser.getId())
+                .fullName(savedUser.getFullName())
+                .email(savedUser.getEmail())
+                .role(savedUser.getRole().name())
+                .avatarUrl(savedUser.getAvatarUrl())
+                .bio(savedUser.getBio())
+                .district(savedUser.getDistrict())
+                .lat(savedUser.getLat())
+                .lng(savedUser.getLng())
+                .isActive(savedUser.getIsActive())
+                .isBanned(savedUser.getIsBanned())
+                .createdAt(savedUser.getCreatedAt())
+                .updatedAt(savedUser.getUpdatedAt())
                 .build();
     }
 }

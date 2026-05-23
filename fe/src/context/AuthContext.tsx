@@ -7,6 +7,14 @@ export interface User {
   email: string;
   role: string;
   avatarUrl?: string;
+  bio?: string | null;
+  district?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  isActive?: boolean | null;
+  isBanned?: boolean | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 interface AuthContextType {

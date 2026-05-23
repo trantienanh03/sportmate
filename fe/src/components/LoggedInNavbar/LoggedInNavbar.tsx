@@ -93,7 +93,7 @@ const LoggedInNavbar: React.FC = () => {
                     <small className="text-muted d-block text-truncate" style={{ maxWidth: '150px' }}>{user?.email}</small>
                   </li>
                   <li><Link className="dropdown-item" to="/profile">Profile</Link></li>
-                  <li><Link className="dropdown-item" to="/settings">Settings</Link></li>
+                  <li><Link className="dropdown-item" to="/profile">Settings</Link></li>
                   <li><hr className="dropdown-divider" /></li>
                   <li><a className="dropdown-item text-danger" href="#" onClick={handleLogout}>Log out</a></li>
                 </ul>

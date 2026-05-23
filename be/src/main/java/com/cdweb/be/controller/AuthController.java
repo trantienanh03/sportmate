@@ -2,6 +2,7 @@ package com.cdweb.be.controller;
 
 import com.cdweb.be.dto.request.LoginRequestDto;
 import com.cdweb.be.dto.request.RegisterRequestDto;
+import com.cdweb.be.dto.request.UpdateProfileRequestDto;
 import com.cdweb.be.dto.response.AuthResponseDto;
 import com.cdweb.be.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,5 +52,19 @@ public class AuthController {
         }
         Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(authService.getProfile(userId));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<AuthResponseDto> updateUserProfile(
+            @Valid @RequestBody UpdateProfileRequestDto request,
+            HttpServletRequest httpRequest
+    ) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Integer userId = (Integer) session.getAttribute("userId");
+        return ResponseEntity.ok(authService.updateProfile(userId, request));
     }
 }
