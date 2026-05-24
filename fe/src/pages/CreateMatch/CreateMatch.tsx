@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
+import { matchService } from '../../services/matchService';
 import './CreateMatch.css';
 
 import footballIcon from '../../assets/ion--football.svg';
@@ -172,6 +173,8 @@ const CreateMatch: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const set = (key: keyof FormData, value: string | number) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -185,9 +188,33 @@ const CreateMatch: React.FC = () => {
     return form.title.trim() !== '';
   };
 
-  const handleSubmit = () => {
-    console.log('Submitting match:', form);
-    navigate('/home');
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const payload = {
+        sport: form.sport,
+        customSport: form.sport === 'other' ? form.customSport : null,
+        venueId: form.venueId,
+        location: form.venueId ? null : form.location,
+        title: form.title,
+        description: form.description,
+        date: form.date,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        skillLevel: form.skillLevel,
+        maxPlayers: form.maxPlayers,
+        feeType: form.feeType,
+        fee: form.feeType === 'paid' ? (parseInt(form.fee) || 0) : null
+      };
+
+      await matchService.createMatch(payload);
+      navigate('/home');
+    } catch (err: any) {
+      setError(err.message || 'Có lỗi xảy ra khi tạo trận đấu');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tip = TIPS[step - 1];
@@ -202,14 +229,25 @@ const CreateMatch: React.FC = () => {
 
           <div className="col-lg-6 col-md-8">
             <div className="cm-form-card">
-              <div className="cm-progress-bar mb-5">
+              <div className="cm-progress-bar mb-4">
                 {[1, 2, 3].map(s => (
                   <div key={s} className={`cm-progress-segment ${s <= step ? 'filled' : ''}`} />
                 ))}
               </div>
 
+              {error && (
+                <div className="alert alert-danger mb-4 d-flex align-items-center" role="alert" style={{ fontSize: '0.875rem', borderRadius: '8px' }}>
+                  <i className="fa-solid fa-triangle-exclamation me-2"></i>
+                  <div>{error}</div>
+                </div>
+              )}
+
               {step > 1 && (
-                <button className="cm-back-btn mb-4" onClick={() => setStep(s => s - 1)}>
+                <button 
+                  className="cm-back-btn mb-4" 
+                  onClick={() => setStep(s => s - 1)}
+                  disabled={loading}
+                >
                   <i className="fa-solid fa-arrow-left me-2"></i> Back
                 </button>
               )}
@@ -229,11 +267,18 @@ const CreateMatch: React.FC = () => {
                   </button>
                 ) : (
                   <button
-                    className={`btn cm-submit-btn w-100 ${canGoNext() ? 'active' : ''}`}
-                    disabled={!canGoNext()}
+                    className={`btn cm-submit-btn w-100 ${canGoNext() && !loading ? 'active' : ''}`}
+                    disabled={!canGoNext() || loading}
                     onClick={handleSubmit}
                   >
-                    Create Match
+                    {loading ? (
+                      <span>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Creating Match...
+                      </span>
+                    ) : (
+                      'Create Match'
+                    )}
                   </button>
                 )}
               </div>
