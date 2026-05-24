@@ -3,7 +3,11 @@ package com.cdweb.be.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
+import java.util.List;
+import com.cdweb.be.enums.VenuePlaceType;
 
 @Entity
 @Table(name = "venues")
@@ -44,6 +48,15 @@ public class Venue {
     @Column(name = "usage_count")
     @Builder.Default
     private Integer usageCount = 0;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "place_type")
+    private VenuePlaceType placeType;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "sport_tags")
+    private List<String> sportTags;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
