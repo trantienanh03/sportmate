@@ -38,11 +38,11 @@ const LoggedInNavbar: React.FC = () => {
               <input
                 type="text"
                 className="form-control search-input"
-                placeholder="Tìm kiếm trận đấu..."
-                aria-label="Tìm kiếm trận đấu"
+                placeholder="Tìm kiếm..."
+                aria-label="Tìm kiếm"
               />
               <span className="input-group-text search-location">
-                TP. Hồ Chí Minh, VN
+                TP. HCM, VN
               </span>
               <button className="btn search-btn" type="button">
                 <i className="fa-solid fa-magnifying-glass"></i>

@@ -51,7 +51,7 @@ const HeroSection: React.FC = () => {
             <div className="img-wrapper blob-shape-2">
               <img src="/hero_football.png" alt="Football" />
             </div>
-            <div className="hero-tag tag-dance">TRẬN ĐẤU VUI VẺ</div>
+            <div className="hero-tag tag-dance">GIAO LƯU VUI</div>
           </div>
         </div>
 
@@ -62,7 +62,7 @@ const HeroSection: React.FC = () => {
             những tình bạn.
           </h1>
           <p className="hero-sub">
-            Bất kể môn thể thao yêu thích của bạn là gì, từ bóng đá, bóng rổ đến cầu lông và tennis, luôn có hàng ngàn người chơi sẵn sàng chia sẻ đam mê trên SportMate. Các trận đấu diễn ra mỗi ngày — hãy đăng ký và tham gia chơi ngay!
+            Dù là bóng đá, bóng rổ, cầu lông hay tennis, luôn có hàng ngàn người chơi sẵn sàng chia sẻ đam mê trên SportMate. Tham gia chơi ngay!
           </p>
           <a href="" className="btn btn-hero-primary">
             Tham gia SportMate
@@ -74,7 +74,7 @@ const HeroSection: React.FC = () => {
             <div className="img-wrapper blob-shape-3">
               <img src="/hero_tennis.png" alt="Tennis" />
             </div>
-            <div className="hero-tag tag-club">PHÙ HỢP NGƯỜI MỚI</div>
+            <div className="hero-tag tag-club">CHO NGƯỜI MỚI</div>
           </div>
           <div className="hero-img-blob blob-4">
             <div className="img-wrapper blob-shape-4">

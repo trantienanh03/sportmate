@@ -232,7 +232,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
-                <div className="auth-form-hint">Tên của bạn sẽ hiển thị công khai trên hồ sơ SportMate</div>
+                <div className="auth-form-hint">Họ tên sẽ hiển thị công khai trên hồ sơ</div>
               </div>
 
               <div className="auth-form-group mb-4">
@@ -244,7 +244,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-                <div className="auth-form-hint">Chúng tôi sẽ sử dụng email này để gửi các cập nhật và xác minh tài khoản của bạn</div>
+                <div className="auth-form-hint">Dùng để nhận thông báo và xác minh tài khoản</div>
               </div>
 
               <div className="auth-form-group mb-4">
@@ -282,12 +282,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   <input
                     type="text"
                     className="auth-form-input"
-                    placeholder="TP. Hồ Chí Minh, VN"
+                    placeholder="TP. HCM, VN"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                   />
                 </div>
-                <div className="auth-form-hint">Chúng tôi dùng vị trí này để hiển thị các trận đấu ở gần bạn.</div>
+                <div className="auth-form-hint">Dùng để hiển thị các trận đấu gần bạn.</div>
               </div>
 
               <div className="auth-form-group mb-4">
