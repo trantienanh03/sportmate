@@ -3,14 +3,12 @@ package com.cdweb.be.service.impl;
 import com.cdweb.be.dto.request.CreateMatchRequest;
 import com.cdweb.be.entity.Match;
 import com.cdweb.be.entity.MatchParticipant;
-import com.cdweb.be.entity.Sport;
 import com.cdweb.be.entity.User;
 import com.cdweb.be.entity.Venue;
 import com.cdweb.be.enums.MatchStatus;
 import com.cdweb.be.enums.SkillLevel;
 import com.cdweb.be.repository.MatchParticipantRepository;
 import com.cdweb.be.repository.MatchRepository;
-import com.cdweb.be.repository.SportRepository;
 import com.cdweb.be.repository.UserRepository;
 import com.cdweb.be.repository.VenueRepository;
 import com.cdweb.be.service.MatchService;
@@ -29,7 +27,6 @@ public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
-    private final SportRepository sportRepository;
     private final VenueRepository venueRepository;
     private final MatchParticipantRepository matchParticipantRepository;
 
@@ -41,18 +38,14 @@ public class MatchServiceImpl implements MatchService {
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng với ID: " + hostId));
 
         // 2. Validate Sport
-        Sport sport = null;
+        String sport = request.getSport();
         String customSport = null;
-        if ("other".equalsIgnoreCase(request.getSport())) {
-            sport = sportRepository.findBySlug("other")
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy môn thể thao 'other' trong hệ thống"));
+        if ("other".equalsIgnoreCase(sport)) {
             if (!StringUtils.hasText(request.getCustomSport())) {
                 throw new AppException(HttpStatus.BAD_REQUEST, "Vui lòng nhập tên môn thể thao tự chọn (customSport) khi chọn môn thể thao là 'other'");
             }
-            customSport = request.getCustomSport();
-        } else {
-            sport = sportRepository.findBySlug(request.getSport())
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy môn thể thao: " + request.getSport()));
+            customSport = request.getCustomSport().trim();
+            sport = customSport;
         }
 
         // 3. Validate Venue/Location

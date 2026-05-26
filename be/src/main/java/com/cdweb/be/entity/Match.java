@@ -26,9 +26,8 @@ public class Match {
     @JoinColumn(name = "host_id", nullable = false)
     private User host;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sport_id", nullable = false)
-    private Sport sport;
+    @Column(name = "sport", nullable = false, length = 100)
+    private String sport;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venue_id")
