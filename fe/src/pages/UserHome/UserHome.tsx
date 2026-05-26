@@ -13,7 +13,7 @@ const UserHome: React.FC = () => {
         <div className="container">
           <div className="row">
 
-            <div className="col-lg-3 col-md-4 mb-4">
+            <div className="col-xl-3 col-lg-4 col-md-5 mb-4">
 
               <div className="sidebar-card profile-card mb-4">
                 <div className="d-flex align-items-center mb-3">
@@ -29,13 +29,15 @@ const UserHome: React.FC = () => {
 
               </div>
 
-              <div className="sidebar-card mb-4 p-4">
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                  <div className="d-flex gap-3">
-                    <span className="fw-bold" style={{ cursor: 'pointer', borderBottom: '2px solid #212529', paddingBottom: '4px' }}>Tham gia</span>
-                    <span className="text-muted fw-medium" style={{ cursor: 'pointer' }}>Đã lưu</span>
-                  </div>
+              <div className="sidebar-card mb-4 p-3">
+                <div className="sidebar-card-header mb-3">
+                  <h6 className="fw-bold mb-0">Lịch trình của bạn</h6>
                   <a href="#" className="text-primary text-decoration-none small fw-bold">Xem tất cả</a>
+                </div>
+                
+                <div className="d-flex gap-2 mb-3">
+                  <span className="fw-bold small" style={{ cursor: 'pointer', borderBottom: '2px solid #212529', paddingBottom: '4px' }}>Tham gia</span>
+                  <span className="text-muted fw-medium small" style={{ cursor: 'pointer' }}>Đã lưu</span>
                 </div>
                 
                 <div className="text-center py-3">
@@ -46,8 +48,8 @@ const UserHome: React.FC = () => {
                 </div>
               </div>
 
-              <div className="sidebar-card mb-4 p-4">
-                <div className="d-flex justify-content-between align-items-center mb-4">
+              <div className="sidebar-card mb-4 p-3">
+                <div className="sidebar-card-header mb-4">
                   <h6 className="fw-bold mb-0">Nhóm của bạn <span className="text-muted fw-normal ms-1">0</span></h6>
                   <a href="#" className="text-primary text-decoration-none small fw-bold">Xem tất cả</a>
                 </div>
@@ -62,7 +64,7 @@ const UserHome: React.FC = () => {
 
             </div>
 
-            <div className="col-lg-9 col-md-8 ps-lg-5">
+            <div className="col-xl-9 col-lg-8 col-md-7 ps-lg-5">
 
               <div className="section-header d-flex justify-content-between align-items-center mb-4">
                 <h4 className="fw-bold m-0">Gợi ý cho bạn</h4>
