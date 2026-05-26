@@ -45,27 +45,27 @@ const HeroSection: React.FC = () => {
             <div className="img-wrapper blob-shape-1">
               <img src="/hero_basketball.png" alt="Basketball" />
             </div>
-            <div className="hero-tag tag-near-you">NEAR YOU</div>
+            <div className="hero-tag tag-near-you">GẦN BẠN</div>
           </div>
           <div className="hero-img-blob blob-2">
             <div className="img-wrapper blob-shape-2">
               <img src="/hero_football.png" alt="Football" />
             </div>
-            <div className="hero-tag tag-dance">FUN MATCHES</div>
+            <div className="hero-tag tag-dance">TRẬN ĐẤU VUI VẺ</div>
           </div>
         </div>
 
         <div className="hero-center-content">
           <h1 className="hero-title">
-            The sports platform.<br />
-            Where matches<br />
-            become friendships.
+            Nền tảng thể thao.<br />
+            Nơi trận đấu kết nối<br />
+            những tình bạn.
           </h1>
           <p className="hero-sub">
-            Whatever your sport, from football and basketball to badminton and tennis, there are thousands of players who share it on SportMate. Matches are happening every day—sign up to play.
+            Bất kể môn thể thao yêu thích của bạn là gì, từ bóng đá, bóng rổ đến cầu lông và tennis, luôn có hàng ngàn người chơi sẵn sàng chia sẻ đam mê trên SportMate. Các trận đấu diễn ra mỗi ngày — hãy đăng ký và tham gia chơi ngay!
           </p>
           <a href="" className="btn btn-hero-primary">
-            Join SportMate
+            Tham gia SportMate
           </a>
         </div>
 
@@ -74,13 +74,13 @@ const HeroSection: React.FC = () => {
             <div className="img-wrapper blob-shape-3">
               <img src="/hero_tennis.png" alt="Tennis" />
             </div>
-            <div className="hero-tag tag-club">BEGINNER FRIENDLY</div>
+            <div className="hero-tag tag-club">PHÙ HỢP NGƯỜI MỚI</div>
           </div>
           <div className="hero-img-blob blob-4">
             <div className="img-wrapper blob-shape-4">
               <img src="/hero_badminton.png" alt="Badminton" />
             </div>
-            <div className="hero-tag tag-thursday">EVERY THURSDAY</div>
+            <div className="hero-tag tag-thursday">MỖI THỨ NĂM</div>
           </div>
         </div>
 

@@ -38,11 +38,11 @@ const LoggedInNavbar: React.FC = () => {
               <input
                 type="text"
                 className="form-control search-input"
-                placeholder="Search events..."
-                aria-label="Search events"
+                placeholder="Tìm kiếm trận đấu..."
+                aria-label="Tìm kiếm trận đấu"
               />
               <span className="input-group-text search-location">
-                Ho Chi Minh City, VN
+                TP. Hồ Chí Minh, VN
               </span>
               <button className="btn search-btn" type="button">
                 <i className="fa-solid fa-magnifying-glass"></i>
@@ -52,7 +52,7 @@ const LoggedInNavbar: React.FC = () => {
 
           <ul className="navbar-nav ms-auto align-items-center flex-row gap-3 gap-lg-0 mt-3 mt-lg-0">
             <li className="nav-item d-none d-lg-block">
-              <Link className="nav-link nav-action-link fw-bold btn btn-outline-dark rounded-pill px-3 py-1 mt-1 me-2" to="/create-match">Create Match</Link>
+              <Link className="nav-link nav-action-link fw-bold btn btn-outline-dark rounded-pill px-3 py-1 mt-1 me-2" to="/create-match">Tạo trận đấu</Link>
             </li>
             <li className="nav-item mx-2">
               <a className="nav-link nav-icon-link" href="#">
@@ -92,10 +92,10 @@ const LoggedInNavbar: React.FC = () => {
                     <span className="fw-bold d-block text-truncate" style={{ maxWidth: '150px' }}>{user?.fullName}</span>
                     <small className="text-muted d-block text-truncate" style={{ maxWidth: '150px' }}>{user?.email}</small>
                   </li>
-                  <li><Link className="dropdown-item" to="/profile">Profile</Link></li>
-                  <li><Link className="dropdown-item" to="/settings">Settings</Link></li>
+                  <li><Link className="dropdown-item" to="/profile">Hồ sơ</Link></li>
+                  <li><Link className="dropdown-item" to="/settings">Cài đặt</Link></li>
                   <li><hr className="dropdown-divider" /></li>
-                  <li><a className="dropdown-item text-danger" href="#" onClick={handleLogout}>Log out</a></li>
+                  <li><a className="dropdown-item text-danger" href="#" onClick={handleLogout}>Đăng xuất</a></li>
                 </ul>
               </div>
             </li>

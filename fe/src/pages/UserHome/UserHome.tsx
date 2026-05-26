@@ -22,7 +22,7 @@ const UserHome: React.FC = () => {
                   </div>
                   <div>
                     <h6 className="fw-bold mb-0">tienanhtran1003</h6>
-                    <small className="text-muted">Ho Chi Minh City</small>
+                    <small className="text-muted">TP. Hồ Chí Minh</small>
                   </div>
                   <i className="fa-solid fa-chevron-right ms-auto text-muted"></i>
                 </div>
@@ -32,30 +32,30 @@ const UserHome: React.FC = () => {
               <div className="sidebar-card mb-4 p-4">
                 <div className="d-flex justify-content-between align-items-center mb-4">
                   <div className="d-flex gap-3">
-                    <span className="fw-bold" style={{ cursor: 'pointer', borderBottom: '2px solid #212529', paddingBottom: '4px' }}>Going</span>
-                    <span className="text-muted fw-medium" style={{ cursor: 'pointer' }}>Saved</span>
+                    <span className="fw-bold" style={{ cursor: 'pointer', borderBottom: '2px solid #212529', paddingBottom: '4px' }}>Tham gia</span>
+                    <span className="text-muted fw-medium" style={{ cursor: 'pointer' }}>Đã lưu</span>
                   </div>
-                  <a href="#" className="text-primary text-decoration-none small fw-bold">See all</a>
+                  <a href="#" className="text-primary text-decoration-none small fw-bold">Xem tất cả</a>
                 </div>
                 
                 <div className="text-center py-3">
-                  <h6 className="fw-bold mb-3">Looks like you're free</h6>
+                  <h6 className="fw-bold mb-3">Lịch trình của bạn đang trống</h6>
                   <button className="btn btn-dark rounded-pill px-4 py-2 fw-bold w-100">
-                    Find events
+                    Tìm sự kiện
                   </button>
                 </div>
               </div>
 
               <div className="sidebar-card mb-4 p-4">
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                  <h6 className="fw-bold mb-0">Your groups <span className="text-muted fw-normal ms-1">0</span></h6>
-                  <a href="#" className="text-primary text-decoration-none small fw-bold">See all</a>
+                  <h6 className="fw-bold mb-0">Nhóm của bạn <span className="text-muted fw-normal ms-1">0</span></h6>
+                  <a href="#" className="text-primary text-decoration-none small fw-bold">Xem tất cả</a>
                 </div>
                 <div className="text-center">
-                  <h6 className="fw-bold mb-2">Looking for your people?</h6>
-                  <p className="text-muted small mb-3">Join a group that shares your passions—and start connecting today.</p>
+                  <h6 className="fw-bold mb-2">Tìm kiếm những người bạn mới?</h6>
+                  <p className="text-muted small mb-3">Tham gia một nhóm có chung đam mê với bạn và bắt đầu kết nối ngay hôm nay.</p>
                   <button className="btn btn-outline-dark rounded-pill px-4 py-2 fw-bold w-100">
-                    Explore groups
+                    Khám phá nhóm
                   </button>
                 </div>
               </div>
@@ -65,8 +65,8 @@ const UserHome: React.FC = () => {
             <div className="col-lg-9 col-md-8 ps-lg-5">
 
               <div className="section-header d-flex justify-content-between align-items-center mb-4">
-                <h4 className="fw-bold m-0">For you</h4>
-                <a href="#" className="text-primary text-decoration-none fw-bold">Browse all</a>
+                <h4 className="fw-bold m-0">Gợi ý cho bạn</h4>
+                <a href="#" className="text-primary text-decoration-none fw-bold">Xem tất cả</a>
               </div>
 
               <div className="row g-4">
@@ -78,16 +78,16 @@ const UserHome: React.FC = () => {
                         <button className="like-btn" onClick={(e) => e.preventDefault()}><i className="fa-regular fa-heart"></i></button>
                       </div>
                       <div className="event-details mt-3">
-                        <h5 className="event-title fw-bold">Global Asian Social: Lounge Asia Meetup (Easy English) @...</h5>
-                        <p className="event-time text-muted small fw-medium mb-1">Tue, May 12 · 7:00 PM AEST</p>
-                        <p className="event-group text-muted small mb-1">by Asian Background Social: Lounge Asi • 4.7 <i className="fa-solid fa-star text-warning"></i></p>
+                        <h5 className="event-title fw-bold">Giao lưu Pickleball: Câu lạc bộ Quận 1 (Cho mọi trình độ)</h5>
+                        <p className="event-time text-muted small fw-medium mb-1">Thứ 3, 12 tháng 5 · 19:00 (AEST)</p>
+                        <p className="event-group text-muted small mb-1">bởi Hội Giao Lưu Thể Thao Sài Gòn • 4.7 <i className="fa-solid fa-star text-warning"></i></p>
                         <div className="d-flex align-items-center mt-2">
                           <div className="attendee-avatars">
                             <img src="https://i.pravatar.cc/150?img=11" alt="user" />
                             <img src="https://i.pravatar.cc/150?img=12" alt="user" />
                             <img src="https://i.pravatar.cc/150?img=13" alt="user" />
                           </div>
-                          <span className="small text-muted ms-2 fw-medium">61 attendees</span>
+                          <span className="small text-muted ms-2 fw-medium">61 người tham gia</span>
                         </div>
                       </div>
                     </div>
@@ -101,16 +101,16 @@ const UserHome: React.FC = () => {
                       <button className="like-btn"><i className="fa-regular fa-heart"></i></button>
                     </div>
                     <div className="event-details mt-3">
-                      <h5 className="event-title fw-bold">Blame it on the hormones!</h5>
-                      <p className="event-time text-muted small fw-medium mb-1">Sun, May 17 · 12:00 PM CST · <i className="fa-solid fa-video ms-1"></i> Online</p>
-                      <p className="event-group text-muted small mb-1">by Alkya - The Perimenopause Commun • 4.8 <i className="fa-solid fa-star text-warning"></i></p>
+                      <h5 className="event-title fw-bold">Giao lưu Bóng rổ ngoài trời (Công viên Tao Đàn)</h5>
+                      <p className="event-time text-muted small fw-medium mb-1">Chủ Nhật, 17 tháng 5 · 12:00 (CST) · <i className="fa-solid fa-video ms-1"></i> Trực tuyến</p>
+                      <p className="event-group text-muted small mb-1">bởi Cộng đồng Bóng rổ phong trào • 4.8 <i className="fa-solid fa-star text-warning"></i></p>
                       <div className="d-flex align-items-center mt-2">
                         <div className="attendee-avatars">
                           <img src="https://i.pravatar.cc/150?img=21" alt="user" />
                           <img src="https://i.pravatar.cc/150?img=22" alt="user" />
                           <img src="https://i.pravatar.cc/150?img=23" alt="user" />
                         </div>
-                        <span className="small text-muted ms-2 fw-medium">18 attendees</span>
+                        <span className="small text-muted ms-2 fw-medium">18 người tham gia</span>
                       </div>
                     </div>
                   </div>
@@ -123,16 +123,16 @@ const UserHome: React.FC = () => {
                       <button className="like-btn"><i className="fa-regular fa-heart"></i></button>
                     </div>
                     <div className="event-details mt-3">
-                      <h5 className="event-title fw-bold">Ho Chi Minh City ServiceNow Developer Meetup Q2 2026</h5>
-                      <p className="event-time text-muted small fw-medium mb-1">Sat, May 16 · 9:00 AM ICT</p>
-                      <p className="event-group text-muted small mb-1">by Ho Chi Minh City ServiceNow Devel • 5.0 <i className="fa-solid fa-star text-warning"></i></p>
+                      <h5 className="event-title fw-bold">Hội thảo Lập trình viên ServiceNow TP. HCM Q2 2026</h5>
+                      <p className="event-time text-muted small fw-medium mb-1">Thứ 7, 16 tháng 5 · 09:00 (ICT)</p>
+                      <p className="event-group text-muted small mb-1">bởi Cộng đồng ServiceNow Việt Nam • 5.0 <i className="fa-solid fa-star text-warning"></i></p>
                       <div className="d-flex align-items-center mt-2">
                         <div className="attendee-avatars">
                           <img src="https://i.pravatar.cc/150?img=31" alt="user" />
                           <img src="https://i.pravatar.cc/150?img=32" alt="user" />
                           <img src="https://i.pravatar.cc/150?img=33" alt="user" />
                         </div>
-                        <span className="small text-muted ms-2 fw-medium">48 attendees</span>
+                        <span className="small text-muted ms-2 fw-medium">48 người tham gia</span>
                       </div>
                     </div>
                   </div>
@@ -140,16 +140,16 @@ const UserHome: React.FC = () => {
               </div>
 
               <div className="section-header d-flex justify-content-between align-items-center mt-5 mb-4">
-                <h4 className="fw-bold m-0">From your groups</h4>
+                <h4 className="fw-bold m-0">Từ các nhóm của bạn</h4>
                 <div className="dropdown">
                   <button className="btn filter-dropdown-btn dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Today
+                    Hôm nay
                   </button>
                   <ul className="dropdown-menu dropdown-menu-end shadow border-0">
-                    <li><a className="dropdown-item" href="#">Today</a></li>
-                    <li><a className="dropdown-item" href="#">Tomorrow</a></li>
-                    <li><a className="dropdown-item" href="#">This week</a></li>
-                    <li><a className="dropdown-item" href="#">This weekend</a></li>
+                    <li><a className="dropdown-item" href="#">Hôm nay</a></li>
+                    <li><a className="dropdown-item" href="#">Ngày mai</a></li>
+                    <li><a className="dropdown-item" href="#">Tuần này</a></li>
+                    <li><a className="dropdown-item" href="#">Cuối tuần này</a></li>
                   </ul>
                 </div>
               </div>
@@ -157,12 +157,12 @@ const UserHome: React.FC = () => {
               <div className="empty-state text-center py-5 mb-5">
                 <div className="empty-state-icon mb-3">
                   <i className="fa-solid fa-bed text-muted fa-3x"></i>
-                  <div className="zzz text-primary fw-bold">Z z z</div>
+                  <div className="zzz text-primary fw-bold">Khò khò</div>
                 </div>
-                <h5 className="fw-bold mb-2">Your groups are quiet for now</h5>
-                <p className="text-muted mb-4">Explore fresh events and stay connected<br />with what's happening around you.</p>
+                <h5 className="fw-bold mb-2">Các nhóm của bạn hiện đang im ắng</h5>
+                <p className="text-muted mb-4">Hãy khám phá các hoạt động mới mẻ và giữ kết nối<br />với những gì đang diễn ra quanh bạn.</p>
                 <button className="btn btn-dark rounded-pill px-4 py-2 fw-bold">
-                  Discover events
+                  Khám phá sự kiện
                 </button>
               </div>
 
