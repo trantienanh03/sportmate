@@ -52,7 +52,7 @@ const LoggedInNavbar: React.FC = () => {
 
           <ul className="navbar-nav ms-auto align-items-center flex-row gap-3 gap-lg-0 mt-3 mt-lg-0">
             <li className="nav-item d-none d-lg-block">
-              <Link className="nav-link nav-action-link fw-bold btn btn-outline-dark rounded-pill px-3 py-1 mt-1 me-2" to="/create-match">Tạo trận đấu</Link>
+              <Link className="btn btn-nav-create mt-1 me-2" to="/create-match">Tạo trận đấu</Link>
             </li>
             <li className="nav-item mx-2">
               <a className="nav-link nav-icon-link" href="#">
