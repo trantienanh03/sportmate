@@ -34,7 +34,7 @@ export interface MatchDetail {
   maxPlayers: number;
   currentPlayers: number;
   feePerPerson: number;
-  startTime: string; // ISO datetime
+  startTime: string;
   endTime?: string;
   locationText?: string;
   lat?: number;
@@ -49,10 +49,10 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     let message = "Request failed";
     try {
-      const errorData = await response.json() as { message?: string };
+      const errorData = (await response.json()) as { message?: string };
       message = errorData.message ?? message;
     } catch {
-      // ignore JSON parse error, keep default message
+      // ignore JSON parse error
     }
     throw new Error(message);
   }
@@ -79,6 +79,16 @@ export const matchService = {
     const response = await fetch(`${API_URL}/matches/${id}/join`, {
       method: "DELETE",
       credentials: "include",
+    });
+    return handleResponse<MatchDetail>(response);
+  },
+
+  createMatch: async (data: object): Promise<MatchDetail> => {
+    const response = await fetch(`${API_URL}/matches`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
     });
     return handleResponse<MatchDetail>(response);
   },

@@ -1,20 +1,17 @@
 package com.cdweb.be.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Builder
-@Data
 @Table(name = "match_participants", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"match_id", "user_id"})
 })
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class MatchParticipant {

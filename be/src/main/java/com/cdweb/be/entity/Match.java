@@ -3,10 +3,7 @@ package com.cdweb.be.entity;
 import com.cdweb.be.enums.MatchStatus;
 import com.cdweb.be.enums.SkillLevel;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -15,9 +12,9 @@ import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
-@Builder
-@Data
 @Table(name = "matches")
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Match {
@@ -43,10 +40,10 @@ public class Match {
     @Column(name = "location_text", length = 255)
     private String locationText;
 
-    @Column(name = "title", nullable = false, length = 200)
+    @Column(nullable = false, length = 200)
     private String title;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)
@@ -62,11 +59,11 @@ public class Match {
     private SkillLevel skillLevel = SkillLevel.beginner;
 
     @Column(name = "max_players", nullable = false)
-    private Integer maxPlayers;
+    private Short maxPlayers;
 
     @Column(name = "current_players", nullable = false)
     @Builder.Default
-    private Integer currentPlayers = 1;
+    private Short currentPlayers = 1;
 
     @Column(name = "fee_per_person", nullable = false)
     @Builder.Default
