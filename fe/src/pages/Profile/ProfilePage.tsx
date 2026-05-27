@@ -1,22 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
-import Footer from '../../components/Footer/Footer';
-import { useAuth } from '../../context/AuthContext';
-import { authService } from '../../services/authService';
-import './ProfilePage.css';
+import React, { useEffect, useState } from "react";
+import LoggedInNavbar from "../../components/LoggedInNavbar/LoggedInNavbar";
+import Footer from "../../components/Footer/Footer";
+import { useAuth } from "../../context/AuthContext";
+import { authService } from "../../services/authService";
+import "./ProfilePage.css";
 
 const formatDate = (value?: string | null) => {
-  if (!value) return 'Chưa cập nhật';
+  if (!value) return "Chưa cập nhật";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('vi-VN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "medium",
+    timeStyle: "short",
   }).format(date);
 };
 
 const toInputValue = (value?: string | number | null) => {
-  if (value === null || value === undefined) return '';
+  if (value === null || value === undefined) return "";
   return String(value);
 };
 
@@ -38,54 +38,54 @@ type ReviewItem = {
 };
 
 const PROFILE_MENU = [
-  { label: 'Home', icon: 'fa-solid fa-house' },
-  { label: 'Payroll', icon: 'fa-regular fa-circle-user' },
-  { label: 'Match Detail', icon: 'fa-regular fa-star' },
-  { label: 'Messages', icon: 'fa-regular fa-comment-dots' },
-  { label: 'Profile', icon: 'fa-solid fa-user', active: true },
-  { label: 'Create Match', icon: 'fa-regular fa-square-plus' },
-  { label: 'Rating Flow', icon: 'fa-regular fa-thumbs-up' },
+  { label: "Home", icon: "fa-solid fa-house" },
+  { label: "Payroll", icon: "fa-regular fa-circle-user" },
+  { label: "Match Detail", icon: "fa-regular fa-star" },
+  { label: "Messages", icon: "fa-regular fa-comment-dots" },
+  { label: "Profile", icon: "fa-solid fa-user", active: true },
+  { label: "Create Match", icon: "fa-regular fa-square-plus" },
+  { label: "Rating Flow", icon: "fa-regular fa-thumbs-up" },
 ];
 
 const STAT_CARDS = [
-  { label: 'Matches', value: '42' },
-  { label: 'Hosted', value: '8' },
-  { label: 'Rating', value: '4.7' },
-  { label: 'Show-up', value: '95%' },
+  { label: "Matches", value: "42" },
+  { label: "Hosted", value: "8" },
+  { label: "Rating", value: "4.7" },
+  { label: "Show-up", value: "95%" },
 ];
 
 const SKILL_LEVELS = [
-  { label: 'Football', value: 68, text: 'Intermediate' },
-  { label: 'Badminton', value: 82, text: 'Advanced' },
-  { label: 'Pickleball', value: 28, text: 'Beginner' },
+  { label: "Football", level: "Advanced", tier: 3 },
+  { label: "Badminton", level: "Pro", tier: 4 },
+  { label: "Pickleball", level: "Newbie", tier: 1 },
 ];
 
 const BADGES = [
-  { title: '10 Matches Joined', icon: 'fa-solid fa-medal', active: true },
-  { title: 'Fair Play', icon: 'fa-solid fa-hands-holding-circle' },
-  { title: 'Always On Time', icon: 'fa-solid fa-bolt' },
+  { title: "10 Matches Joined", icon: "fa-solid fa-medal", active: true },
+  { title: "Fair Play", icon: "fa-solid fa-hands-holding-circle" },
+  { title: "Always On Time", icon: "fa-solid fa-bolt" },
 ];
 
 const REVIEWS: ReviewItem[] = [
   {
-    name: 'Linh N.',
-    sport: 'Weekend Football Match',
-    timeAgo: '2 days ago',
-    message: 'Great player! Very skilled and always punctual.',
+    name: "Linh N.",
+    sport: "Weekend Football Match",
+    timeAgo: "2 days ago",
+    message: "Great player! Very skilled and always punctual.",
     rating: 5,
   },
   {
-    name: 'Duo P.',
-    sport: 'Badminton Doubles',
-    timeAgo: '1 week ago',
-    message: 'Fun to play with, good sportsmanship.',
+    name: "Duo P.",
+    sport: "Badminton Doubles",
+    timeAgo: "1 week ago",
+    message: "Fun to play with, good sportsmanship.",
     rating: 4,
   },
   {
-    name: 'Khanh D.',
-    sport: 'City Football',
-    timeAgo: '2 weeks ago',
-    message: 'Well organized match, everything was smooth. Would join again!',
+    name: "Khanh D.",
+    sport: "City Football",
+    timeAgo: "2 weeks ago",
+    message: "Well organized match, everything was smooth. Would join again!",
     rating: 5,
   },
 ];
@@ -94,26 +94,26 @@ const ProfilePage: React.FC = () => {
   const { user, login } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [avatarMode, setAvatarMode] = useState<'url' | 'upload'>('upload');
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [avatarMode, setAvatarMode] = useState<"url" | "upload">("upload");
   const [formData, setFormData] = useState<ProfileFormState>({
-    fullName: '',
-    avatarUrl: '',
-    bio: '',
-    district: '',
-    lat: '',
-    lng: '',
+    fullName: "",
+    avatarUrl: "",
+    bio: "",
+    district: "",
+    lat: "",
+    lng: "",
   });
 
   useEffect(() => {
     if (!user) return;
 
     setFormData({
-      fullName: user.fullName ?? '',
-      avatarUrl: user.avatarUrl ?? '',
-      bio: user.bio ?? '',
-      district: user.district ?? '',
+      fullName: user.fullName ?? "",
+      avatarUrl: user.avatarUrl ?? "",
+      bio: user.bio ?? "",
+      district: user.district ?? "",
       lat: toInputValue(user.lat),
       lng: toInputValue(user.lng),
     });
@@ -121,22 +121,24 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (!successMessage) return;
-    const timer = window.setTimeout(() => setSuccessMessage(''), 4000);
+    const timer = window.setTimeout(() => setSuccessMessage(""), 4000);
     return () => window.clearTimeout(timer);
   }, [successMessage]);
 
-  const profileInitial = user?.fullName?.trim()?.charAt(0).toUpperCase() || 'U';
+  const profileInitial = user?.fullName?.trim()?.charAt(0).toUpperCase() || "U";
   const isActive = user?.isActive !== false;
   const isBanned = user?.isBanned === true;
 
-  const handleChange = (field: keyof ProfileFormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setErrorMessage('');
-    setSuccessMessage('');
-    setFormData((current) => ({
-      ...current,
-      [field]: e.target.value,
-    }));
-  };
+  const handleChange =
+    (field: keyof ProfileFormState) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setErrorMessage("");
+      setSuccessMessage("");
+      setFormData((current) => ({
+        ...current,
+        [field]: e.target.value,
+      }));
+    };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -146,8 +148,8 @@ const ProfilePage: React.FC = () => {
     reader.onload = () => {
       const result = reader.result as string | null;
       if (result) {
-        setErrorMessage('');
-        setSuccessMessage('');
+        setErrorMessage("");
+        setSuccessMessage("");
         setFormData((current) => ({
           ...current,
           avatarUrl: result,
@@ -162,8 +164,8 @@ const ProfilePage: React.FC = () => {
     if (isSaving) return;
 
     setIsSaving(true);
-    setErrorMessage('');
-    setSuccessMessage('');
+    setErrorMessage("");
+    setSuccessMessage("");
 
     try {
       const payload = {
@@ -178,9 +180,10 @@ const ProfilePage: React.FC = () => {
       const updatedProfile = await authService.updateProfile(payload);
       login(updatedProfile);
       setIsEditing(false);
-      setSuccessMessage('Cập nhật profile thành công.');
+      setSuccessMessage("Cập nhật profile thành công.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Không thể cập nhật profile.';
+      const message =
+        error instanceof Error ? error.message : "Không thể cập nhật profile.";
       setErrorMessage(message);
     } finally {
       setIsSaving(false);
@@ -200,30 +203,43 @@ const ProfilePage: React.FC = () => {
                 <div className="profile-hero-top">
                   <div className="profile-avatar-rail">
                     <div className="profile-avatar-ring">
-                      {user?.avatarUrl ? <img src={user.avatarUrl} alt={user.fullName} /> : <span>{profileInitial}</span>}
+                      {user?.avatarUrl ? (
+                        <img src={user.avatarUrl} alt={user.fullName} />
+                      ) : (
+                        <span>{profileInitial}</span>
+                      )}
                     </div>
                   </div>
 
                   <div className="profile-hero-info">
                     <div className="profile-name-row">
                       <div>
-                        <h1 className="profile-hero-name">{user?.fullName || 'Unknown user'}</h1>
+                        <h1 className="profile-hero-name">
+                          {user?.fullName || "Unknown user"}
+                        </h1>
                         <div className="profile-hero-location">
                           <i className="fa-solid fa-location-dot me-2" />
-                          {user?.district || 'Ho Chi Minh City, Vietnam'}
+                          {user?.district || "Ho Chi Minh City, Vietnam"}
                         </div>
                       </div>
 
                       <div className="profile-hero-actions">
-                        <button type="button" className="btn btn-primary profile-main-btn" onClick={() => {
-                          setSuccessMessage('');
-                          setErrorMessage('');
-                          setIsEditing((current) => !current);
-                        }}>
+                        <button
+                          type="button"
+                          className="btn btn-primary profile-main-btn"
+                          onClick={() => {
+                            setSuccessMessage("");
+                            setErrorMessage("");
+                            setIsEditing((current) => !current);
+                          }}
+                        >
                           <i className="fa-regular fa-pen-to-square me-2" />
-                          {isEditing ? 'Close editor' : 'Edit profile'}
+                          {isEditing ? "Close editor" : "Edit profile"}
                         </button>
-                        <button type="button" className="btn btn-light profile-secondary-btn">
+                        <button
+                          type="button"
+                          className="btn btn-light profile-secondary-btn"
+                        >
                           <i className="fa-regular fa-paper-plane me-2" />
                           Message
                         </button>
@@ -233,7 +249,9 @@ const ProfilePage: React.FC = () => {
                     <div className="profile-tags">
                       <span className="profile-pill">Football</span>
                       <span className="profile-pill">Badminton</span>
-                      <span className="profile-pill profile-pill-muted">Active account</span>
+                      <span className="profile-pill profile-pill-muted">
+                        Active account
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -248,11 +266,13 @@ const ProfilePage: React.FC = () => {
                   <form className="profile-edit-form" onSubmit={handleSubmit}>
                     <div className="row g-3">
                       <div className="col-12">
-                        <label className="form-label fw-semibold">Full name</label>
+                        <label className="form-label fw-semibold">
+                          Full name
+                        </label>
                         <input
                           className="form-control profile-input"
                           value={formData.fullName}
-                          onChange={handleChange('fullName')}
+                          onChange={handleChange("fullName")}
                           placeholder="Your full name"
                           maxLength={100}
                         />
@@ -263,30 +283,42 @@ const ProfilePage: React.FC = () => {
                         <div className="d-flex gap-2 mb-2 flex-wrap">
                           <button
                             type="button"
-                            className={`btn btn-sm ${avatarMode === 'upload' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                            onClick={() => setAvatarMode('upload')}
+                            className={`btn btn-sm ${avatarMode === "upload" ? "btn-primary" : "btn-outline-secondary"}`}
+                            onClick={() => setAvatarMode("upload")}
                           >
                             Upload from device
                           </button>
                           <button
                             type="button"
-                            className={`btn btn-sm ${avatarMode === 'url' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                            onClick={() => setAvatarMode('url')}
+                            className={`btn btn-sm ${avatarMode === "url" ? "btn-primary" : "btn-outline-secondary"}`}
+                            onClick={() => setAvatarMode("url")}
                           >
                             Use URL
                           </button>
                         </div>
 
-                        {avatarMode === 'upload' ? (
+                        {avatarMode === "upload" ? (
                           <div className="avatar-upload-block">
-                            <input type="file" accept="image/*" onChange={handleFileChange} />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFileChange}
+                            />
                             {formData.avatarUrl && (
                               <div className="avatar-upload-preview mt-3">
-                                <img src={formData.avatarUrl} alt="avatar preview" />
+                                <img
+                                  src={formData.avatarUrl}
+                                  alt="avatar preview"
+                                />
                                 <button
                                   type="button"
                                   className="btn btn-sm btn-outline-secondary"
-                                  onClick={() => setFormData((current) => ({ ...current, avatarUrl: '' }))}
+                                  onClick={() =>
+                                    setFormData((current) => ({
+                                      ...current,
+                                      avatarUrl: "",
+                                    }))
+                                  }
                                 >
                                   Remove
                                 </button>
@@ -297,7 +329,7 @@ const ProfilePage: React.FC = () => {
                           <input
                             className="form-control profile-input"
                             value={formData.avatarUrl}
-                            onChange={handleChange('avatarUrl')}
+                            onChange={handleChange("avatarUrl")}
                             placeholder="https://..."
                             maxLength={200}
                           />
@@ -310,17 +342,19 @@ const ProfilePage: React.FC = () => {
                           className="form-control profile-input"
                           rows={4}
                           value={formData.bio}
-                          onChange={handleChange('bio')}
+                          onChange={handleChange("bio")}
                           placeholder="Introduce yourself, preferred sports, and goals."
                         />
                       </div>
 
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">District</label>
+                        <label className="form-label fw-semibold">
+                          District
+                        </label>
                         <input
                           className="form-control profile-input"
                           value={formData.district}
-                          onChange={handleChange('district')}
+                          onChange={handleChange("district")}
                           placeholder="District / area"
                           maxLength={60}
                         />
@@ -328,27 +362,35 @@ const ProfilePage: React.FC = () => {
 
                       {errorMessage && (
                         <div className="col-12">
-                          <div className="alert alert-danger mb-0 profile-alert">{errorMessage}</div>
+                          <div className="alert alert-danger mb-0 profile-alert">
+                            {errorMessage}
+                          </div>
                         </div>
                       )}
 
                       {successMessage && (
                         <div className="col-12">
-                          <div className="alert alert-success mb-0 profile-alert">{successMessage}</div>
+                          <div className="alert alert-success mb-0 profile-alert">
+                            {successMessage}
+                          </div>
                         </div>
                       )}
 
                       <div className="col-12 d-flex flex-wrap gap-2 pt-1">
-                        <button className="btn btn-primary profile-main-btn" type="submit" disabled={isSaving}>
-                          {isSaving ? 'Saving...' : 'Save changes'}
+                        <button
+                          className="btn btn-primary profile-main-btn"
+                          type="submit"
+                          disabled={isSaving}
+                        >
+                          {isSaving ? "Saving..." : "Save changes"}
                         </button>
                         <button
                           className="btn btn-outline-secondary profile-secondary-btn"
                           type="button"
                           onClick={() => {
                             setIsEditing(false);
-                            setSuccessMessage('');
-                            setErrorMessage('');
+                            setSuccessMessage("");
+                            setErrorMessage("");
                           }}
                         >
                           Cancel
@@ -360,19 +402,19 @@ const ProfilePage: React.FC = () => {
                   <div className="profile-info-list">
                     <div className="profile-info-row">
                       <span>Email</span>
-                      <strong>{user?.email || '-'}</strong>
+                      <strong>{user?.email || "-"}</strong>
                     </div>
                     <div className="profile-info-row">
                       <span>Role</span>
-                      <strong>{user?.role || '-'}</strong>
+                      <strong>{user?.role || "-"}</strong>
                     </div>
                     <div className="profile-info-row">
                       <span>Bio</span>
-                      <strong>{user?.bio || 'Chưa có mô tả'}</strong>
+                      <strong>{user?.bio || "Chưa có mô tả"}</strong>
                     </div>
                     <div className="profile-info-row">
                       <span>District</span>
-                      <strong>{user?.district || 'Chưa cập nhật'}</strong>
+                      <strong>{user?.district || "Chưa cập nhật"}</strong>
                     </div>
                   </div>
                 )}
@@ -393,14 +435,26 @@ const ProfilePage: React.FC = () => {
                     <h3>Skill Levels</h3>
                     <span className="panel-meta">Training snapshot</span>
                   </div>
-                  <div className="skill-list">
+                  <div className="skill-chips-grid">
                     {SKILL_LEVELS.map((skill) => (
-                      <div className="skill-row" key={skill.label}>
-                        <div className="skill-name">{skill.label}</div>
-                        <div className="skill-bar-wrap">
-                          <div className="skill-bar" style={{ width: `${skill.value}%` }} />
+                      <div
+                        className={`skill-chip skill-chip--tier-${skill.tier}`}
+                        key={skill.label}
+                      >
+                        <span className="skill-chip-sport">{skill.label}</span>
+                        <div className="skill-chip-right">
+                          <span className="skill-chip-dots">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                              <span
+                                key={i}
+                                className={`skill-dot${i < skill.tier ? " skill-dot--filled" : ""}`}
+                              />
+                            ))}
+                          </span>
+                          <span className="skill-chip-level">
+                            {skill.level}
+                          </span>
                         </div>
-                        <div className="skill-text">{skill.text}</div>
                       </div>
                     ))}
                   </div>
@@ -413,7 +467,10 @@ const ProfilePage: React.FC = () => {
                   </div>
                   <div className="badge-strip">
                     {BADGES.map((badge) => (
-                      <div className={`earned-badge ${badge.active ? 'active' : ''}`} key={badge.title}>
+                      <div
+                        className={`earned-badge ${badge.active ? "active" : ""}`}
+                        key={badge.title}
+                      >
                         <i className={badge.icon} />
                         <span>{badge.title}</span>
                       </div>
@@ -424,7 +481,9 @@ const ProfilePage: React.FC = () => {
                       <i className="fa-regular fa-flag me-2" />
                       Attendance Warning
                     </div>
-                    <div className="warning-text">This edge appears when attendance drops below 75%.</div>
+                    <div className="warning-text">
+                      This edge appears when attendance drops below 75%.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -437,8 +496,12 @@ const ProfilePage: React.FC = () => {
                   </div>
 
                   <div className="review-tabs">
-                    <button type="button" className="review-tab active">As Player</button>
-                    <button type="button" className="review-tab">As Host</button>
+                    <button type="button" className="review-tab active">
+                      As Player
+                    </button>
+                    <button type="button" className="review-tab">
+                      As Host
+                    </button>
                   </div>
 
                   <div className="review-list">
@@ -447,11 +510,19 @@ const ProfilePage: React.FC = () => {
                         <div className="review-topline">
                           <div>
                             <div className="review-name">{review.name}</div>
-                            <div className="review-meta">{review.sport} • {review.timeAgo}</div>
+                            <div className="review-meta">
+                              {review.sport} • {review.timeAgo}
+                            </div>
                           </div>
-                          <div className="review-rating" aria-label={`${review.rating} stars`}>
+                          <div
+                            className="review-rating"
+                            aria-label={`${review.rating} stars`}
+                          >
                             {Array.from({ length: 5 }).map((_, index) => (
-                              <i key={index} className={`fa-star ${index < review.rating ? 'fa-solid' : 'fa-regular'}`} />
+                              <i
+                                key={index}
+                                className={`fa-star ${index < review.rating ? "fa-solid" : "fa-regular"}`}
+                              />
                             ))}
                           </div>
                         </div>
@@ -460,7 +531,6 @@ const ProfilePage: React.FC = () => {
                     ))}
                   </div>
                 </div>
-
               </div>
             </section>
           </div>
