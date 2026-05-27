@@ -96,7 +96,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         </button>
 
         <h2 className="auth-modal-title">
-          {mode === 'login' ? 'Log in' : (signupStep === 1 ? 'Sign up' : 'Finish signing up')}
+          {mode === 'login' ? 'Đăng nhập' : (signupStep === 1 ? 'Đăng ký' : 'Hoàn tất đăng ký')}
         </h2>
 
         {mode === 'login' ? (
@@ -104,15 +104,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             <div className="auth-social-buttons">
               <button className="auth-social-btn">
                 <i className="fab fa-google text-danger"></i>
-                Log in with Google
+                Đăng nhập bằng Google
               </button>
               <button className="auth-social-btn">
                 <i className="fab fa-facebook text-primary"></i>
-                Log in with Facebook
+                Đăng nhập bằng Facebook
               </button>
             </div>
 
-            <div className="auth-divider">or</div>
+            <div className="auth-divider">hoặc</div>
 
             {error && <div className="alert alert-danger p-2 mb-3" style={{ fontSize: '14px' }}>{error}</div>}
 
@@ -128,7 +128,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               </div>
 
               <div className="auth-form-group">
-                <label className="auth-form-label">Password</label>
+                <label className="auth-form-label">Mật khẩu</label>
                 <div className="auth-password-wrapper">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -153,7 +153,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   checked={keepLoggedIn}
                   onChange={(e) => setKeepLoggedIn(e.target.checked)}
                 />
-                <label htmlFor="keepLoggedIn">Keep me logged in</label>
+                <label htmlFor="keepLoggedIn">Duy trì đăng nhập</label>
               </div>
 
               <button
@@ -161,15 +161,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 className={`auth-submit-btn ${isLoginFormValid && !isLoading ? 'active' : ''}`}
                 disabled={!isLoginFormValid || isLoading}
               >
-                {isLoading ? 'Logging in...' : 'Log in'}
+                {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
               </button>
 
               <div className="auth-footer-links">
-                <p><a href="#forgot">Forgot password?</a></p>
+                <p><a href="#forgot">Quên mật khẩu?</a></p>
                 <p className="mt-3">
-                  Don't have an account?{' '}
+                  Chưa có tài khoản?{' '}
                   <a href="#signup" onClick={(e) => { e.preventDefault(); setMode('signup'); setSignupStep(1); }}>
-                    Sign up
+                    Đăng ký ngay
                   </a>
                 </p>
               </div>
@@ -181,15 +181,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               <div className="auth-social-buttons">
                 <button className="auth-social-btn">
                   <i className="fab fa-google text-danger"></i>
-                  Continue with Google
+                  Tiếp tục với Google
                 </button>
                 <button className="auth-social-btn">
                   <i className="fab fa-facebook text-primary"></i>
-                  Continue with Facebook
+                  Tiếp tục với Facebook
                 </button>
               </div>
 
-              <div className="auth-divider">or</div>
+              <div className="auth-divider">hoặc</div>
 
               <div>
                 <div className="text-center mt-4 mb-4">
@@ -202,19 +202,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                       setSignupStep(2);
                     }}
                   >
-                    Sign up with email
+                    Đăng ký bằng email
                   </a>
                 </div>
 
                 <div className="auth-footer-links">
                   <p>
-                    Already have an account?{' '}
+                    Đã có tài khoản?{' '}
                     <a href="#login" onClick={(e) => { e.preventDefault(); setMode('login'); }}>
-                      Log in
+                      Đăng nhập
                     </a>
                   </p>
                   <p className="auth-terms-text">
-                    By signing up, you agree to <a href="#terms">Terms of Service</a>, <a href="#privacy">Privacy Policy</a>, and <a href="#cookie">Cookie Policy</a>.
+                    Bằng việc đăng ký, bạn đồng ý với <a href="#terms">Điều khoản dịch vụ</a>, <a href="#privacy">Chính sách bảo mật</a>, và <a href="#cookie">Chính sách Cookie</a>.
                   </p>
                 </div>
               </div>
@@ -224,19 +224,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               {error && <div className="alert alert-danger p-2 mb-3" style={{ fontSize: '14px' }}>{error}</div>}
 
               <div className="auth-form-group mb-4">
-                <label className="auth-form-label">Your name</label>
+                <label className="auth-form-label">Tên của bạn</label>
                 <input
                   type="text"
                   className="auth-form-input"
-                  placeholder="Your full name here"
+                  placeholder="Nhập họ và tên của bạn"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
-                <div className="auth-form-hint">Your name will be public on your Meetup profile</div>
+                <div className="auth-form-hint">Họ tên sẽ hiển thị công khai trên hồ sơ</div>
               </div>
 
               <div className="auth-form-group mb-4">
-                <label className="auth-form-label">Email address</label>
+                <label className="auth-form-label">Địa chỉ Email</label>
                 <input
                   type="email"
                   className="auth-form-input"
@@ -244,12 +244,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-                <div className="auth-form-hint">We'll use your email address to send you updates and to verify your account</div>
+                <div className="auth-form-hint">Dùng để nhận thông báo và xác minh tài khoản</div>
               </div>
 
               <div className="auth-form-group mb-4">
                 <label className="auth-form-label">
-                  Password <i className="far fa-question-circle ms-1 text-muted"></i>
+                  Mật khẩu <i className="far fa-question-circle ms-1 text-muted"></i>
                 </label>
                 <div className="auth-password-wrapper">
                   <input
@@ -266,7 +266,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                     <i className={`far ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
                 </div>
-                <div className="auth-form-hint">At least 10 characters are required</div>
+                <div className="auth-form-hint">Mật khẩu phải chứa ít nhất 10 ký tự</div>
                 <div className="auth-password-strength mt-2">
                   <div className={`strength-bar ${password.length > 0 ? 'active' : ''}`}></div>
                   <div className={`strength-bar ${password.length > 5 ? 'active' : ''}`}></div>
@@ -276,23 +276,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               </div>
 
               <div className="auth-form-group mb-4">
-                <label className="auth-form-label">Location</label>
+                <label className="auth-form-label">Địa điểm</label>
                 <div className="auth-input-with-icon">
                   <i className="fas fa-map-marker-alt"></i>
                   <input
                     type="text"
                     className="auth-form-input"
-                    placeholder="Ho Chi Minh City, VN"
+                    placeholder="TP. HCM, VN"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                   />
                 </div>
-                <div className="auth-form-hint">We'll use your location to show Meetup events near you.</div>
+                <div className="auth-form-hint">Dùng để hiển thị các trận đấu gần bạn.</div>
               </div>
 
               <div className="auth-form-group mb-4">
                 <label className="auth-form-label">
-                  Age <i className="far fa-question-circle ms-1 text-muted"></i>
+                  Tuổi <i className="far fa-question-circle ms-1 text-muted"></i>
                 </label>
                 <div className="d-flex align-items-center mt-1">
                   <input
@@ -303,7 +303,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                     className="me-2"
                   />
                   <label htmlFor="ageCheck" className="fw-semibold" style={{ fontSize: '14px' }}>
-                    I am 18 years of age or older.
+                    Tôi từ 18 tuổi trở lên.
                   </label>
                 </div>
               </div>
@@ -313,18 +313,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 className={`auth-submit-btn ${isSignupFormValid && !isLoading ? 'active' : ''}`}
                 disabled={!isSignupFormValid || isLoading}
               >
-                {isLoading ? 'Signing up...' : 'Sign up'}
+                {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
               </button>
 
               <div className="auth-footer-links mt-4">
                 <p>
-                  Already have an account?{' '}
+                  Đã có tài khoản?{' '}
                   <a href="#login" onClick={(e) => { e.preventDefault(); setMode('login'); }}>
-                    Log in
+                    Đăng nhập
                   </a>
                 </p>
                 <p className="auth-terms-text">
-                  By signing up, you agree to <a href="#terms">Terms of Service</a>, <a href="#privacy">Privacy Policy</a>, and <a href="#cookie">Cookie Policy</a>.
+                  Bằng việc đăng ký, bạn đồng ý với <a href="#terms">Điều khoản dịch vụ</a>, <a href="#privacy">Chính sách bảo mật</a>, và <a href="#cookie">Chính sách Cookie</a>.
                 </p>
               </div>
             </form>

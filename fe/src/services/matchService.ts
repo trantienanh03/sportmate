@@ -15,11 +15,9 @@ export const matchService = {
       let message = "Tạo trận đấu thất bại";
       try {
         const errorData = await response.json();
-        // Backend returns map/object where keys could be field names or standard error message
         if (errorData.message) {
           message = errorData.message;
-        } else if (typeof errorData === 'object') {
-          // If it's field validation errors, extract first error message
+        } else if (typeof errorData === "object") {
           const values = Object.values(errorData);
           if (values.length > 0) {
             message = String(values[0]);
@@ -30,6 +28,22 @@ export const matchService = {
         if (textData) message = textData;
       }
       throw new Error(message);
+    }
+
+    return response.json();
+  },
+
+  getMatches: async () => {
+    const response = await fetch(`${API_URL}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Lấy danh sách trận đấu thất bại");
     }
 
     return response.json();

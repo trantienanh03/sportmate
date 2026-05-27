@@ -1,27 +1,28 @@
 package com.cdweb.be.service.impl;
 
 import com.cdweb.be.dto.request.CreateMatchRequest;
+import com.cdweb.be.dto.response.MatchResponseDto;
 import com.cdweb.be.entity.Match;
 import com.cdweb.be.entity.MatchParticipant;
-import com.cdweb.be.entity.Sport;
 import com.cdweb.be.entity.User;
 import com.cdweb.be.entity.Venue;
 import com.cdweb.be.enums.MatchStatus;
 import com.cdweb.be.enums.SkillLevel;
 import com.cdweb.be.repository.MatchParticipantRepository;
 import com.cdweb.be.repository.MatchRepository;
-import com.cdweb.be.repository.SportRepository;
 import com.cdweb.be.repository.UserRepository;
 import com.cdweb.be.repository.VenueRepository;
 import com.cdweb.be.service.MatchService;
 import lombok.RequiredArgsConstructor;
 import com.cdweb.be.exception.AppException;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +30,6 @@ public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
-    private final SportRepository sportRepository;
     private final VenueRepository venueRepository;
     private final MatchParticipantRepository matchParticipantRepository;
 
@@ -41,18 +41,14 @@ public class MatchServiceImpl implements MatchService {
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng với ID: " + hostId));
 
         // 2. Validate Sport
-        Sport sport = null;
+        String sport = request.getSport();
         String customSport = null;
-        if ("other".equalsIgnoreCase(request.getSport())) {
-            sport = sportRepository.findBySlug("other")
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy môn thể thao 'other' trong hệ thống"));
+        if ("other".equalsIgnoreCase(sport)) {
             if (!StringUtils.hasText(request.getCustomSport())) {
                 throw new AppException(HttpStatus.BAD_REQUEST, "Vui lòng nhập tên môn thể thao tự chọn (customSport) khi chọn môn thể thao là 'other'");
             }
-            customSport = request.getCustomSport();
-        } else {
-            sport = sportRepository.findBySlug(request.getSport())
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy môn thể thao: " + request.getSport()));
+            customSport = request.getCustomSport().trim();
+            sport = customSport;
         }
 
         // 3. Validate Venue/Location
@@ -113,6 +109,7 @@ public class MatchServiceImpl implements MatchService {
                 .feePerPerson(fee)
                 .startTime(start)
                 .endTime(end)
+                .imageUrl(request.getImageUrl())
                 .build();
 
         Match savedMatch = matchRepository.save(match);
@@ -127,5 +124,58 @@ public class MatchServiceImpl implements MatchService {
         matchParticipantRepository.save(participant);
 
         return savedMatch;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MatchResponseDto> getAllMatches() {
+        return matchRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .map(this::convertToResponseDto)
+                .toList();
+    }
+
+    private MatchResponseDto convertToResponseDto(Match match) {
+        MatchResponseDto.HostDto hostDto = null;
+        if (match.getHost() != null) {
+            hostDto = MatchResponseDto.HostDto.builder()
+                    .id(match.getHost().getId())
+                    .fullName(match.getHost().getFullName())
+                    .avatarUrl(match.getHost().getAvatarUrl())
+                    .build();
+        }
+
+        MatchResponseDto.VenueDto venueDto = null;
+        if (match.getVenue() != null) {
+            venueDto = MatchResponseDto.VenueDto.builder()
+                    .id(match.getVenue().getId())
+                    .name(match.getVenue().getName())
+                    .address(match.getVenue().getAddress())
+                    .district(match.getVenue().getDistrict())
+                    .build();
+        }
+
+        return MatchResponseDto.builder()
+                .id(match.getId())
+                .host(hostDto)
+                .sport(match.getSport())
+                .venue(venueDto)
+                .customSport(match.getCustomSport())
+                .locationText(match.getLocationText())
+                .title(match.getTitle())
+                .description(match.getDescription())
+                .status(match.getStatus() != null ? match.getStatus().name() : null)
+                .skillLevel(match.getSkillLevel() != null ? match.getSkillLevel().name() : null)
+                .maxPlayers(match.getMaxPlayers())
+                .currentPlayers(match.getCurrentPlayers())
+                .feePerPerson(match.getFeePerPerson())
+                .startTime(match.getStartTime())
+                .endTime(match.getEndTime())
+                .lat(match.getLat())
+                .lng(match.getLng())
+                .imageUrl(match.getImageUrl())
+                .createdAt(match.getCreatedAt())
+                .updatedAt(match.getUpdatedAt())
+                .build();
     }
 }

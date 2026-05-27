@@ -1,6 +1,7 @@
 package com.cdweb.be.controller;
 
 import com.cdweb.be.dto.request.CreateMatchRequest;
+import com.cdweb.be.dto.response.MatchResponseDto;
 import com.cdweb.be.entity.Match;
 import com.cdweb.be.service.MatchService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,12 +12,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/matches")
 @RequiredArgsConstructor
-public class MatchController {
+public class  MatchController {
 
     private final MatchService matchService;
 
@@ -32,6 +34,11 @@ public class MatchController {
         Match match = matchService.createMatch(request, hostId);
         
         return ResponseEntity.ok(match);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<MatchResponseDto>> getAllMatches() {
+        return ResponseEntity.ok(matchService.getAllMatches());
     }
 }
 

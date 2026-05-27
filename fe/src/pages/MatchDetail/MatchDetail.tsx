@@ -7,22 +7,22 @@ const MatchDetail: React.FC = () => {
   const { id: _id } = useParams<{ id: string }>();
 
   const match = {
-    title: 'Ham Pick Social Club',
+    title: 'Hội Giao Lưu Pickleball Quận 1',
     host: { name: 'Mai T.', avatar: 'https://i.pravatar.cc/150?img=5' },
     image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=1200&auto=format&fit=crop&q=80',
-    date: 'Thursday, May 14',
-    time: '8:00 PM to 10:00 PM ICT',
-    recurrence: 'Every week on Tuesday, Thursday',
+    date: 'Thứ Năm, 14 tháng 5',
+    time: '20:00 đến 22:00 (ICT)',
+    recurrence: 'Hàng tuần vào thứ Ba, thứ Năm',
     venue: 'Amber Pickleball Club',
-    address: '326 Vo Van Kiet, Cau Ong Lanh · Ho Chi Minh City',
-    description: `Pickleball at Ham Pick 🎾\n\nNothing serious, beginners always welcome\nCome hang out, hit a few balls, stay as long as you want.\n\nWe play, we miss, we laugh\nAny level, just show up 🙋‍♀️🙋‍♂️\n\nTo register:\nUse the club code or tap the link below to join.\n\nYou can also find us here:\nInstagram: @hampick.socialclub`,
+    address: '326 Võ Văn Kiệt, Cầu Ông Lãnh · Quận 1, TP. Hồ Chí Minh',
+    description: `Giao lưu Pickleball tại Amber Club 🎾\n\nChơi vui vẻ là chính, luôn chào đón người mới bắt đầu.\nĐến cùng chơi, đập vài đường bóng và trò chuyện vui vẻ, bạn có thể ở lại bao lâu tùy thích.\n\nChúng ta chơi, chúng ta hụt bóng, chúng ta cùng cười.\nMọi cấp độ đều có thể tham gia, chỉ cần xách vợt lên và đi 🙋‍♀️🙋‍♂️\n\nĐể đăng ký:\nSử dụng mã câu lạc bộ hoặc nhấn vào liên kết bên dưới để tham gia.\n\nHẹn gặp lại mọi người trên sân!`,
     attendees: [
-      { id: 1, name: 'Mai T.', role: 'Organizer', avatar: 'https://i.pravatar.cc/150?img=5' },
-      { id: 2, name: 'John D.', role: 'Member', avatar: 'https://i.pravatar.cc/150?img=11' },
-      { id: 3, name: 'Sarah W.', role: 'Member', avatar: 'https://i.pravatar.cc/150?img=12' },
-      { id: 4, name: 'Mike R.', role: 'Member', avatar: 'https://i.pravatar.cc/150?img=13' },
+      { id: 1, name: 'Mai T.', role: 'Người tổ chức', avatar: 'https://i.pravatar.cc/150?img=5' },
+      { id: 2, name: 'John D.', role: 'Thành viên', avatar: 'https://i.pravatar.cc/150?img=11' },
+      { id: 3, name: 'Sarah W.', role: 'Thành viên', avatar: 'https://i.pravatar.cc/150?img=12' },
+      { id: 4, name: 'Mike R.', role: 'Thành viên', avatar: 'https://i.pravatar.cc/150?img=13' },
     ],
-    price: '50,000 VND',
+    price: '50.000 VND',
     spotsLeft: 19
   };
 
@@ -41,7 +41,7 @@ const MatchDetail: React.FC = () => {
               style={{ width: '50px', height: '50px', objectFit: 'cover' }}
             />
             <div>
-              <p className="mb-0 text-muted small fw-medium">Hosted by</p>
+              <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
               <h6 className="fw-bold mb-0">{match.host.name}</h6>
             </div>
           </div>
@@ -59,19 +59,19 @@ const MatchDetail: React.FC = () => {
               style={{ height: '400px' }}
             />
 
-            <h4 className="fw-bold mb-3">Details</h4>
+            <h4 className="fw-bold mb-3">Chi tiết</h4>
             <div className="mb-5 text-break match-description">
               {match.description}
             </div>
 
             <div className="d-flex justify-content-between align-items-center mb-4">
               <h4 className="fw-bold mb-0 d-flex align-items-center">
-                Attendees
+                Người tham gia
                 <span className="badge bg-secondary bg-opacity-10 text-dark rounded-pill ms-2 fs-6">
                   {match.attendees.length}
                 </span>
               </h4>
-              <a href="#" className="text-primary fw-medium text-decoration-none">See all</a>
+              <a href="#" className="text-primary fw-medium text-decoration-none">Xem tất cả</a>
             </div>
 
             <div className="d-flex flex-wrap gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm">
@@ -89,14 +89,14 @@ const MatchDetail: React.FC = () => {
               ))}
             </div>
 
-            <h4 className="fw-bold mb-3">Discussion</h4>
+            <h4 className="fw-bold mb-3">Thảo luận</h4>
             <div className="card border-0 bg-white shadow-sm rounded-4 p-4 mb-5">
               <div className="d-flex align-items-start mb-3">
                 <img src="https://i.pravatar.cc/150?img=8" className="rounded-circle me-3 mt-1" style={{ width: '40px', height: '40px' }} alt="User" />
                 <div className="flex-grow-1">
-                  <textarea className="form-control bg-light border-0 rounded-3" rows={2} placeholder="Add a comment..."></textarea>
+                  <textarea className="form-control bg-light border-0 rounded-3" rows={2} placeholder="Thêm bình luận..."></textarea>
                   <div className="text-end mt-2">
-                    <button className="btn btn-secondary fw-bold px-4 rounded-pill" disabled>Post</button>
+                    <button className="btn btn-secondary fw-bold px-4 rounded-pill" disabled>Đăng</button>
                   </div>
                 </div>
               </div>
@@ -127,7 +127,7 @@ const MatchDetail: React.FC = () => {
                     <h6 className="fw-bold mb-1">{match.venue}</h6>
                     <p className="text-muted small mb-1">{match.address}</p>
                     <a href="#" className="text-primary small text-decoration-none fw-medium d-flex align-items-center">
-                      How to find us <i className="fa-solid fa-arrow-up-right-from-square ms-1" style={{ fontSize: '10px' }}></i>
+                      Cách tìm vị trí <i className="fa-solid fa-arrow-up-right-from-square ms-1" style={{ fontSize: '10px' }}></i>
                     </a>
                   </div>
                 </div>
@@ -152,7 +152,7 @@ const MatchDetail: React.FC = () => {
               <div className="text-end me-3 d-none d-md-block">
                 <span className="fw-bold fs-6 me-3">{match.price}</span>
                 <span className="badge bg-warning bg-opacity-25 text-dark border border-warning rounded-pill px-3 py-2 fw-bold">
-                  {match.spotsLeft} spots left
+                  Còn {match.spotsLeft} chỗ trống
                 </span>
               </div>
 
@@ -164,7 +164,7 @@ const MatchDetail: React.FC = () => {
               </button>
 
               <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm">
-                Attend
+                Tham gia
               </button>
             </div>
 

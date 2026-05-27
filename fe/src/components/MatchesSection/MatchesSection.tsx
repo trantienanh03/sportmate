@@ -40,61 +40,61 @@ const MatchesSection: React.FC = () => {
         <div className="d-flex flex-column flex-md-row align-items-md-end justify-content-between mb-5 gap-3">
           <div>
             <div className="d-flex align-items-center gap-2 mb-2">
-              <h2 className="display-6 fw-bold mb-0 text-dark">Events near</h2>
+              <h2 className="display-6 fw-bold mb-0 text-dark">Sự kiện gần</h2>
               <button className="btn btn-link text-primary fw-bold text-decoration-none p-0 fs-3 d-flex align-items-center">
-                Ho Chi Minh City, VN
+                TP. Hồ Chí Minh, VN
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-chevron-right ms-1" viewBox="0 0 16 16">
                   <path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
                 </svg>
               </button>
             </div>
-            <p className="text-muted fw-medium mb-0 mt-2">Find your next favorite match happening this week.</p>
+            <p className="text-muted fw-medium mb-0 mt-2">Tìm trận đấu yêu thích tiếp theo của bạn diễn ra trong tuần này.</p>
           </div>
-          <button className="btn btn-link text-primary fw-bold text-decoration-none p-0">See all events</button>
+          <button className="btn btn-link text-primary fw-bold text-decoration-none p-0">Xem tất cả sự kiện</button>
         </div>
 
         <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4 mb-5">
           <div className="col">
             <MatchCard
               image="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=400"
-              badge="Verified"
-              title="Friendly Football: Mixed Skill Levels Welcome"
-              date="Tue, May 12 · 4:00 PM ICT"
-              location="Hoa Lu Stadium, District 1"
-              organizer="Saigon Football Club"
-              category="Football"
+              badge="Đã xác minh"
+              title="Bóng đá giao lưu: Chào mừng mọi trình độ"
+              date="Thứ 3, 12 tháng 5 · 16:00 (ICT)"
+              location="Sân vận động Hoa Lư, Quận 1"
+              organizer="CLB Bóng đá Sài Gòn"
+              category="Bóng đá"
             />
           </div>
           <div className="col">
             <MatchCard
               image="https://images.unsplash.com/photo-1504450758481-7338eba7524a?auto=format&fit=crop&q=80&w=400"
-              badge="Free"
-              title="Outdoor Basketball Session (3x3 Practice)"
-              date="Thu, May 14 · 5:30 PM ICT"
-              location="Tao Dan Park Courts"
-              organizer="District 1 Ballers"
-              category="Basketball"
+              badge="Miễn phí"
+              title="Bóng rổ ngoài trời (Luyện tập 3x3)"
+              date="Thứ 5, 14 tháng 5 · 17:30 (ICT)"
+              location="Sân bóng rổ Công viên Tao Đàn"
+              organizer="Hội bóng rổ Quận 1"
+              category="Bóng rổ"
             />
           </div>
           <div className="col">
             <MatchCard
               image="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&q=80&w=400"
-              badge="Free"
-              title="Beginner Friendly Badminton (All Rackets Provided)"
-              date="Sat, May 16 · 9:00 AM ICT"
-              location="Phu Tho Indoor Center"
-              organizer="Saigon Badminton Social"
-              category="Badminton"
+              badge="Miễn phí"
+              title="Cầu lông cho người mới bắt đầu (Hỗ trợ vợt)"
+              date="Thứ 7, 16 tháng 5 · 09:00 (ICT)"
+              location="Nhà thi đấu Phú Thọ"
+              organizer="Hội cầu lông Sài Gòn"
+              category="Cầu lông"
             />
           </div>
           <div className="col">
             <MatchCard
               image="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&q=80&w=400"
-              badge="Verified"
-              title="Tennis Doubles: Intermediate Mixed Group"
-              date="Sun, May 17 · 4:00 PM ICT"
-              location="Kỳ Hòa Tennis Club"
-              organizer="District 10 Tennis Community"
+              badge="Đã xác minh"
+              title="Tennis đánh đôi: Nhóm trình độ trung bình"
+              date="Chủ Nhật, 17 tháng 5 · 16:00 (ICT)"
+              location="CLB Tennis Kỳ Hòa"
+              organizer="Cộng đồng Tennis Quận 10"
               category="Tennis"
             />
           </div>
