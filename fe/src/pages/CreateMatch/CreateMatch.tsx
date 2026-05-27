@@ -195,8 +195,48 @@ const CreateMatch: React.FC = () => {
     }
   }, [showSuccess, navigate]);
 
-  const set = (key: keyof FormData, value: string | number) =>
+  const set = (key: keyof FormData, value: any) =>
     setForm(prev => ({ ...prev, [key]: value }));
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          set('imageUrl', compressedBase64);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const canGoNext = () => {
     if (step === 1) {
@@ -307,7 +347,7 @@ const CreateMatch: React.FC = () => {
 
               {step === 1 && <Step1 form={form} set={set} />}
               {step === 2 && <Step2 form={form} set={set} />}
-              {step === 3 && <Step3 form={form} set={set} />}
+              {step === 3 && <Step3 form={form} set={set} handleImageUpload={handleImageUpload} />}
 
               <div className="mt-4">
                 {step < 3 ? (
@@ -556,7 +596,11 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void
   );
 };
 
-const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
+const Step3: React.FC<{ 
+  form: FormData; 
+  set: (k: keyof FormData, v: any) => void; 
+  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}> = ({ form, set, handleImageUpload }) => (
   <div>
     <p className="letter-spacing mb-1" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
       Bước 3 / 3
@@ -626,7 +670,9 @@ const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
 
     <div className="cm-field-group mt-3">
       <label className="cm-label">Hình ảnh trận đấu</label>
-      <div className="d-flex gap-2 mb-2 overflow-auto py-1" style={{ scrollbarWidth: 'thin' }}>
+      <p className="text-muted small mb-2">Chọn một ảnh mẫu có sẵn hoặc tải lên hình ảnh từ thiết bị của bạn:</p>
+      
+      <div className="d-flex gap-3 mb-3 overflow-auto py-1 align-items-center" style={{ scrollbarWidth: 'thin' }}>
         {[
           { url: '/hero_football.png', label: 'Bóng đá' },
           { url: '/hero_badminton.png', label: 'Cầu lông' },
@@ -650,13 +696,37 @@ const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
             </div>
           </div>
         ))}
+
+        <div
+          className={`position-relative rounded overflow-hidden border d-flex flex-column align-items-center justify-content-center ${form.imageUrl && !form.imageUrl.startsWith('/hero_') ? 'border-primary border-2 shadow-sm' : 'border-dashed border-secondary'}`}
+          style={{ width: '90px', height: '60px', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s', backgroundColor: '#f8f9fa' }}
+          onClick={() => {
+            const input = document.getElementById('custom-image-upload') as HTMLInputElement;
+            if (input) input.click();
+          }}
+        >
+          {form.imageUrl && !form.imageUrl.startsWith('/hero_') ? (
+            <>
+              <img src={form.imageUrl} alt="Uploaded" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div className="position-absolute top-0 end-0 bg-primary text-white d-flex align-items-center justify-content-center" style={{ width: '20px', height: '20px', borderRadius: '0 0 0 4px', fontSize: '0.7rem' }}>
+                <i className="fa-solid fa-check"></i>
+              </div>
+            </>
+          ) : (
+            <>
+              <i className="fa-solid fa-cloud-arrow-up text-muted mb-1" style={{ fontSize: '1.2rem' }}></i>
+              <span className="text-muted" style={{ fontSize: '0.65rem', fontWeight: 600 }}>Tải lên ảnh</span>
+            </>
+          )}
+        </div>
       </div>
+
       <input
-        type="text"
-        className="cm-input"
-        placeholder="Nhập link ảnh tự do (hoặc chọn ảnh mẫu phía trên)..."
-        value={form.imageUrl}
-        onChange={e => set('imageUrl', e.target.value)}
+        type="file"
+        id="custom-image-upload"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleImageUpload}
       />
     </div>
 
