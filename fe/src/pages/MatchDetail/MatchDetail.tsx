@@ -1,177 +1,395 @@
-import React from 'react';
-import { useParams } from 'react-router-dom';
-import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
-import './MatchDetail.css';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import LoggedInNavbar from "../../components/LoggedInNavbar/LoggedInNavbar";
+import {
+  matchService,
+  type MatchDetail as MatchDetailType,
+} from "../../services/matchService";
+import { useAuth } from "../../context/AuthContext";
+import "./MatchDetail.css";
 
+/* ── helpers ────────────────────────────────────────── */
+const SPORT_ICONS: Record<string, string> = {
+  football: "⚽",
+  soccer: "⚽",
+  basketball: "🏀",
+  badminton: "🏸",
+  tennis: "🎾",
+  volleyball: "🏐",
+  pickleball: "🏓",
+  running: "🏃",
+  swimming: "🏊",
+  default: "🏅",
+};
+const getSportIcon = (sport: string) =>
+  SPORT_ICONS[sport.toLowerCase()] ?? SPORT_ICONS.default;
+
+const SPORT_BG: Record<string, string> = {
+  football: "linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%)",
+  soccer: "linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%)",
+  basketball: "linear-gradient(135deg,#1c0a00 0%,#7c2d12 60%,#1c0a00 100%)",
+  badminton: "linear-gradient(135deg,#030712 0%,#0e1b33 60%,#030712 100%)",
+  tennis: "linear-gradient(135deg,#052e16 0%,#14532d 60%,#052e16 100%)",
+  volleyball: "linear-gradient(135deg,#1e1b4b 0%,#3730a3 60%,#1e1b4b 100%)",
+  pickleball: "linear-gradient(135deg,#0c0a09 0%,#292524 60%,#0c0a09 100%)",
+  default: "linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0f172a 100%)",
+};
+const getSportBg = (sport: string) =>
+  SPORT_BG[sport.toLowerCase()] ?? SPORT_BG.default;
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+const formatTime = (start: string, end?: string) => {
+  const fmt = (s: string) =>
+    new Date(s).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  return end ? `${fmt(start)} — ${fmt(end)}` : fmt(start);
+};
+
+/* ── component ──────────────────────────────────────── */
 const MatchDetail: React.FC = () => {
-  const { id: _id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const [match, setMatch] = useState<MatchDetailType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const match = {
-    title: 'Ham Pick Social Club',
-    host: { name: 'Mai T.', avatar: 'https://i.pravatar.cc/150?img=5' },
-    image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=1200&auto=format&fit=crop&q=80',
-    date: 'Thursday, May 14',
-    time: '8:00 PM to 10:00 PM ICT',
-    recurrence: 'Every week on Tuesday, Thursday',
-    venue: 'Amber Pickleball Club',
-    address: '326 Vo Van Kiet, Cau Ong Lanh · Ho Chi Minh City',
-    description: `Pickleball at Ham Pick 🎾\n\nNothing serious, beginners always welcome\nCome hang out, hit a few balls, stay as long as you want.\n\nWe play, we miss, we laugh\nAny level, just show up 🙋‍♀️🙋‍♂️\n\nTo register:\nUse the club code or tap the link below to join.\n\nYou can also find us here:\nInstagram: @hampick.socialclub`,
-    attendees: [
-      { id: 1, name: 'Mai T.', role: 'Organizer', avatar: 'https://i.pravatar.cc/150?img=5' },
-      { id: 2, name: 'John D.', role: 'Member', avatar: 'https://i.pravatar.cc/150?img=11' },
-      { id: 3, name: 'Sarah W.', role: 'Member', avatar: 'https://i.pravatar.cc/150?img=12' },
-      { id: 4, name: 'Mike R.', role: 'Member', avatar: 'https://i.pravatar.cc/150?img=13' },
-    ],
-    price: '50,000 VND',
-    spotsLeft: 19
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    matchService
+      .getMatch(Number(id))
+      .then(setMatch)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const handleJoin = async () => {
+    if (!match) return;
+    setActionLoading(true);
+    try {
+      setMatch(await matchService.join(match.id));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to join");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
+  const handleLeave = async () => {
+    if (!match) return;
+    setActionLoading(true);
+    try {
+      setMatch(await matchService.leave(match.id));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to leave");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="md-page">
+        <LoggedInNavbar />
+        <div className="md-center-state">
+          <div className="spinner-border text-primary" role="status" />
+        </div>
+      </div>
+    );
+
+  if (error || !match)
+    return (
+      <div className="md-page">
+        <LoggedInNavbar />
+        <div className="md-center-state md-error-text">
+          {error ?? "Match not found"}
+        </div>
+      </div>
+    );
+
+  const spotsLeft = match.maxPlayers - match.currentPlayers;
+  const fillPct = Math.min(
+    100,
+    Math.round((match.currentPlayers / match.maxPlayers) * 100),
+  );
+  const isHost = user?.id === match.host.id;
+  const priceLabel =
+    match.feePerPerson === 0
+      ? "Free"
+      : `${match.feePerPerson.toLocaleString("vi-VN")} VND / person`;
+  const skillLabel =
+    match.skillLevel.charAt(0).toUpperCase() + match.skillLevel.slice(1);
+
   return (
-    <div className="match-detail-page bg-light min-vh-100">
+    <div className="md-page">
       <LoggedInNavbar />
 
-      <div className="bg-white pt-4 pb-4 border-bottom">
-        <div className="container">
-          <h1 className="fw-bolder mb-4 match-title">{match.title}</h1>
-          <div className="d-flex align-items-center">
-            <img
-              src={match.host.avatar}
-              alt="host"
-              className="rounded-circle me-3 border"
-              style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-            />
-            <div>
-              <p className="mb-0 text-muted small fw-medium">Hosted by</p>
-              <h6 className="fw-bold mb-0">{match.host.name}</h6>
-            </div>
-          </div>
+      {/* ── Hero ──────────────────────────────── */}
+      <div className="md-hero" style={{ background: getSportBg(match.sport) }}>
+        <div className="md-hero-inner">
+          <span className="md-sport-icon">{getSportIcon(match.sport)}</span>
+          {match.status === "open" && (
+            <span className="md-available-badge">
+              <span className="md-dot" /> Available
+            </span>
+          )}
+          <h1 className="md-hero-title">{match.title.toUpperCase()}</h1>
         </div>
       </div>
 
-      <div className="container py-4">
-        <div className="row position-relative">
-
-          <div className="col-lg-8 pe-lg-5 mb-5">
-            <img
-              src={match.image}
-              alt={match.title}
-              className="w-100 rounded-4 mb-5 object-fit-cover shadow-sm"
-              style={{ height: '400px' }}
-            />
-
-            <h4 className="fw-bold mb-3">Details</h4>
-            <div className="mb-5 text-break match-description">
-              {match.description}
+      {/* ── Body ──────────────────────────────── */}
+      <div className="container-xl md-body">
+        <div className="row g-4">
+          {/* ── Left column ───────────────────── */}
+          <div className="col-lg-8">
+            {/* Host card */}
+            <div className="md-card md-anim-1">
+              <div className="md-host-row">
+                <div className="md-avatar md-avatar--lg">
+                  {match.host.avatarUrl ? (
+                    <img src={match.host.avatarUrl} alt={match.host.fullName} />
+                  ) : (
+                    <span>{match.host.fullName.charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                <div>
+                  <div className="md-host-name">{match.host.fullName}</div>
+                  <div className="md-stars">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <i
+                        key={i}
+                        className="fa-solid fa-star"
+                        style={{
+                          color: i <= 4 ? "#f59e0b" : "#e2e8f0",
+                          fontSize: "13px",
+                        }}
+                      />
+                    ))}
+                    <span className="md-rating-text">4.8 (23 reviews)</span>
+                  </div>
+                  <div className="md-host-meta">
+                    Organized {match.currentPlayers} matches
+                    <span className="md-sep">·</span>
+                    96% attendance
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <h4 className="fw-bold mb-0 d-flex align-items-center">
-                Attendees
-                <span className="badge bg-secondary bg-opacity-10 text-dark rounded-pill ms-2 fs-6">
-                  {match.attendees.length}
-                </span>
-              </h4>
-              <a href="#" className="text-primary fw-medium text-decoration-none">See all</a>
+            {/* Match Details */}
+            <div className="md-card md-anim-2">
+              <h3 className="md-section-title">Match Details</h3>
+              <div className="md-detail-list">
+                <div className="md-detail-row">
+                  <div className="md-detail-icon">
+                    <i className="fa-regular fa-calendar" />
+                  </div>
+                  <div>
+                    <div className="md-detail-primary">
+                      {formatDate(match.startTime)}
+                    </div>
+                    <div className="md-detail-secondary">
+                      {formatTime(match.startTime, match.endTime)}
+                    </div>
+                  </div>
+                </div>
+                <div className="md-detail-row">
+                  <div className="md-detail-icon">
+                    <i className="fa-solid fa-location-dot" />
+                  </div>
+                  <div>
+                    <div className="md-detail-primary">
+                      {match.venue?.name ?? match.locationText ?? "TBD"}
+                    </div>
+                    {(match.venue?.address ?? match.locationText) && (
+                      <div className="md-detail-secondary">
+                        {match.venue?.address ?? match.locationText}
+                      </div>
+                    )}
+                    {match.venue?.googleMapsUrl && (
+                      <a
+                        href={match.venue.googleMapsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="md-dir-link"
+                      >
+                        Get Directions
+                        <i
+                          className="fa-solid fa-arrow-up-right-from-square ms-1"
+                          style={{ fontSize: "9px" }}
+                        />
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <div className="md-detail-row">
+                  <div className="md-detail-icon">
+                    <i className="fa-solid fa-dollar-sign" />
+                  </div>
+                  <div className="md-detail-primary">{priceLabel}</div>
+                </div>
+                <div className="md-detail-row">
+                  <div className="md-detail-icon">
+                    <i className="fa-solid fa-shield-halved" />
+                  </div>
+                  <div className="md-detail-primary">Level: {skillLabel}</div>
+                </div>
+              </div>
+              {match.description && (
+                <p className="md-description">{match.description}</p>
+              )}
             </div>
 
-            <div className="d-flex flex-wrap gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm">
-              {match.attendees.map(a => (
-                <div key={a.id} className="text-center attendee-item">
-                  <img
-                    src={a.avatar}
-                    alt={a.name}
-                    className="rounded-circle mb-2 border"
-                    style={{ width: '64px', height: '64px', objectFit: 'cover' }}
+            {/* Who's joining */}
+            <div className="md-card md-anim-3">
+              <div className="md-row-between mb-3">
+                <h3 className="md-section-title" style={{ margin: 0 }}>
+                  Who's joining ({match.currentPlayers}/{match.maxPlayers})
+                </h3>
+                <i className="fa-solid fa-user-group text-muted" />
+              </div>
+              <div className="md-participants">
+                {match.participants.length === 0 && (
+                  <p className="text-muted small mb-0">No participants yet.</p>
+                )}
+                {match.participants.map((p, i) => (
+                  <div
+                    className="md-participant"
+                    key={p.userId}
+                    style={{ animationDelay: `${0.08 * i}s` }}
+                  >
+                    <div className="md-avatar md-avatar--md">
+                      {p.avatarUrl ? (
+                        <img src={p.avatarUrl} alt={p.fullName} />
+                      ) : (
+                        <span>{p.fullName.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="md-participant-name">
+                      {p.fullName.split(" ")[0]}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Discussion */}
+            <div className="md-card md-anim-4">
+              <div className="md-row-between mb-3">
+                <h3 className="md-section-title" style={{ margin: 0 }}>
+                  Discussion
+                </h3>
+                <i className="fa-regular fa-comment-dots text-muted" />
+              </div>
+              <div className="md-discussion">
+                <div className="md-avatar md-avatar--sm">
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.fullName} />
+                  ) : (
+                    <span>
+                      {user?.fullName?.charAt(0).toUpperCase() ?? "?"}
+                    </span>
+                  )}
+                </div>
+                <div className="md-discussion-body">
+                  <textarea
+                    className="md-textarea"
+                    placeholder="Ask something about this match…"
+                    rows={2}
                   />
-                  <p className="fw-bold mb-0 small text-truncate" style={{ maxWidth: '80px' }}>{a.name}</p>
-                  <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>{a.role}</p>
-                </div>
-              ))}
-            </div>
-
-            <h4 className="fw-bold mb-3">Discussion</h4>
-            <div className="card border-0 bg-white shadow-sm rounded-4 p-4 mb-5">
-              <div className="d-flex align-items-start mb-3">
-                <img src="https://i.pravatar.cc/150?img=8" className="rounded-circle me-3 mt-1" style={{ width: '40px', height: '40px' }} alt="User" />
-                <div className="flex-grow-1">
-                  <textarea className="form-control bg-light border-0 rounded-3" rows={2} placeholder="Add a comment..."></textarea>
                   <div className="text-end mt-2">
-                    <button className="btn btn-secondary fw-bold px-4 rounded-pill" disabled>Post</button>
+                    <button className="md-post-btn">Post</button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="col-lg-4 d-none d-lg-block">
-            <div className="card border-0 shadow-sm rounded-4 sticky-top" style={{ top: '100px', zIndex: 10 }}>
-              <div className="card-body p-4">
-                <div className="d-flex mb-4">
-                  <div className="me-3 mt-1">
-                    <i className="fa-regular fa-clock fs-4 text-muted"></i>
-                  </div>
-                  <div>
-                    <h6 className="fw-bold mb-1">{match.date}</h6>
-                    <p className="text-muted small mb-0">{match.time}</p>
-                    <p className="text-muted small mt-1 mb-0 d-flex align-items-center">
-                      <i className="fa-solid fa-rotate-right me-1"></i> {match.recurrence}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="d-flex mb-2">
-                  <div className="me-3 mt-1">
-                    <i className="fa-solid fa-location-dot fs-4 text-muted"></i>
-                  </div>
-                  <div>
-                    <h6 className="fw-bold mb-1">{match.venue}</h6>
-                    <p className="text-muted small mb-1">{match.address}</p>
-                    <a href="#" className="text-primary small text-decoration-none fw-medium d-flex align-items-center">
-                      How to find us <i className="fa-solid fa-arrow-up-right-from-square ms-1" style={{ fontSize: '10px' }}></i>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <div style={{ height: '90px' }}></div>
-
-      <div className="fixed-bottom bg-white border-top py-3 sticky-bottom-bar shadow-lg" style={{ zIndex: 1000 }}>
-        <div className="container">
-          <div className="d-flex justify-content-between align-items-center">
-            <div className="d-none d-sm-block">
-              <p className="text-muted fw-bold mb-0" style={{ fontSize: '13px' }}>{match.date}</p>
-              <h5 className="fw-bolder mb-0 text-truncate" style={{ maxWidth: '300px' }}>{match.title}</h5>
-            </div>
-
-            <div className="d-flex align-items-center ms-auto">
-              <div className="text-end me-3 d-none d-md-block">
-                <span className="fw-bold fs-6 me-3">{match.price}</span>
-                <span className="badge bg-warning bg-opacity-25 text-dark border border-warning rounded-pill px-3 py-2 fw-bold">
-                  {match.spotsLeft} spots left
+          {/* ── Right sidebar ──────────────────── */}
+          <div className="col-lg-4">
+            <div className="md-sidebar md-anim-2">
+              {/* Spots */}
+              <div className="md-spots-header">
+                <span className="md-spots-label">
+                  {match.currentPlayers} / {match.maxPlayers} spots filled
                 </span>
+                <span className="md-spots-pct">{fillPct}%</span>
+              </div>
+              <div className="md-progress-track">
+                <div
+                  className="md-progress-fill"
+                  style={{ width: `${fillPct}%` }}
+                />
               </div>
 
-              <button className="btn btn-light rounded-circle me-2 action-icon-btn">
-                <i className="fa-regular fa-heart"></i>
-              </button>
-              <button className="btn btn-light rounded-circle me-3 action-icon-btn d-none d-sm-inline-block">
-                <i className="fa-solid fa-arrow-up-from-bracket"></i>
-              </button>
+              {/* Action */}
+              <div className="mt-4">
+                {isHost ? (
+                  <div className="md-host-badge">
+                    <i className="fa-solid fa-crown me-2" />
+                    You're the host
+                  </div>
+                ) : match.joined ? (
+                  <button
+                    className="md-leave-btn"
+                    onClick={handleLeave}
+                    disabled={actionLoading}
+                  >
+                    {actionLoading ? "…" : "Leave Match"}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className="md-join-btn"
+                      onClick={handleJoin}
+                      disabled={actionLoading || spotsLeft === 0}
+                    >
+                      {actionLoading ? "…" : "JOIN THIS MATCH"}
+                    </button>
+                    {spotsLeft === 0 && (
+                      <button className="md-waitlist-btn mt-2">
+                        Join Waitlist
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
 
-              <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm">
-                Attend
+              {!isHost && (
+                <button className="md-report-btn">
+                  <i className="fa-regular fa-flag me-1" /> Report fake match
+                </button>
+              )}
+
+              {/* Safety tip */}
+              <div className="md-safety">
+                <i className="fa-solid fa-circle-check md-safety-icon" />
+                <p className="md-safety-text">
+                  <strong>Safety tip:</strong> Never transfer money directly to
+                  hosts. Use our secure split fee feature.
+                </p>
+              </div>
+
+              <hr className="md-hr" />
+
+              <button className="md-share-btn">
+                <i className="fa-solid fa-arrow-up-from-bracket me-2" />
+                Share Match
               </button>
             </div>
-
           </div>
         </div>
       </div>
-
     </div>
   );
 };
