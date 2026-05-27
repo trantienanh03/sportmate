@@ -29,30 +29,30 @@ const UserHome: React.FC = () => {
   }, []);
 
   const getSportImage = (sport: string) => {
-    if (!sport) return 'https://images.unsplash.com/photo-1541252260730-0412e8e2108e?w=500&auto=format&fit=crop&q=60';
+    if (!sport) return '/hero_football.png';
     const s = sport.toLowerCase();
     if (s.includes('bóng đá') || s.includes('football') || s.includes('soccer')) {
-      return 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&auto=format&fit=crop&q=60';
+      return '/hero_football.png';
     }
     if (s.includes('cầu lông') || s.includes('badminton')) {
-      return 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=500&auto=format&fit=crop&q=60';
+      return '/hero_badminton.png';
     }
     if (s.includes('bóng rổ') || s.includes('basketball')) {
-      return 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=500&auto=format&fit=crop&q=60';
+      return '/hero_basketball.png';
     }
     if (s.includes('tennis') || s.includes('quần vợt')) {
-      return 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=500&auto=format&fit=crop&q=60';
+      return '/hero_tennis.png';
     }
     if (s.includes('pickleball')) {
-      return 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=500&auto=format&fit=crop&q=60';
+      return '/hero_badminton.png';
     }
-    if (s.includes('bóng bàn') || s.includes('table tennis')) {
-      return 'https://images.unsplash.com/photo-1534158914592-062992fbe900?w=500&auto=format&fit=crop&q=60';
+    if (s.includes('bóng bàn') || s.includes('table tennis') || s.includes('tabletennis')) {
+      return '/hero_badminton.png';
     }
     if (s.includes('bóng chuyền') || s.includes('volleyball')) {
-      return 'https://images.unsplash.com/photo-1592656094267-764a450f857e?w=500&auto=format&fit=crop&q=60';
+      return '/hero_football.png';
     }
-    return 'https://images.unsplash.com/photo-1541252260730-0412e8e2108e?w=500&auto=format&fit=crop&q=60';
+    return '/hero_football.png';
   };
 
   const formatMatchTime = (timeStr: string) => {
@@ -177,7 +177,7 @@ const UserHome: React.FC = () => {
                       <Link to={`/matches/${match.id}`} className="text-decoration-none text-dark">
                         <div className="event-card">
                           <div className="event-img-wrapper">
-                            <img src={getSportImage(match.sport)} alt={match.title} className="event-img" />
+                            <img src={match.imageUrl || getSportImage(match.sport)} alt={match.title} className="event-img" />
                             <button className="like-btn" onClick={(e) => e.preventDefault()}><i className="fa-regular fa-heart"></i></button>
                           </div>
                           <div className="event-details mt-3">

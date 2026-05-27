@@ -69,6 +69,7 @@ interface FormData {
   feeType: 'free' | 'paid';
   fee: string;
   description: string;
+  imageUrl: string;
 }
 
 const INITIAL_FORM: FormData = {
@@ -85,6 +86,7 @@ const INITIAL_FORM: FormData = {
   feeType: 'free',
   fee: '',
   description: '',
+  imageUrl: '',
 };
 
 const formatDate = (d: string) => {
@@ -222,7 +224,8 @@ const CreateMatch: React.FC = () => {
         skillLevel: form.skillLevel,
         maxPlayers: form.maxPlayers,
         feeType: form.feeType,
-        fee: form.feeType === 'paid' ? (parseInt(form.fee) || 0) : null
+        fee: form.feeType === 'paid' ? (parseInt(form.fee) || 0) : null,
+        imageUrl: form.imageUrl || null
       };
 
       await matchService.createMatch(payload);
@@ -619,6 +622,42 @@ const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
           <span className="cm-fee-suffix">VND / người</span>
         </div>
       )}
+    </div>
+
+    <div className="cm-field-group mt-3">
+      <label className="cm-label">Hình ảnh trận đấu</label>
+      <div className="d-flex gap-2 mb-2 overflow-auto py-1" style={{ scrollbarWidth: 'thin' }}>
+        {[
+          { url: '/hero_football.png', label: 'Bóng đá' },
+          { url: '/hero_badminton.png', label: 'Cầu lông' },
+          { url: '/hero_tennis.png', label: 'Tennis' },
+          { url: '/hero_basketball.png', label: 'Bóng rổ' }
+        ].map((preset) => (
+          <div
+            key={preset.url}
+            className={`position-relative rounded overflow-hidden border ${form.imageUrl === preset.url ? 'border-primary border-2 shadow-sm' : 'border-light'}`}
+            style={{ width: '90px', height: '60px', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s' }}
+            onClick={() => set('imageUrl', preset.url)}
+          >
+            <img src={preset.url} alt={preset.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {form.imageUrl === preset.url && (
+              <div className="position-absolute top-0 end-0 bg-primary text-white d-flex align-items-center justify-content-center" style={{ width: '20px', height: '20px', borderRadius: '0 0 0 4px', fontSize: '0.7rem' }}>
+                <i className="fa-solid fa-check"></i>
+              </div>
+            )}
+            <div className="position-absolute bottom-0 start-0 w-100 text-center text-white bg-dark bg-opacity-75" style={{ fontSize: '0.65rem', padding: '1px 0' }}>
+              {preset.label}
+            </div>
+          </div>
+        ))}
+      </div>
+      <input
+        type="text"
+        className="cm-input"
+        placeholder="Nhập link ảnh tự do (hoặc chọn ảnh mẫu phía trên)..."
+        value={form.imageUrl}
+        onChange={e => set('imageUrl', e.target.value)}
+      />
     </div>
 
     <div className="cm-field-group mt-3">
