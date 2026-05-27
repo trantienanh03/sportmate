@@ -109,6 +109,7 @@ public class MatchServiceImpl implements MatchService {
                 .feePerPerson(fee)
                 .startTime(start)
                 .endTime(end)
+                .imageUrl(request.getImageUrl())
                 .build();
 
         Match savedMatch = matchRepository.save(match);
@@ -172,6 +173,7 @@ public class MatchServiceImpl implements MatchService {
                 .endTime(match.getEndTime())
                 .lat(match.getLat())
                 .lng(match.getLng())
+                .imageUrl(match.getImageUrl())
                 .createdAt(match.getCreatedAt())
                 .updatedAt(match.getUpdatedAt())
                 .build();

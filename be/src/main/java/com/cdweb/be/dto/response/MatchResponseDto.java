@@ -28,6 +28,7 @@ public class MatchResponseDto {
     private LocalDateTime endTime;
     private Double lat;
     private Double lng;
+    private String imageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

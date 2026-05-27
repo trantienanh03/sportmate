@@ -40,5 +40,7 @@ public class CreateMatchRequest {
     
     @Min(value = 0, message = "Phí tham gia không được là số âm")
     private Integer fee;
+
+    private String imageUrl;
 }
 
