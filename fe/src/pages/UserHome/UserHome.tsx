@@ -1,10 +1,88 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
+import { useAuth } from '../../context/AuthContext';
+import { matchService } from '../../services/matchService';
 import './UserHome.css';
 
 const UserHome: React.FC = () => {
+  const { user } = useAuth();
+  const [matches, setMatches] = useState<any[]>([]);
+  const [isMatchesLoading, setIsMatchesLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const data = await matchService.getMatches();
+        setMatches(data);
+      } catch (err: any) {
+        console.error("Lỗi khi tải danh sách trận đấu:", err);
+        setError(err.message || "Không thể tải danh sách trận đấu");
+      } finally {
+        setIsMatchesLoading(false);
+      }
+    };
+
+    fetchMatches();
+  }, []);
+
+  const getSportImage = (sport: string) => {
+    if (!sport) return 'https://images.unsplash.com/photo-1541252260730-0412e8e2108e?w=500&auto=format&fit=crop&q=60';
+    const s = sport.toLowerCase();
+    if (s.includes('bóng đá') || s.includes('football') || s.includes('soccer')) {
+      return 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&auto=format&fit=crop&q=60';
+    }
+    if (s.includes('cầu lông') || s.includes('badminton')) {
+      return 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=500&auto=format&fit=crop&q=60';
+    }
+    if (s.includes('bóng rổ') || s.includes('basketball')) {
+      return 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=500&auto=format&fit=crop&q=60';
+    }
+    if (s.includes('tennis') || s.includes('quần vợt')) {
+      return 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=500&auto=format&fit=crop&q=60';
+    }
+    if (s.includes('pickleball')) {
+      return 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=500&auto=format&fit=crop&q=60';
+    }
+    if (s.includes('bóng bàn') || s.includes('table tennis')) {
+      return 'https://images.unsplash.com/photo-1534158914592-062992fbe900?w=500&auto=format&fit=crop&q=60';
+    }
+    if (s.includes('bóng chuyền') || s.includes('volleyball')) {
+      return 'https://images.unsplash.com/photo-1592656094267-764a450f857e?w=500&auto=format&fit=crop&q=60';
+    }
+    return 'https://images.unsplash.com/photo-1541252260730-0412e8e2108e?w=500&auto=format&fit=crop&q=60';
+  };
+
+  const formatMatchTime = (timeStr: string) => {
+    try {
+      const date = new Date(timeStr);
+      if (isNaN(date.getTime())) return timeStr;
+      
+      const days = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+      const dayName = days[date.getDay()];
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${dayName}, ${day} tháng ${month} · ${hours}:${minutes}`;
+    } catch (e) {
+      return timeStr;
+    }
+  };
+
+  const translateSkillLevel = (level: string) => {
+    if (!level) return 'Mọi trình độ';
+    switch (level.toLowerCase()) {
+      case 'newbie': return 'Mới chơi';
+      case 'beginner': return 'Cơ bản';
+      case 'intermediate': return 'Trung bình';
+      case 'advanced': return 'Nâng cao';
+      case 'all': return 'Mọi trình độ';
+      default: return level;
+    }
+  };
   return (
     <div className="user-home-page">
       <LoggedInNavbar />
@@ -18,15 +96,18 @@ const UserHome: React.FC = () => {
               <div className="sidebar-card profile-card mb-4">
                 <div className="d-flex align-items-center mb-3">
                   <div className="profile-avatar me-3">
-                    <span>T</span>
+                    {user?.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.fullName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <span>{user?.fullName?.charAt(0).toUpperCase() || 'U'}</span>
+                    )}
                   </div>
                   <div>
-                    <h6 className="fw-bold mb-0">tienanhtran1003</h6>
-                    <small className="text-muted">TP. Hồ Chí Minh</small>
+                    <h6 className="fw-bold mb-0">{user?.fullName || 'User'}</h6>
+                    <small className="text-muted">{user?.district || 'TP. Hồ Chí Minh'}</small>
                   </div>
                   <i className="fa-solid fa-chevron-right ms-auto text-muted"></i>
                 </div>
-
               </div>
 
               <div className="sidebar-card mb-4 p-3">
@@ -71,74 +152,63 @@ const UserHome: React.FC = () => {
                 <a href="#" className="text-primary text-decoration-none fw-bold">Xem tất cả</a>
               </div>
 
+              {error && <div className="alert alert-danger mb-4">{error}</div>}
+
               <div className="row g-4">
-                <div className="col-lg-4 col-sm-6">
-                  <Link to="/matches/1" className="text-decoration-none text-dark">
-                    <div className="event-card">
-                      <div className="event-img-wrapper">
-                        <img src="https://images.unsplash.com/photo-1543269865-cbf427effbad?w=500&auto=format&fit=crop&q=60" alt="Event" className="event-img" />
-                        <button className="like-btn" onClick={(e) => e.preventDefault()}><i className="fa-regular fa-heart"></i></button>
-                      </div>
-                      <div className="event-details mt-3">
-                        <h5 className="event-title fw-bold">Giao lưu Pickleball: Câu lạc bộ Quận 1 (Cho mọi trình độ)</h5>
-                        <p className="event-time text-muted small fw-medium mb-1">Thứ 3, 12 tháng 5 · 19:00 (AEST)</p>
-                        <p className="event-group text-muted small mb-1">bởi Hội Giao Lưu Thể Thao Sài Gòn • 4.7 <i className="fa-solid fa-star text-warning"></i></p>
-                        <div className="d-flex align-items-center mt-2">
-                          <div className="attendee-avatars">
-                            <img src="https://i.pravatar.cc/150?img=11" alt="user" />
-                            <img src="https://i.pravatar.cc/150?img=12" alt="user" />
-                            <img src="https://i.pravatar.cc/150?img=13" alt="user" />
+                {isMatchesLoading ? (
+                  <div className="col-12 text-center py-5">
+                    <div className="spinner-border text-dark" role="status">
+                      <span className="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p className="mt-2 text-muted">Đang tải danh sách trận đấu...</p>
+                  </div>
+                ) : matches.length === 0 ? (
+                  <div className="col-12 text-center py-5">
+                    <i className="fa-solid fa-calendar-minus text-muted fa-3x mb-3"></i>
+                    <h5 className="fw-bold">Chưa có trận đấu nào</h5>
+                    <p className="text-muted">Hãy tạo trận đấu đầu tiên để mọi người cùng tham gia!</p>
+                    <Link to="/create-match" className="btn btn-dark rounded-pill px-4 py-2 fw-bold mt-2">
+                      Tạo trận đấu ngay
+                    </Link>
+                  </div>
+                ) : (
+                  matches.map((match) => (
+                    <div className="col-lg-4 col-sm-6" key={match.id}>
+                      <Link to={`/matches/${match.id}`} className="text-decoration-none text-dark">
+                        <div className="event-card">
+                          <div className="event-img-wrapper">
+                            <img src={getSportImage(match.sport)} alt={match.title} className="event-img" />
+                            <button className="like-btn" onClick={(e) => e.preventDefault()}><i className="fa-regular fa-heart"></i></button>
                           </div>
-                          <span className="small text-muted ms-2 fw-medium">61 người tham gia</span>
+                          <div className="event-details mt-3">
+                            <h5 className="event-title fw-bold" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '2.8rem' }} title={match.title}>
+                              {match.title}
+                            </h5>
+                            <p className="event-time text-muted small fw-medium mb-1">
+                              {formatMatchTime(match.startTime)}
+                            </p>
+                            <p className="event-group text-muted small mb-1 text-truncate">
+                              bởi {match.host?.fullName || 'Người dùng'} • <span className="badge bg-light text-dark border">{translateSkillLevel(match.skillLevel)}</span>
+                            </p>
+                            <p className="event-location text-muted small mb-2 text-truncate">
+                              <i className="fa-solid fa-location-dot me-1"></i>
+                              {match.venue?.name || match.locationText || 'Chưa có địa điểm'}
+                            </p>
+                            <div className="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                              <span className="small text-muted fw-semibold">
+                                <i className="fa-solid fa-users me-1 text-primary"></i>
+                                {match.currentPlayers || 1}/{match.maxPlayers} người
+                              </span>
+                              <span className="fw-bold text-dark small">
+                                {match.feePerPerson === 0 ? 'Miễn phí' : `${match.feePerPerson.toLocaleString('vi-VN')}đ`}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      </Link>
                     </div>
-                  </Link>
-                </div>
-
-                <div className="col-lg-4 col-sm-6">
-                  <div className="event-card">
-                    <div className="event-img-wrapper">
-                      <img src="https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=500&auto=format&fit=crop&q=60" alt="Event" className="event-img" />
-                      <button className="like-btn"><i className="fa-regular fa-heart"></i></button>
-                    </div>
-                    <div className="event-details mt-3">
-                      <h5 className="event-title fw-bold">Giao lưu Bóng rổ ngoài trời (Công viên Tao Đàn)</h5>
-                      <p className="event-time text-muted small fw-medium mb-1">Chủ Nhật, 17 tháng 5 · 12:00 (CST) · <i className="fa-solid fa-video ms-1"></i> Trực tuyến</p>
-                      <p className="event-group text-muted small mb-1">bởi Cộng đồng Bóng rổ phong trào • 4.8 <i className="fa-solid fa-star text-warning"></i></p>
-                      <div className="d-flex align-items-center mt-2">
-                        <div className="attendee-avatars">
-                          <img src="https://i.pravatar.cc/150?img=21" alt="user" />
-                          <img src="https://i.pravatar.cc/150?img=22" alt="user" />
-                          <img src="https://i.pravatar.cc/150?img=23" alt="user" />
-                        </div>
-                        <span className="small text-muted ms-2 fw-medium">18 người tham gia</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-lg-4 col-sm-6">
-                  <div className="event-card">
-                    <div className="event-img-wrapper">
-                      <img src="https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=500&auto=format&fit=crop&q=60" alt="Event" className="event-img" />
-                      <button className="like-btn"><i className="fa-regular fa-heart"></i></button>
-                    </div>
-                    <div className="event-details mt-3">
-                      <h5 className="event-title fw-bold">Hội thảo Lập trình viên ServiceNow TP. HCM Q2 2026</h5>
-                      <p className="event-time text-muted small fw-medium mb-1">Thứ 7, 16 tháng 5 · 09:00 (ICT)</p>
-                      <p className="event-group text-muted small mb-1">bởi Cộng đồng ServiceNow Việt Nam • 5.0 <i className="fa-solid fa-star text-warning"></i></p>
-                      <div className="d-flex align-items-center mt-2">
-                        <div className="attendee-avatars">
-                          <img src="https://i.pravatar.cc/150?img=31" alt="user" />
-                          <img src="https://i.pravatar.cc/150?img=32" alt="user" />
-                          <img src="https://i.pravatar.cc/150?img=33" alt="user" />
-                        </div>
-                        <span className="small text-muted ms-2 fw-medium">48 người tham gia</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  ))
+                )}
               </div>
 
               <div className="section-header d-flex justify-content-between align-items-center mt-5 mb-4">
