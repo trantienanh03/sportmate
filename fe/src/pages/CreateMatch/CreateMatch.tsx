@@ -14,36 +14,36 @@ import esportsIcon from '../../assets/material-symbols--sports-esports.svg';
 import volleyballIcon from '../../assets/mdi--volleyball.svg';
 
 const SPORTS = [
-  { id: 'football', label: 'Football', icon: footballIcon },
-  { id: 'badminton', label: 'Badminton', icon: badmintonIcon },
+  { id: 'football', label: 'Bóng đá', icon: footballIcon },
+  { id: 'badminton', label: 'Cầu lông', icon: badmintonIcon },
   { id: 'tennis', label: 'Tennis', icon: tennisIcon },
   { id: 'pickleball', label: 'Pickleball', icon: pickleballIcon },
-  { id: 'basketball', label: 'Basketball', icon: basketballIcon },
-  { id: 'tabletennis', label: 'Table Tennis', icon: tableTennisIcon },
-  { id: 'esports', label: 'Esports', icon: esportsIcon },
-  { id: 'volleyball', label: 'Volleyball', icon: volleyballIcon },
+  { id: 'basketball', label: 'Bóng rổ', icon: basketballIcon },
+  { id: 'tabletennis', label: 'Bóng bàn', icon: tableTennisIcon },
+  { id: 'esports', label: 'Thể thao điện tử', icon: esportsIcon },
+  { id: 'volleyball', label: 'Bóng chuyền', icon: volleyballIcon },
 ];
 
 const SKILL_LEVELS = [
-  { id: 'newbie', label: 'Newbie' },
-  { id: 'beginner', label: 'Beginner' },
-  { id: 'intermediate', label: 'Intermediate' },
-  { id: 'advanced', label: 'Advanced' },
-  { id: 'all', label: 'All Levels' },
+  { id: 'newbie', label: 'Mới tập chơi' },
+  { id: 'beginner', label: 'Cơ bản' },
+  { id: 'intermediate', label: 'Trung bình' },
+  { id: 'advanced', label: 'Nâng cao' },
+  { id: 'all', label: 'Mọi trình độ' },
 ];
 
 const TIPS = [
   {
-    title: 'Pick your sport',
-    body: 'Choose the sport you want to play. This helps players with the right skill set find your match quickly.',
+    title: 'Chọn môn thể thao',
+    body: 'Chọn môn thể thao bạn muốn chơi. Việc này giúp những người cùng sở thích tìm thấy trận đấu của bạn nhanh hơn.',
   },
   {
-    title: 'Schedule it right',
-    body: 'Weekday evenings (6–9 PM) and weekend mornings are peak times. Pick a slot when most players are free.',
+    title: 'Lên lịch phù hợp',
+    body: 'Các buổi tối ngày thường (18h - 21h) hoặc sáng cuối tuần là thời điểm vàng. Hãy chọn khung giờ có nhiều người rảnh.',
   },
   {
-    title: 'Almost there!',
-    body: 'Keep your title short and clear. A good description helps players know what to expect.',
+    title: 'Sắp hoàn tất!',
+    body: 'Hãy đặt tiêu đề ngắn gọn và rõ ràng. Mô tả chi tiết sẽ giúp những người chơi khác biết trước trận đấu diễn ra thế nào.',
   },
 ];
 
@@ -69,6 +69,7 @@ interface FormData {
   feeType: 'free' | 'paid';
   fee: string;
   description: string;
+  imageUrl: string;
 }
 
 const INITIAL_FORM: FormData = {
@@ -85,6 +86,7 @@ const INITIAL_FORM: FormData = {
   feeType: 'free',
   fee: '',
   description: '',
+  imageUrl: '',
 };
 
 const formatDate = (d: string) => {
@@ -103,18 +105,18 @@ const formatTime = (t: string) => {
 const PreviewCard: React.FC<{ form: FormData; step: number }> = ({ form, step }) => {
   const sport = SPORTS.find(s => s.id === form.sport);
   const sportLabel = form.sport === 'other'
-    ? (form.customSport.trim() || 'Other')
+    ? (form.customSport.trim() || 'Khác')
     : sport?.label;
   if (!form.sport) return null;
 
   return (
     <div className="cm-preview-card">
-      <p className="cm-preview-title">Match Preview</p>
+      <p className="cm-preview-title">Xem trước trận đấu</p>
 
       <div className="cm-preview-row">
         <i className="fa-solid fa-futbol"></i>
         <div>
-          <div className="cm-preview-row-label">Sport</div>
+          <div className="cm-preview-row-label">Môn thể thao</div>
           <span className="cm-preview-sport-badge">{sportLabel}</span>
         </div>
       </div>
@@ -123,7 +125,7 @@ const PreviewCard: React.FC<{ form: FormData; step: number }> = ({ form, step })
         <div className="cm-preview-row">
           <i className="fa-regular fa-calendar"></i>
           <div>
-            <div className="cm-preview-row-label">Date & Time</div>
+            <div className="cm-preview-row-label">Ngày & Giờ</div>
             <div className="cm-preview-row-value">{formatDate(form.date)}</div>
             {form.startTime && form.endTime && (
               <div className="cm-preview-row-label">
@@ -138,7 +140,7 @@ const PreviewCard: React.FC<{ form: FormData; step: number }> = ({ form, step })
         <div className="cm-preview-row">
           <i className="fa-solid fa-location-dot"></i>
           <div>
-            <div className="cm-preview-row-label">Location</div>
+            <div className="cm-preview-row-label">Địa điểm</div>
             <div className="cm-preview-row-value" style={{ fontSize: '0.82rem' }}>{form.location}</div>
           </div>
         </div>
@@ -148,8 +150,8 @@ const PreviewCard: React.FC<{ form: FormData; step: number }> = ({ form, step })
         <div className="cm-preview-row">
           <i className="fa-solid fa-users"></i>
           <div>
-            <div className="cm-preview-row-label">Players</div>
-            <div className="cm-preview-row-value">{form.maxPlayers} players · {form.skillLevel}</div>
+            <div className="cm-preview-row-label">Số người chơi</div>
+            <div className="cm-preview-row-value">{form.maxPlayers} người chơi · {SKILL_LEVELS.find(l => l.id === form.skillLevel)?.label || form.skillLevel}</div>
           </div>
         </div>
       )}
@@ -158,9 +160,9 @@ const PreviewCard: React.FC<{ form: FormData; step: number }> = ({ form, step })
         <div className="cm-preview-row">
           <i className="fa-solid fa-tag"></i>
           <div>
-            <div className="cm-preview-row-label">Entry fee</div>
+            <div className="cm-preview-row-label">Phí tham gia</div>
             <div className="cm-preview-row-value">
-              {form.feeType === 'free' ? 'Free' : (form.fee ? `${Number(form.fee).toLocaleString()} VND` : 'Paid')}
+              {form.feeType === 'free' ? 'Miễn phí' : (form.fee ? `${Number(form.fee).toLocaleString()} VND` : 'Có phí')}
             </div>
           </div>
         </div>
@@ -175,9 +177,66 @@ const CreateMatch: React.FC = () => {
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(3);
 
-  const set = (key: keyof FormData, value: string | number) =>
+  useEffect(() => {
+    if (showSuccess) {
+      const interval = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            navigate('/home');
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [showSuccess, navigate]);
+
+  const set = (key: keyof FormData, value: any) =>
     setForm(prev => ({ ...prev, [key]: value }));
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          set('imageUrl', compressedBase64);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const canGoNext = () => {
     if (step === 1) {
@@ -205,11 +264,12 @@ const CreateMatch: React.FC = () => {
         skillLevel: form.skillLevel,
         maxPlayers: form.maxPlayers,
         feeType: form.feeType,
-        fee: form.feeType === 'paid' ? (parseInt(form.fee) || 0) : null
+        fee: form.feeType === 'paid' ? (parseInt(form.fee) || 0) : null,
+        imageUrl: form.imageUrl || null
       };
 
       await matchService.createMatch(payload);
-      navigate('/home');
+      setShowSuccess(true);
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra khi tạo trận đấu');
     } finally {
@@ -219,6 +279,39 @@ const CreateMatch: React.FC = () => {
 
   const tip = TIPS[step - 1];
   const showPreview = form.sport !== '';
+
+  if (showSuccess) {
+    return (
+      <div className="create-match-page d-flex align-items-center justify-content-center bg-light" style={{ minHeight: '100vh' }}>
+        <div className="text-center p-5 bg-white shadow rounded-4 cm-form-card" style={{ maxWidth: '500px', margin: '20px' }}>
+          <div className="mb-4 d-flex justify-content-center">
+            <span className="d-inline-flex align-items-center justify-content-center rounded-circle bg-success text-white" style={{ width: '80px', height: '80px', fontSize: '36px' }}>
+              <i className="fa-solid fa-check"></i>
+            </span>
+          </div>
+          <h2 className="fw-bold text-success mb-3">Tạo trận đấu thành công!</h2>
+          <p className="text-muted mb-4" style={{ fontSize: '0.95rem' }}>
+            Trận đấu <strong>"{form.title}"</strong> của bạn đã được tạo thành công trên SportMate.
+          </p>
+          <div className="p-3 bg-light rounded-3 mb-4 text-start" style={{ fontSize: '0.875rem', lineHeight: '1.6' }}>
+            <div className="mb-1 text-truncate"><strong>Môn chơi:</strong> {form.sport === 'other' ? form.customSport : SPORTS.find(s => s.id === form.sport)?.label}</div>
+            <div className="mb-1"><strong>Thời gian:</strong> {form.date} ({form.startTime} - {form.endTime})</div>
+            <div className="text-truncate"><strong>Địa điểm:</strong> {form.location || 'Sân tự chọn'}</div>
+          </div>
+          <p className="text-muted small mb-0">
+            Hệ thống đang chuyển về Trang chủ trong <strong>{countdown}</strong> giây...
+          </p>
+          <div className="progress mt-3" style={{ height: '4px' }}>
+            <div 
+              className="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+              role="progressbar" 
+              style={{ width: `${(countdown / 3) * 100}%`, transition: 'width 1s linear' }}
+            ></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="create-match-page">
@@ -248,13 +341,13 @@ const CreateMatch: React.FC = () => {
                   onClick={() => setStep(s => s - 1)}
                   disabled={loading}
                 >
-                  <i className="fa-solid fa-arrow-left me-2"></i> Back
+                  <i className="fa-solid fa-arrow-left me-2"></i> Quay lại
                 </button>
               )}
 
               {step === 1 && <Step1 form={form} set={set} />}
               {step === 2 && <Step2 form={form} set={set} />}
-              {step === 3 && <Step3 form={form} set={set} />}
+              {step === 3 && <Step3 form={form} set={set} handleImageUpload={handleImageUpload} />}
 
               <div className="mt-4">
                 {step < 3 ? (
@@ -263,7 +356,7 @@ const CreateMatch: React.FC = () => {
                     disabled={!canGoNext()}
                     onClick={() => setStep(s => s + 1)}
                   >
-                    Next
+                    Tiếp theo
                   </button>
                 ) : (
                   <button
@@ -274,10 +367,10 @@ const CreateMatch: React.FC = () => {
                     {loading ? (
                       <span>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Creating Match...
+                        Đang tạo trận đấu...
                       </span>
                     ) : (
-                      'Create Match'
+                      'Tạo trận đấu'
                     )}
                   </button>
                 )}
@@ -305,9 +398,9 @@ const CreateMatch: React.FC = () => {
 const Step1: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
   <div>
     <p className="letter-spacing mb-1" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-      Step 1 of 3
+      Bước 1 / 3
     </p>
-    <h2 className="cm-step-title">What sport do you want to play?</h2>
+    <h2 className="cm-step-title">Bạn muốn chơi môn thể thao nào?</h2>
     <div className="cm-sport-grid mt-4">
       {SPORTS.map(sport => (
         <button
@@ -334,7 +427,7 @@ const Step1: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
       <i className="fa-solid fa-plus cm-other-plus"></i>
       <input
         className="cm-other-input"
-        placeholder="Other sport (e.g. Archery, Climbing, Yoga...)"
+        placeholder="Môn thể thao khác (VD: Bắn cung, Leo núi, Yoga...)"
         value={form.customSport}
         onClick={(e) => {
           e.stopPropagation();
@@ -393,13 +486,13 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void
   return (
     <div>
       <p className="letter-spacing mb-1" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-        Step 2 of 3
+        Bước 2 / 3
       </p>
-      <h2 className="cm-step-title">When and where?</h2>
+      <h2 className="cm-step-title">Thời gian & Địa điểm?</h2>
 
       <div className="cm-field-group mt-4">
         <label className="cm-label">
-          <i className="fa-regular fa-calendar me-2" style={{ color: 'var(--text-muted)' }}></i>Date
+          <i className="fa-regular fa-calendar me-2" style={{ color: 'var(--text-muted)' }}></i>Ngày diễn ra
         </label>
         <input
           type="date"
@@ -413,20 +506,20 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void
       <div className="cm-time-row mt-3">
         <div className="cm-field-group">
           <label className="cm-label">
-            <i className="fa-regular fa-clock me-2" style={{ color: 'var(--text-muted)' }}></i>Start time
+            <i className="fa-regular fa-clock me-2" style={{ color: 'var(--text-muted)' }}></i>Giờ bắt đầu
           </label>
           <input type="time" className="cm-input" value={form.startTime} onChange={e => set('startTime', e.target.value)} />
         </div>
-        <span className="cm-time-separator">to</span>
+        <span className="cm-time-separator">đến</span>
         <div className="cm-field-group">
-          <label className="cm-label">End time</label>
+          <label className="cm-label">Giờ kết thúc</label>
           <input type="time" className="cm-input" value={form.endTime} onChange={e => set('endTime', e.target.value)} />
         </div>
       </div>
 
       <div className="cm-field-group mt-3 position-relative" ref={dropdownRef}>
         <label className="cm-label">
-          <i className="fa-solid fa-location-dot me-2" style={{ color: 'var(--text-muted)' }}></i>Venue / Location
+          <i className="fa-solid fa-location-dot me-2" style={{ color: 'var(--text-muted)' }}></i>Sân chơi / Địa điểm
         </label>
         
         {!isCustom && form.venueId ? (
@@ -445,7 +538,7 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void
               type="text"
               className="cm-input"
               autoFocus
-              placeholder="Enter exact address or area..."
+              placeholder="Nhập địa chỉ chính xác hoặc khu vực chơi..."
               value={form.location}
               onChange={e => set('location', e.target.value)}
             />
@@ -454,7 +547,7 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void
               style={{ fontSize: '0.85rem', fontWeight: 600 }}
               onClick={handleClearVenue}
             >
-              <i className="fa-solid fa-arrow-left me-1"></i> Back to venue search
+              <i className="fa-solid fa-arrow-left me-1"></i> Quay lại tìm kiếm sân chơi
             </button>
           </div>
         ) : (
@@ -462,7 +555,7 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void
             <input
               type="text"
               className="cm-input"
-              placeholder="Search venues..."
+              placeholder="Tìm kiếm sân chơi..."
               value={search}
               onFocus={() => setIsOpen(true)}
               onChange={e => {
@@ -487,12 +580,12 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void
                   </div>
                 ) : (
                   <div className="p-3 text-center text-muted small">
-                    No venues found for {form.sport || 'this search'}
+                    Không tìm thấy sân chơi nào cho môn {form.sport || 'này'}
                   </div>
                 )}
                 <div className="cm-venue-dropdown-footer" onClick={handleCustomMode}>
                   <i className="fa-solid fa-map-pin me-2"></i>
-                  Can't find your venue? Enter custom address
+                  Không thấy sân của bạn? Nhập địa chỉ tự do
                 </div>
               </div>
             )}
@@ -503,19 +596,23 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void
   );
 };
 
-const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | number) => void }> = ({ form, set }) => (
+const Step3: React.FC<{ 
+  form: FormData; 
+  set: (k: keyof FormData, v: any) => void; 
+  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}> = ({ form, set, handleImageUpload }) => (
   <div>
     <p className="letter-spacing mb-1" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-      Step 3 of 3
+      Bước 3 / 3
     </p>
-    <h2 className="cm-step-title">Match details</h2>
+    <h2 className="cm-step-title">Chi tiết trận đấu</h2>
 
     <div className="cm-field-group mt-4">
-      <label className="cm-label">Match title</label>
+      <label className="cm-label">Tiêu đề trận đấu</label>
       <input
         type="text"
         className="cm-input"
-        placeholder={`e.g. ${form.sport ? form.sport.charAt(0).toUpperCase() + form.sport.slice(1) : 'Football'} match in District 1`}
+        placeholder={`Ví dụ: Trận giao lưu ${form.sport ? (SPORTS.find(s => s.id === form.sport)?.label || 'Bóng đá') : 'Bóng đá'} tại Quận 1`}
         value={form.title}
         maxLength={100}
         onChange={e => set('title', e.target.value)}
@@ -524,18 +621,18 @@ const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
 
     <div className="cm-field-group mt-3">
       <label className="cm-label">
-        <i className="fa-solid fa-users me-2" style={{ color: 'var(--text-muted)' }}></i>Players needed
+        <i className="fa-solid fa-users me-2" style={{ color: 'var(--text-muted)' }}></i>Số người chơi cần tìm
       </label>
       <div className="cm-stepper">
         <button className="cm-stepper-btn" onClick={() => set('maxPlayers', Math.max(2, Number(form.maxPlayers) - 1))}>−</button>
         <span className="cm-stepper-value">{form.maxPlayers}</span>
         <button className="cm-stepper-btn" onClick={() => set('maxPlayers', Math.min(100, Number(form.maxPlayers) + 1))}>+</button>
-        <span className="ms-3" style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>players total (including you)</span>
+        <span className="ms-3" style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>người chơi tổng cộng (đã gồm bạn)</span>
       </div>
     </div>
 
     <div className="cm-field-group mt-3">
-      <label className="cm-label">Skill level</label>
+      <label className="cm-label">Trình độ</label>
       <div className="cm-chip-group">
         {SKILL_LEVELS.map(lvl => (
           <button
@@ -551,11 +648,11 @@ const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
 
     <div className="cm-field-group mt-3">
       <label className="cm-label">
-        <i className="fa-solid fa-tag me-2" style={{ color: 'var(--text-muted)' }}></i>Entry fee
+        <i className="fa-solid fa-tag me-2" style={{ color: 'var(--text-muted)' }}></i>Phí tham gia
       </label>
       <div className="cm-chip-group mb-2">
-        <button className={`cm-chip ${form.feeType === 'free' ? 'selected' : ''}`} onClick={() => set('feeType', 'free')}>Free</button>
-        <button className={`cm-chip ${form.feeType === 'paid' ? 'selected' : ''}`} onClick={() => set('feeType', 'paid')}>Paid</button>
+        <button className={`cm-chip ${form.feeType === 'free' ? 'selected' : ''}`} onClick={() => set('feeType', 'free')}>Miễn phí</button>
+        <button className={`cm-chip ${form.feeType === 'paid' ? 'selected' : ''}`} onClick={() => set('feeType', 'paid')}>Có phí</button>
       </div>
       {form.feeType === 'paid' && (
         <div className="cm-fee-input-wrapper">
@@ -566,19 +663,81 @@ const Step3: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
             value={form.fee}
             onChange={e => set('fee', e.target.value)}
           />
-          <span className="cm-fee-suffix">VND / person</span>
+          <span className="cm-fee-suffix">VND / người</span>
         </div>
       )}
     </div>
 
     <div className="cm-field-group mt-3">
+      <label className="cm-label">Hình ảnh trận đấu</label>
+      <p className="text-muted small mb-2">Chọn một ảnh mẫu có sẵn hoặc tải lên hình ảnh từ thiết bị của bạn:</p>
+      
+      <div className="d-flex gap-3 mb-3 overflow-auto py-1 align-items-center" style={{ scrollbarWidth: 'thin' }}>
+        {[
+          { url: '/hero_football.png', label: 'Bóng đá' },
+          { url: '/hero_badminton.png', label: 'Cầu lông' },
+          { url: '/hero_tennis.png', label: 'Tennis' },
+          { url: '/hero_basketball.png', label: 'Bóng rổ' }
+        ].map((preset) => (
+          <div
+            key={preset.url}
+            className={`position-relative rounded overflow-hidden border ${form.imageUrl === preset.url ? 'border-primary border-2 shadow-sm' : 'border-light'}`}
+            style={{ width: '90px', height: '60px', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s' }}
+            onClick={() => set('imageUrl', preset.url)}
+          >
+            <img src={preset.url} alt={preset.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {form.imageUrl === preset.url && (
+              <div className="position-absolute top-0 end-0 bg-primary text-white d-flex align-items-center justify-content-center" style={{ width: '20px', height: '20px', borderRadius: '0 0 0 4px', fontSize: '0.7rem' }}>
+                <i className="fa-solid fa-check"></i>
+              </div>
+            )}
+            <div className="position-absolute bottom-0 start-0 w-100 text-center text-white bg-dark bg-opacity-75" style={{ fontSize: '0.65rem', padding: '1px 0' }}>
+              {preset.label}
+            </div>
+          </div>
+        ))}
+
+        <div
+          className={`position-relative rounded overflow-hidden border d-flex flex-column align-items-center justify-content-center ${form.imageUrl && !form.imageUrl.startsWith('/hero_') ? 'border-primary border-2 shadow-sm' : 'border-dashed border-secondary'}`}
+          style={{ width: '90px', height: '60px', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s', backgroundColor: '#f8f9fa' }}
+          onClick={() => {
+            const input = document.getElementById('custom-image-upload') as HTMLInputElement;
+            if (input) input.click();
+          }}
+        >
+          {form.imageUrl && !form.imageUrl.startsWith('/hero_') ? (
+            <>
+              <img src={form.imageUrl} alt="Uploaded" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div className="position-absolute top-0 end-0 bg-primary text-white d-flex align-items-center justify-content-center" style={{ width: '20px', height: '20px', borderRadius: '0 0 0 4px', fontSize: '0.7rem' }}>
+                <i className="fa-solid fa-check"></i>
+              </div>
+            </>
+          ) : (
+            <>
+              <i className="fa-solid fa-cloud-arrow-up text-muted mb-1" style={{ fontSize: '1.2rem' }}></i>
+              <span className="text-muted" style={{ fontSize: '0.65rem', fontWeight: 600 }}>Tải lên ảnh</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <input
+        type="file"
+        id="custom-image-upload"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleImageUpload}
+      />
+    </div>
+
+    <div className="cm-field-group mt-3">
       <label className="cm-label">
-        Description <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+        Mô tả thêm <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(không bắt buộc)</span>
       </label>
       <textarea
         className="cm-input cm-textarea"
         rows={3}
-        placeholder="Tell players what to expect, what to bring, any rules..."
+        placeholder="Chia sẻ với người chơi những gì cần mang theo, luật chơi hoặc yêu cầu cụ thể..."
         value={form.description}
         onChange={e => set('description', e.target.value)}
       />

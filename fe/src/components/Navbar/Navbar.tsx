@@ -68,22 +68,22 @@ const Navbar: React.FC = () => {
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav mx-auto gap-1">
               <li className="nav-item nav-item-anim">
-                <a className="nav-link nav-link-custom active" href="#hero">Find Matches</a>
+                <a className="nav-link nav-link-custom active" href="#hero">Tìm trận đấu</a>
               </li>
               <li className="nav-item nav-item-anim">
-                <a className="nav-link nav-link-custom" href="#how-it-works">How it Works</a>
+                <a className="nav-link nav-link-custom" href="#how-it-works">Cách hoạt động</a>
               </li>
               <li className="nav-item nav-item-anim">
-                <a className="nav-link nav-link-custom" href="#categories">Categories</a>
+                <a className="nav-link nav-link-custom" href="#categories">Danh mục</a>
               </li>
               <li className="nav-item nav-item-anim">
-                <a className="nav-link nav-link-custom" href="#matches">Teams</a>
+                <a className="nav-link nav-link-custom" href="#matches">Đội nhóm</a>
               </li>
             </ul>
 
             <div className="d-flex align-items-center gap-3 nav-item-anim">
-              <a href="#" className="btn btn-nav-login" onClick={openLogin}>Log In</a>
-              <a href="#" className="btn btn-nav-signup" onClick={openSignup}>Sign Up</a>
+              <a href="#" className="btn btn-nav-login" onClick={openLogin}>Đăng nhập</a>
+              <a href="#" className="btn btn-nav-signup" onClick={openSignup}>Đăng ký</a>
             </div>
           </div>
         </div>

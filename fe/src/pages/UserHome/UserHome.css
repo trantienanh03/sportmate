@@ -18,6 +18,47 @@
   border: 1px solid var(--border);
 }
 
+.sidebar-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+
+@media (max-width: 1200px) {
+  .sidebar-card-header {
+    gap: 8px;
+  }
+  .sidebar-card-header .d-flex {
+    gap: 6px !important;
+  }
+  .sidebar-card-header span {
+    font-size: 0.9rem;
+  }
+  .sidebar-card-header a {
+    font-size: 0.85rem !important;
+  }
+  .sidebar-card-header h6 {
+    font-size: 0.95rem !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .sidebar-card {
+    padding: 15px !important;
+  }
+  .sidebar-card-header span {
+    font-size: 0.85rem;
+  }
+  .sidebar-card-header a {
+    font-size: 0.8rem !important;
+  }
+  .sidebar-card-header h6 {
+    font-size: 0.9rem !important;
+  }
+}
+
 .profile-avatar {
   width: 45px;
   height: 45px;

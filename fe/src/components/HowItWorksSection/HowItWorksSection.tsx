@@ -8,18 +8,18 @@ gsap.registerPlugin(ScrollTrigger);
 const steps = [
   {
     num: '01',
-    title: 'Discover Matches',
-    desc: 'Browse hundreds of active games in your area across multiple sports and skill levels.',
+    title: 'Khám phá trận đấu',
+    desc: 'Duyệt qua hàng trăm trận đấu đang hoạt động xung quanh bạn với nhiều môn thể thao và trình độ khác nhau.',
   },
   {
     num: '02',
-    title: 'Join or Create',
-    desc: 'Sign up for an existing match or create your own and invite other players to join.',
+    title: 'Tham gia hoặc Tạo mới',
+    desc: 'Đăng ký tham gia một trận đấu có sẵn hoặc tự tạo trận đấu của riêng bạn để mời người khác chơi cùng.',
   },
   {
     num: '03',
-    title: 'Play & Connect',
-    desc: 'Show up, compete, and build lasting connections with fellow athletes in your city.',
+    title: 'Chơi & Kết nối',
+    desc: 'Ra sân, thi đấu hết mình và kết nối dài lâu với những người yêu thể thao trong thành phố của bạn.',
   },
 ];
 
@@ -62,9 +62,9 @@ const HowItWorksSection: React.FC = () => {
     <section id="how-it-works" ref={sectionRef} className="how-it-works-section py-5">
       <div className="container">
         <div className="text-center mb-5 hiw-title">
-          <span className="section-chip">How it works</span>
-          <h2 className="section-title mt-2">Three Simple Steps</h2>
-          <p className="section-sub">Getting started is easy — no long sign-up forms or complicated setups.</p>
+          <span className="section-chip">Cách hoạt động</span>
+          <h2 className="section-title mt-2">Ba Bước Cực Kỳ Đơn Giản</h2>
+          <p className="section-sub">Bắt đầu cực kỳ dễ dàng — không cần khai báo rườm rà hay thiết lập phức tạp.</p>
         </div>
 
         <div className="row g-4 justify-content-center position-relative hiw-steps">
