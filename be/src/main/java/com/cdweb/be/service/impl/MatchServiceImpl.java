@@ -2,7 +2,8 @@ package com.cdweb.be.service.impl;
 
 import com.cdweb.be.dto.request.CreateMatchRequest;
 import com.cdweb.be.dto.response.HostDto;
-import com.cdweb.be.dto.response.MatchResponseDto;
+import com.cdweb.be.dto.response.MatchDetailDto;
+import com.cdweb.be.dto.response.ParticipantDto;
 import com.cdweb.be.dto.response.VenueDto;
 import com.cdweb.be.entity.Match;
 import com.cdweb.be.entity.MatchParticipant;
@@ -203,16 +204,14 @@ public class MatchServiceImpl implements MatchService {
         return saved;
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<MatchResponseDto> getAllMatches() {
-        return matchRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
-                .stream()
-                .map(this::convertToResponseDto)
-                .toList();
-    }
+    // ── Internal DTO builder ─────────────────────────────────────────
+    private MatchDetailDto buildDto(Match match, Integer currentUserId) {
+        List<MatchParticipant> participants =
+                matchParticipantRepository.findByMatch_Id(match.getId());
 
-    private MatchResponseDto convertToResponseDto(Match match) {
+        boolean joined = currentUserId != null &&
+                matchParticipantRepository.existsByMatch_IdAndUser_Id(match.getId(), currentUserId);
+
         HostDto hostDto = null;
         if (match.getHost() != null) {
             hostDto = HostDto.builder()

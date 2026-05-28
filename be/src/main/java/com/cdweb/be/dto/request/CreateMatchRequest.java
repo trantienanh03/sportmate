@@ -10,13 +10,12 @@ import java.time.LocalTime;
 
 @Data
 public class CreateMatchRequest {
-
-    private Integer venueId;
-
     @NotBlank(message = "Môn thể thao không được để trống")
     private String sport;
-
     private String customSport;
+
+    private Integer venueId;
+    private String location;
 
     @NotBlank(message = "Tiêu đề trận đấu không được để trống")
     private String title;
@@ -46,15 +45,5 @@ public class CreateMatchRequest {
     @Min(value = 0, message = "Phí tham gia không được là số âm")
     private Integer fee;
 
-    @NotNull(message = "Ngày tổ chức không được để trống")
-    private LocalDate date;
-
-    @NotNull(message = "Giờ bắt đầu không được để trống")
-    private LocalTime startTime;
-
-    private LocalTime endTime;
-
-    private String location;
-
-    private String skillLevel;
+    private String imageUrl;
 }
