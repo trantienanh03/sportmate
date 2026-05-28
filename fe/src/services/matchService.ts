@@ -92,4 +92,13 @@ export const matchService = {
     });
     return handleResponse<MatchDetail>(response);
   },
+
+  getMatches: async () => {
+    const response = await fetch(`${API_URL}/matches`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    return handleResponse<MatchDetail[]>(response);
+  },
 };
