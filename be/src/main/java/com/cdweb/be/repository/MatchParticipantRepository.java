@@ -8,9 +8,9 @@ import java.util.Optional;
 
 public interface MatchParticipantRepository extends JpaRepository<MatchParticipant, Integer> {
 
-    List<MatchParticipant> findByMatchId(Integer matchId);
+    List<MatchParticipant> findByMatch_Id(Integer matchId);
 
-    Optional<MatchParticipant> findByMatchIdAndUserId(Integer matchId, Integer userId);
+    Optional<MatchParticipant> findByMatch_IdAndUser_Id(Integer matchId, Integer userId);
 
-    boolean existsByMatchIdAndUserId(Integer matchId, Integer userId);
+    boolean existsByMatch_IdAndUser_Id(Integer matchId, Integer userId);
 }
