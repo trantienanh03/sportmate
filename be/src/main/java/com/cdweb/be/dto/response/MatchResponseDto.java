@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -31,25 +32,4 @@ public class MatchResponseDto {
     private String imageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class HostDto {
-        private Integer id;
-        private String fullName;
-        private String avatarUrl;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class VenueDto {
-        private Integer id;
-        private String name;
-        private String address;
-        private String district;
-    }
 }
