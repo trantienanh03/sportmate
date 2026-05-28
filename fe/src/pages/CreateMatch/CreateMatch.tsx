@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
+import Toast from '../../components/Toast/Toast';
 import { matchService } from '../../services/matchService';
+import { venueService } from '../../services/venueService';
+import type { VenueItem } from '../../services/venueService';
 import './CreateMatch.css';
 
 import footballIcon from '../../assets/ion--football.svg';
@@ -47,13 +50,7 @@ const TIPS = [
   },
 ];
 
-const MOCK_VENUES = [
-  { id: 1, name: 'Sân Cầu Lông Phú Nhuận', address: '123 Phan Xích Long, Phú Nhuận, HCM', sport: 'badminton', image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=100&h=100&fit=crop' },
-  { id: 2, name: 'Amber Pickleball Club', address: '326 Võ Văn Kiệt, Quận 1, HCM', sport: 'pickleball', image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=100&h=100&fit=crop' },
-  { id: 3, name: 'Sân Bóng Đá Chảo Lửa', address: '30 Phan Thúc Duyện, Tân Bình, HCM', sport: 'football', image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=100&h=100&fit=crop' },
-  { id: 4, name: 'Sân Cầu Lông Viettel', address: 'Hẻm 285 CMT8, Quận 10, HCM', sport: 'badminton', image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=100&h=100&fit=crop' },
-  { id: 5, name: 'Sân Tennis Lan Anh', address: '291 CMT8, Quận 10, HCM', sport: 'tennis', image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a631d6?w=100&h=100&fit=crop' }
-];
+
 
 interface FormData {
   sport: string;
@@ -177,23 +174,23 @@ const CreateMatch: React.FC = () => {
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [countdown, setCountdown] = useState(3);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [venues, setVenues] = useState<VenueItem[]>([]);
+  const [venuesLoading, setVenuesLoading] = useState(false);
 
   useEffect(() => {
-    if (showSuccess) {
-      const interval = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            navigate('/home');
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [showSuccess, navigate]);
+    setVenuesLoading(true);
+    venueService.getVenues()
+      .then(data => {
+        setVenues(data);
+      })
+      .catch(() => {
+        setVenues([]);
+      })
+      .finally(() => setVenuesLoading(false));
+  }, []);
+
+
 
   const set = (key: keyof FormData, value: any) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -268,8 +265,11 @@ const CreateMatch: React.FC = () => {
         imageUrl: form.imageUrl || null
       };
 
-      await matchService.createMatch(payload);
-      setShowSuccess(true);
+      const newMatch = await matchService.createMatch(payload);
+      setToastMessage('Tạo trận đấu thành công!');
+      setTimeout(() => {
+        navigate(`/matches/${newMatch.id}`);
+      }, 1500);
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra khi tạo trận đấu');
     } finally {
@@ -280,42 +280,10 @@ const CreateMatch: React.FC = () => {
   const tip = TIPS[step - 1];
   const showPreview = form.sport !== '';
 
-  if (showSuccess) {
-    return (
-      <div className="create-match-page d-flex align-items-center justify-content-center bg-light" style={{ minHeight: '100vh' }}>
-        <div className="text-center p-5 bg-white shadow rounded-4 cm-form-card" style={{ maxWidth: '500px', margin: '20px' }}>
-          <div className="mb-4 d-flex justify-content-center">
-            <span className="d-inline-flex align-items-center justify-content-center rounded-circle bg-success text-white" style={{ width: '80px', height: '80px', fontSize: '36px' }}>
-              <i className="fa-solid fa-check"></i>
-            </span>
-          </div>
-          <h2 className="fw-bold text-success mb-3">Tạo trận đấu thành công!</h2>
-          <p className="text-muted mb-4" style={{ fontSize: '0.95rem' }}>
-            Trận đấu <strong>"{form.title}"</strong> của bạn đã được tạo thành công trên SportMate.
-          </p>
-          <div className="p-3 bg-light rounded-3 mb-4 text-start" style={{ fontSize: '0.875rem', lineHeight: '1.6' }}>
-            <div className="mb-1 text-truncate"><strong>Môn chơi:</strong> {form.sport === 'other' ? form.customSport : SPORTS.find(s => s.id === form.sport)?.label}</div>
-            <div className="mb-1"><strong>Thời gian:</strong> {form.date} ({form.startTime} - {form.endTime})</div>
-            <div className="text-truncate"><strong>Địa điểm:</strong> {form.location || 'Sân tự chọn'}</div>
-          </div>
-          <p className="text-muted small mb-0">
-            Hệ thống đang chuyển về Trang chủ trong <strong>{countdown}</strong> giây...
-          </p>
-          <div className="progress mt-3" style={{ height: '4px' }}>
-            <div 
-              className="progress-bar progress-bar-striped progress-bar-animated bg-success" 
-              role="progressbar" 
-              style={{ width: `${(countdown / 3) * 100}%`, transition: 'width 1s linear' }}
-            ></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="create-match-page">
       <LoggedInNavbar />
+      {toastMessage && <Toast message={toastMessage} type="success" onClose={() => setToastMessage(null)} />}
 
       <div className="cm-shell container py-5">
         <div className="row justify-content-center g-5">
@@ -346,7 +314,7 @@ const CreateMatch: React.FC = () => {
               )}
 
               {step === 1 && <Step1 form={form} set={set} />}
-              {step === 2 && <Step2 form={form} set={set} />}
+              {step === 2 && <Step2 form={form} set={set} venues={venues} venuesLoading={venuesLoading} />}
               {step === 3 && <Step3 form={form} set={set} handleImageUpload={handleImageUpload} />}
 
               <div className="mt-4">
@@ -440,7 +408,7 @@ const Step1: React.FC<{ form: FormData; set: (k: keyof FormData, v: string | num
   </div>
 );
 
-const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void }> = ({ form, set }) => {
+const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void; venues: VenueItem[]; venuesLoading: boolean }> = ({ form, set, venues, venuesLoading }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [isCustom, setIsCustom] = useState(form.venueId === null && form.location !== '');
@@ -456,15 +424,33 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const filteredVenues = MOCK_VENUES.filter(v => {
-    if (form.sport && form.sport !== 'other' && v.sport !== form.sport) return false;
-    if (search && !v.name.toLowerCase().includes(search.toLowerCase()) && !v.address.toLowerCase().includes(search.toLowerCase())) return false;
+  // Map frontend sport IDs to possible tags stored in DB (Vietnamese or English)
+  const SPORT_ALIASES: Record<string, string[]> = {
+    badminton:   ['badminton', 'cầu lông', 'cau long'],
+    football:    ['football', 'soccer', 'bóng đá', 'bong da'],
+    tennis:      ['tennis', 'quần vợt', 'quan vot'],
+    pickleball:  ['pickleball'],
+    basketball:  ['basketball', 'bóng rổ', 'bong ro'],
+    tabletennis: ['tabletennis', 'table tennis', 'bóng bàn', 'bong ban'],
+    volleyball:  ['volleyball', 'bóng chuyền', 'bong chuyen'],
+    esports:     ['esports', 'esport', 'thể thao điện tử'],
+  };
+
+  const filteredVenues = venues.filter(v => {
+    if (form.sport && form.sport !== 'other' && v.sportTags && v.sportTags.length > 0) {
+      const aliases = SPORT_ALIASES[form.sport.toLowerCase()] ?? [form.sport.toLowerCase()];
+      const hasMatch = v.sportTags.some(tag =>
+        aliases.some(alias => tag.toLowerCase().includes(alias) || alias.includes(tag.toLowerCase()))
+      );
+      if (!hasMatch) return false;
+    }
+    if (search && !v.name.toLowerCase().includes(search.toLowerCase()) && !(v.address || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
-  const handleSelectVenue = (venue: any) => {
+  const handleSelectVenue = (venue: VenueItem) => {
     set('venueId', venue.id);
-    set('location', `${venue.name}, ${venue.address}`);
+    set('location', `${venue.name}, ${venue.address || ''}`);
     setIsOpen(false);
     setIsCustom(false);
     setSearch('');
@@ -566,21 +552,28 @@ const Step2: React.FC<{ form: FormData; set: (k: keyof FormData, v: any) => void
             
             {isOpen && (
               <div className="cm-venue-dropdown">
-                {filteredVenues.length > 0 ? (
+                {venuesLoading ? (
+                  <div className="p-3 text-center text-muted small">
+                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Đang tải danh sách sân...
+                  </div>
+                ) : filteredVenues.length > 0 ? (
                   <div className="cm-venue-list">
                     {filteredVenues.map(venue => (
                       <div key={venue.id} className="cm-venue-item" onClick={() => handleSelectVenue(venue)}>
-                        <img src={venue.image} alt={venue.name} className="cm-venue-img" />
+                        <div className="cm-venue-icon d-flex align-items-center justify-content-center bg-light rounded" style={{ width: '44px', height: '44px', flexShrink: 0 }}>
+                          <i className="fa-solid fa-location-dot text-primary"></i>
+                        </div>
                         <div className="cm-venue-details">
                           <span className="cm-venue-name">{venue.name}</span>
-                          <span className="cm-venue-address">{venue.address}</span>
+                          <span className="cm-venue-address">{venue.address}{venue.district ? `, ${venue.district}` : ''}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="p-3 text-center text-muted small">
-                    Không tìm thấy sân chơi nào cho môn {form.sport || 'này'}
+                    Không tìm thấy sân chơi nào {form.sport && form.sport !== 'other' ? `cho môn ${form.sport}` : ''}
                   </div>
                 )}
                 <div className="cm-venue-dropdown-footer" onClick={handleCustomMode}>

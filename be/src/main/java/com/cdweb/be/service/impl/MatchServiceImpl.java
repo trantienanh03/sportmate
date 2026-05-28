@@ -2,8 +2,7 @@ package com.cdweb.be.service.impl;
 
 import com.cdweb.be.dto.request.CreateMatchRequest;
 import com.cdweb.be.dto.response.HostDto;
-import com.cdweb.be.dto.response.MatchDetailDto;
-import com.cdweb.be.dto.response.ParticipantDto;
+import com.cdweb.be.dto.response.MatchResponseDto;
 import com.cdweb.be.dto.response.VenueDto;
 import com.cdweb.be.entity.Match;
 import com.cdweb.be.entity.MatchParticipant;
@@ -148,8 +147,9 @@ public class MatchServiceImpl implements MatchService {
 
         // Resolve date + time → LocalDateTime
         LocalDateTime start = LocalDateTime.of(request.getDate(), request.getStartTime());
-        LocalDateTime end   = request.getEndTime() != null
-                ? LocalDateTime.of(request.getDate(), request.getEndTime()) : null;
+        LocalDateTime end = request.getEndTime() != null
+                ? LocalDateTime.of(request.getDate(), request.getEndTime())
+                : null;
 
         if (start.isBefore(LocalDateTime.now())) {
             throw new AppException(HttpStatus.BAD_REQUEST, "Thời gian bắt đầu không thể ở trong quá khứ");
@@ -203,19 +203,24 @@ public class MatchServiceImpl implements MatchService {
         return saved;
     }
 
-    // ── Internal DTO builder ─────────────────────────────────────────
-    private MatchDetailDto buildDto(Match match, Integer currentUserId) {
-        List<MatchParticipant> participants =
-                matchParticipantRepository.findByMatch_Id(match.getId());
+    @Override
+    @Transactional(readOnly = true)
+    public List<MatchResponseDto> getAllMatches() {
+        return matchRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .map(this::convertToResponseDto)
+                .toList();
+    }
 
-        boolean joined = currentUserId != null &&
-                matchParticipantRepository.existsByMatch_IdAndUser_Id(match.getId(), currentUserId);
-
-        HostDto hostDto = HostDto.builder()
-                .id(match.getHost().getId())
-                .fullName(match.getHost().getFullName())
-                .avatarUrl(match.getHost().getAvatarUrl())
-                .build();
+    private MatchResponseDto convertToResponseDto(Match match) {
+        HostDto hostDto = null;
+        if (match.getHost() != null) {
+            hostDto = HostDto.builder()
+                    .id(match.getHost().getId())
+                    .fullName(match.getHost().getFullName())
+                    .avatarUrl(match.getHost().getAvatarUrl())
+                    .build();
+        }
 
         VenueDto venueDto = null;
         if (match.getVenue() != null) {

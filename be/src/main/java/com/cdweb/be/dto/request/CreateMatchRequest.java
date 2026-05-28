@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -22,6 +22,20 @@ public class CreateMatchRequest {
     private String title;
 
     private String description;
+
+    @NotNull(message = "Ngày diễn ra không được để trống")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate date;
+
+    @NotNull(message = "Giờ bắt đầu không được để trống")
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime startTime;
+
+    @NotNull(message = "Giờ kết thúc không được để trống")
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime endTime;
+
+    private String skillLevel;
 
     @NotNull(message = "Số lượng người chơi tối đa không được để trống")
     @Min(value = 2, message = "Số lượng người chơi tối đa tối thiểu phải là 2")
