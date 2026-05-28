@@ -39,6 +39,15 @@ public class MatchServiceImpl implements MatchService {
     private final VenueRepository venueRepository;
     private final MatchParticipantRepository matchParticipantRepository;
 
+    // ── Get All Matches ──────────────────────────────────────────────
+    @Override
+    @Transactional(readOnly = true)
+    public List<MatchDetailDto> getMatches(Integer currentUserId) {
+        return matchRepository.findAll().stream()
+                .map(match -> buildDto(match, currentUserId))
+                .collect(Collectors.toList());
+    }
+
     // ── Match Detail ─────────────────────────────────────────────────
     @Override
     @Transactional(readOnly = true)

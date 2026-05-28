@@ -4,6 +4,7 @@ import com.cdweb.be.dto.request.CreateMatchRequest;
 import com.cdweb.be.dto.response.MatchDetailDto;
 import com.cdweb.be.entity.Match;
 import com.cdweb.be.service.MatchService;
+import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -20,6 +21,13 @@ import java.util.Map;
 public class MatchController {
 
     private final MatchService matchService;
+
+    @GetMapping
+    public ResponseEntity<List<MatchDetailDto>> getMatches(HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
+        return ResponseEntity.ok(matchService.getMatches(userId));
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<MatchDetailDto> getMatch(
