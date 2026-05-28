@@ -184,7 +184,7 @@ const CreateMatch: React.FC = () => {
       .then(data => {
         setVenues(data);
       })
-      .catch((err) => {
+      .catch(() => {
         setVenues([]);
       })
       .finally(() => setVenuesLoading(false));
