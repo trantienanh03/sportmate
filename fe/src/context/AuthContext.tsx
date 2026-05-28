@@ -45,7 +45,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await authService.logout();
     } catch (error) {
-      console.error('Logout failed', error);
     } finally {
       setUser(null);
     }

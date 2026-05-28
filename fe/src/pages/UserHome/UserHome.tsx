@@ -18,7 +18,6 @@ const UserHome: React.FC = () => {
         const data = await matchService.getMatches();
         setMatches(data);
       } catch (err: any) {
-        console.error("Lỗi khi tải danh sách trận đấu:", err);
         setError(err.message || "Không thể tải danh sách trận đấu");
       } finally {
         setIsMatchesLoading(false);
@@ -59,7 +58,7 @@ const UserHome: React.FC = () => {
     try {
       const date = new Date(timeStr);
       if (isNaN(date.getTime())) return timeStr;
-      
+
       const days = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
       const dayName = days[date.getDay()];
       const day = date.getDate();
@@ -104,7 +103,7 @@ const UserHome: React.FC = () => {
                   </div>
                   <div>
                     <h6 className="fw-bold mb-0">{user?.fullName || 'User'}</h6>
-                    <small className="text-muted">{user?.district || 'TP. Hồ Chí Minh'}</small>
+                    <small className="text-muted">TP. Hồ Chí Minh</small>
                   </div>
                   <i className="fa-solid fa-chevron-right ms-auto text-muted"></i>
                 </div>
@@ -115,12 +114,12 @@ const UserHome: React.FC = () => {
                   <h6 className="fw-bold mb-0">Lịch trình của bạn</h6>
                   <a href="#" className="text-primary text-decoration-none small fw-bold">Xem tất cả</a>
                 </div>
-                
+
                 <div className="d-flex gap-2 mb-3">
                   <span className="fw-bold small" style={{ cursor: 'pointer', borderBottom: '2px solid #212529', paddingBottom: '4px' }}>Tham gia</span>
                   <span className="text-muted fw-medium small" style={{ cursor: 'pointer' }}>Đã lưu</span>
                 </div>
-                
+
                 <div className="text-center py-3">
                   <h6 className="fw-bold mb-3">Lịch trình của bạn đang trống</h6>
                   <button className="btn btn-dark rounded-pill px-4 py-2 fw-bold w-100">

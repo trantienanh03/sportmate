@@ -8,9 +8,10 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: 'login' | 'signup';
+  onRegisterSuccess?: (message: string) => void;
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login', onRegisterSuccess }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
@@ -63,12 +64,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSignupFormValid) return;
-    
+
     setIsLoading(true);
     setError(null);
     try {
       await authService.register({ fullName: name, email, password });
       onClose();
+      setMode('login');
+      setSignupStep(1);
+      onRegisterSuccess?.('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.');
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {

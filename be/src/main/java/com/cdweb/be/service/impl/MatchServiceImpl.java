@@ -1,7 +1,9 @@
 package com.cdweb.be.service.impl;
 
 import com.cdweb.be.dto.request.CreateMatchRequest;
+import com.cdweb.be.dto.response.HostDto;
 import com.cdweb.be.dto.response.MatchResponseDto;
+import com.cdweb.be.dto.response.VenueDto;
 import com.cdweb.be.entity.Match;
 import com.cdweb.be.entity.MatchParticipant;
 import com.cdweb.be.entity.User;
@@ -136,18 +138,18 @@ public class MatchServiceImpl implements MatchService {
     }
 
     private MatchResponseDto convertToResponseDto(Match match) {
-        MatchResponseDto.HostDto hostDto = null;
+        HostDto hostDto = null;
         if (match.getHost() != null) {
-            hostDto = MatchResponseDto.HostDto.builder()
+            hostDto = HostDto.builder()
                     .id(match.getHost().getId())
                     .fullName(match.getHost().getFullName())
                     .avatarUrl(match.getHost().getAvatarUrl())
                     .build();
         }
 
-        MatchResponseDto.VenueDto venueDto = null;
+        VenueDto venueDto = null;
         if (match.getVenue() != null) {
-            venueDto = MatchResponseDto.VenueDto.builder()
+            venueDto = VenueDto.builder()
                     .id(match.getVenue().getId())
                     .name(match.getVenue().getName())
                     .address(match.getVenue().getAddress())

@@ -2,11 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import './Navbar.css';
 import AuthModal from '../AuthModal/AuthModal';
+import Toast from '../Toast/Toast';
+import type { ToastType } from '../Toast/Toast';
 
 const Navbar: React.FC = () => {
   const navRef = useRef<HTMLElement>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  const showToast = (message: string, type: ToastType = 'success') => {
+    setToast({ message, type });
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -89,11 +96,20 @@ const Navbar: React.FC = () => {
         </div>
       </nav>
 
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-        initialMode={authMode} 
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authMode}
+        onRegisterSuccess={(msg) => showToast(msg, 'success')}
       />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </>
   );
 };
