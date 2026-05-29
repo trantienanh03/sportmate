@@ -148,8 +148,9 @@ public class MatchServiceImpl implements MatchService {
 
         // Resolve date + time → LocalDateTime
         LocalDateTime start = LocalDateTime.of(request.getDate(), request.getStartTime());
-        LocalDateTime end   = request.getEndTime() != null
-                ? LocalDateTime.of(request.getDate(), request.getEndTime()) : null;
+        LocalDateTime end = request.getEndTime() != null
+                ? LocalDateTime.of(request.getDate(), request.getEndTime())
+                : null;
 
         if (start.isBefore(LocalDateTime.now())) {
             throw new AppException(HttpStatus.BAD_REQUEST, "Thời gian bắt đầu không thể ở trong quá khứ");
@@ -211,11 +212,14 @@ public class MatchServiceImpl implements MatchService {
         boolean joined = currentUserId != null &&
                 matchParticipantRepository.existsByMatch_IdAndUser_Id(match.getId(), currentUserId);
 
-        HostDto hostDto = HostDto.builder()
-                .id(match.getHost().getId())
-                .fullName(match.getHost().getFullName())
-                .avatarUrl(match.getHost().getAvatarUrl())
-                .build();
+        HostDto hostDto = null;
+        if (match.getHost() != null) {
+            hostDto = HostDto.builder()
+                    .id(match.getHost().getId())
+                    .fullName(match.getHost().getFullName())
+                    .avatarUrl(match.getHost().getAvatarUrl())
+                    .build();
+        }
 
         VenueDto venueDto = null;
         if (match.getVenue() != null) {
