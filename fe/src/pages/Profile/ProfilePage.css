@@ -811,3 +811,80 @@
     background-clip: text;
     font-weight: 900;
 }
+
+/* ── Profile Hero Banner ───────────────────────────────── */
+.profile-hero-banner {
+    height: 140px;
+    background: linear-gradient(
+        135deg,
+        #1e40af 0%,
+        #2563eb 40%,
+        #3b82f6 70%,
+        #60a5fa 100%
+    );
+    border-radius: 24px 24px 0 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-hero-banner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(
+            circle at 20% 50%,
+            rgba(255, 255, 255, 0.08) 0%,
+            transparent 50%
+        ),
+        radial-gradient(
+            circle at 80% 20%,
+            rgba(255, 255, 255, 0.06) 0%,
+            transparent 40%
+        );
+}
+
+/* Override hero-bg để ẩn khi có banner */
+.profile-hero-bg {
+    display: none;
+}
+
+/* Adjust hero-top padding khi có banner */
+.profile-hero .profile-hero-top {
+    padding-top: 0;
+    margin-top: -52px;
+}
+
+/* ── Hero Bio ─────────────────────────────────────────── */
+.profile-hero-bio {
+    margin-top: 8px;
+    color: #475467;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    max-width: 420px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ── Stat icon ────────────────────────────────────────── */
+.profile-stat-icon {
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* ── Skill chip emoji ───────────────────────────────────── */
+.skill-chip-emoji {
+    margin-right: 8px;
+    font-size: 1.1rem;
+}
+
+/* ── Info row icon ────────────────────────────────────────── */
+.profile-info-icon {
+    margin-right: 8px;
+    color: #2563eb;
+    width: 16px;
+    text-align: center;
+}

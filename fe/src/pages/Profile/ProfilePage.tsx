@@ -48,16 +48,26 @@ const PROFILE_MENU = [
 ];
 
 const STAT_CARDS = [
-  { label: "Matches", value: "42" },
-  { label: "Hosted", value: "8" },
-  { label: "Rating", value: "4.7" },
-  { label: "Show-up", value: "95%" },
+  {
+    label: "Matches",
+    value: "42",
+    icon: "fa-solid fa-futbol",
+    color: "#2563eb",
+  },
+  { label: "Hosted", value: "8", icon: "fa-solid fa-crown", color: "#16a34a" },
+  { label: "Rating", value: "4.7", icon: "fa-solid fa-star", color: "#d97706" },
+  {
+    label: "Show-up",
+    value: "95%",
+    icon: "fa-solid fa-circle-check",
+    color: "#7c3aed",
+  },
 ];
 
 const SKILL_LEVELS = [
-  { label: "Football", level: "Advanced", tier: 3 },
-  { label: "Badminton", level: "Pro", tier: 4 },
-  { label: "Pickleball", level: "Newbie", tier: 1 },
+  { label: "Football", emoji: "⚽", level: "Advanced", tier: 3 },
+  { label: "Badminton", emoji: "🏸", level: "Pro", tier: 4 },
+  { label: "Pickleball", emoji: "🏓", level: "Newbie", tier: 1 },
 ];
 
 const BADGES = [
@@ -199,6 +209,7 @@ const ProfilePage: React.FC = () => {
           <div className="profile-board">
             <section className="profile-content">
               <div className="profile-hero card-shell">
+                <div className="profile-hero-banner" />
                 <div className="profile-hero-bg" />
                 <div className="profile-hero-top">
                   <div className="profile-avatar-rail">
@@ -221,6 +232,9 @@ const ProfilePage: React.FC = () => {
                           <i className="fa-solid fa-location-dot me-2" />
                           {user?.district || "Ho Chi Minh City, Vietnam"}
                         </div>
+                        {user?.bio && (
+                          <p className="profile-hero-bio">{user.bio}</p>
+                        )}
                       </div>
 
                       <div className="profile-hero-actions">
@@ -401,19 +415,31 @@ const ProfilePage: React.FC = () => {
                 ) : (
                   <div className="profile-info-list">
                     <div className="profile-info-row">
-                      <span>Email</span>
+                      <span>
+                        <i className="fa-solid fa-envelope profile-info-icon" />
+                        Email
+                      </span>
                       <strong>{user?.email || "-"}</strong>
                     </div>
                     <div className="profile-info-row">
-                      <span>Role</span>
+                      <span>
+                        <i className="fa-solid fa-shield-halved profile-info-icon" />
+                        Vai trò
+                      </span>
                       <strong>{user?.role || "-"}</strong>
                     </div>
                     <div className="profile-info-row">
-                      <span>Bio</span>
+                      <span>
+                        <i className="fa-solid fa-quote-left profile-info-icon" />
+                        Bio
+                      </span>
                       <strong>{user?.bio || "Chưa có mô tả"}</strong>
                     </div>
                     <div className="profile-info-row">
-                      <span>District</span>
+                      <span>
+                        <i className="fa-solid fa-location-dot profile-info-icon" />
+                        Quận/Huyện
+                      </span>
                       <strong>{user?.district || "Chưa cập nhật"}</strong>
                     </div>
                   </div>
@@ -422,7 +448,15 @@ const ProfilePage: React.FC = () => {
 
               <div className="profile-stats-grid">
                 {STAT_CARDS.map((stat) => (
-                  <div className="profile-stat card-shell" key={stat.label}>
+                  <div
+                    className="profile-stat card-shell"
+                    key={stat.label}
+                    style={{ borderTop: `3px solid ${stat.color}` }}
+                  >
+                    <i
+                      className={`${stat.icon} profile-stat-icon`}
+                      style={{ color: stat.color }}
+                    />
                     <div className="profile-stat-value">{stat.value}</div>
                     <div className="profile-stat-label">{stat.label}</div>
                   </div>
@@ -441,7 +475,12 @@ const ProfilePage: React.FC = () => {
                         className={`skill-chip skill-chip--tier-${skill.tier}`}
                         key={skill.label}
                       >
-                        <span className="skill-chip-sport">{skill.label}</span>
+                        <span className="skill-chip-sport">
+                          <span className="skill-chip-emoji">
+                            {skill.emoji}
+                          </span>
+                          {skill.label}
+                        </span>
                         <div className="skill-chip-right">
                           <span className="skill-chip-dots">
                             {Array.from({ length: 4 }).map((_, i) => (
