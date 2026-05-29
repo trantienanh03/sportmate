@@ -814,34 +814,47 @@
 
 /* ── Profile Hero Banner ───────────────────────────────── */
 .profile-hero-banner {
-    height: 140px;
+    height: 88px;
     background: linear-gradient(
-        135deg,
-        #1e40af 0%,
-        #2563eb 40%,
-        #3b82f6 70%,
-        #60a5fa 100%
+        120deg,
+        #0f172a 0%,
+        #1e3a5f 35%,
+        #1d4ed8 70%,
+        #3b82f6 100%
     );
     border-radius: 24px 24px 0 0;
     position: relative;
     overflow: hidden;
 }
 
-.profile-hero-banner::after {
+/* Diagonal stripe texture */
+.profile-hero-banner::before {
     content: "";
     position: absolute;
     inset: 0;
-    background:
-        radial-gradient(
-            circle at 20% 50%,
-            rgba(255, 255, 255, 0.08) 0%,
-            transparent 50%
-        ),
-        radial-gradient(
-            circle at 80% 20%,
-            rgba(255, 255, 255, 0.06) 0%,
-            transparent 40%
-        );
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 18px,
+        rgba(255, 255, 255, 0.03) 18px,
+        rgba(255, 255, 255, 0.03) 36px
+    );
+}
+
+/* Glow accent */
+.profile-hero-banner::after {
+    content: "";
+    position: absolute;
+    bottom: -40px;
+    left: 160px;
+    width: 220px;
+    height: 110px;
+    background: radial-gradient(
+        ellipse,
+        rgba(96, 165, 250, 0.28),
+        transparent 70%
+    );
+    border-radius: 50%;
 }
 
 /* Override hero-bg để ẩn khi có banner */
@@ -852,7 +865,7 @@
 /* Adjust hero-top padding khi có banner */
 .profile-hero .profile-hero-top {
     padding-top: 0;
-    margin-top: -52px;
+    margin-top: -42px;
 }
 
 /* ── Hero Bio ─────────────────────────────────────────── */
