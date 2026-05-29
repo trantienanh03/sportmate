@@ -476,7 +476,7 @@
     }
 }
 
-@media (max-width: 1399.98px) {
+@media (max-width: 767.98px) {
     .profile-grid-two {
         grid-template-columns: 1fr;
     }
