@@ -209,7 +209,6 @@ const ProfilePage: React.FC = () => {
           <div className="profile-board">
             <section className="profile-content">
               <div className="profile-hero card-shell">
-                <div className="profile-hero-banner" />
                 <div className="profile-hero-bg" />
                 <div className="profile-hero-top">
                   <div className="profile-avatar-rail">

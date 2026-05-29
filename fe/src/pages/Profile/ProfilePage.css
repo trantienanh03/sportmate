@@ -857,16 +857,7 @@
     border-radius: 50%;
 }
 
-/* Override hero-bg để ẩn khi có banner */
-.profile-hero-bg {
-    display: none;
-}
-
-/* Adjust hero-top padding khi có banner */
-.profile-hero .profile-hero-top {
-    padding-top: 0;
-    margin-top: -42px;
-}
+/* (banner removed) */
 
 /* ── Hero Bio ─────────────────────────────────────────── */
 .profile-hero-bio {
