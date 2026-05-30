@@ -432,6 +432,72 @@
         box-shadow 0.2s;
 }
 
+/* ═══════════════════════════════════════════════════════
+   MAIN-LIKE HERO IMAGE
+═══════════════════════════════════════════════════════ */
+.md-cover-wrap {
+    position: relative;
+    border-radius: 1.5rem;
+    overflow: hidden;
+    height: 400px;
+    background: #e2e8f0;
+}
+
+.md-cover-img {
+    height: 100%;
+    object-fit: cover;
+}
+
+.md-cover-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.08), transparent 40%);
+}
+
+.md-cover-emoji {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+}
+
+.md-cover-badge {
+    display: inline-flex;
+    align-items: center;
+    height: fit-content;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.15);
+}
+
+.white-card {
+    background: #fff;
+}
+
+.match-title {
+    letter-spacing: -0.03em;
+}
+
+@media (max-width: 991.98px) {
+    .md-cover-wrap {
+        height: 300px;
+    }
+}
+
 .md-post-btn:hover {
     background: #1d4ed8;
     transform: translateY(-1px);

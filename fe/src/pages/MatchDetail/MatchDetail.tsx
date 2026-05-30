@@ -1,60 +1,55 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import LoggedInNavbar from "../../components/LoggedInNavbar/LoggedInNavbar";
-import {
-  matchService,
-  type MatchDetail as MatchDetailType,
-} from "../../services/matchService";
-import { useAuth } from "../../context/AuthContext";
-import "./MatchDetail.css";
+import React, { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
+import { useAuth } from '../../context/AuthContext';
+import { matchService, type MatchDetail as MatchDetailType } from '../../services/matchService';
+import './MatchDetail.css';
 
-/* ── helpers ────────────────────────────────────────── */
-const SPORT_ICONS: Record<string, string> = {
-  football: "⚽",
-  soccer: "⚽",
-  basketball: "🏀",
-  badminton: "🏸",
-  tennis: "🎾",
-  volleyball: "🏐",
-  pickleball: "🏓",
-  running: "🏃",
-  swimming: "🏊",
-  default: "🏅",
+const SPORT_IMAGES: Record<string, string> = {
+  football: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80',
+  soccer: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80',
+  badminton: 'https://images.unsplash.com/photo-1613918431706-0808f5f3a3fd?auto=format&fit=crop&w=1200&q=80',
+  tennis: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1200&q=80',
+  volleyball: 'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=1200&q=80',
+  basketball: 'https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80',
+  pickleball: 'https://images.unsplash.com/photo-1515573396941-6f3d8f0c4fbd?auto=format&fit=crop&w=1200&q=80',
+  running: 'https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=1200&q=80',
+  default: 'https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80',
 };
-const getSportIcon = (sport: string) =>
-  SPORT_ICONS[sport.toLowerCase()] ?? SPORT_ICONS.default;
 
-const SPORT_BG: Record<string, string> = {
-  football: "linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%)",
-  soccer: "linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%)",
-  basketball: "linear-gradient(135deg,#1c0a00 0%,#7c2d12 60%,#1c0a00 100%)",
-  badminton: "linear-gradient(135deg,#030712 0%,#0e1b33 60%,#030712 100%)",
-  tennis: "linear-gradient(135deg,#052e16 0%,#14532d 60%,#052e16 100%)",
-  volleyball: "linear-gradient(135deg,#1e1b4b 0%,#3730a3 60%,#1e1b4b 100%)",
-  pickleball: "linear-gradient(135deg,#0c0a09 0%,#292524 60%,#0c0a09 100%)",
-  default: "linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0f172a 100%)",
+const SPORT_EMOJI: Record<string, string> = {
+  football: '⚽',
+  soccer: '⚽',
+  badminton: '🏸',
+  tennis: '🎾',
+  volleyball: '🏐',
+  basketball: '🏀',
+  pickleball: '🏓',
+  running: '🏃',
+  default: '🏅',
 };
-const getSportBg = (sport: string) =>
-  SPORT_BG[sport.toLowerCase()] ?? SPORT_BG.default;
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+const getSportImage = (sport: string) => SPORT_IMAGES[sport.toLowerCase()] ?? SPORT_IMAGES.default;
+const getSportEmoji = (sport: string) => SPORT_EMOJI[sport.toLowerCase()] ?? SPORT_EMOJI.default;
+
+const formatDate = (value: string) =>
+  new Date(value).toLocaleDateString('vi-VN', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
   });
 
-const formatTime = (start: string, end?: string) => {
-  const fmt = (s: string) =>
-    new Date(s).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
+const formatTime = (start: string, end?: string | null) => {
+  const fmt = (value: string) =>
+    new Date(value).toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
     });
-  return end ? `${fmt(start)} — ${fmt(end)}` : fmt(start);
+
+  return end ? `${fmt(start)} đến ${fmt(end)}` : fmt(start);
 };
 
-/* ── component ──────────────────────────────────────── */
 const MatchDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -62,10 +57,13 @@ const MatchDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [comment, setComment] = useState('');
 
   useEffect(() => {
     if (!id) return;
+
     setLoading(true);
+    setError(null);
     matchService
       .getMatch(Number(id))
       .then(setMatch)
@@ -73,13 +71,40 @@ const MatchDetail: React.FC = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const derived = useMemo(() => {
+    if (!match) return null;
+
+    const spotsLeft = Math.max(match.maxPlayers - match.currentPlayers, 0);
+    const feeLabel = match.feePerPerson === 0 ? 'Miễn phí' : `${match.feePerPerson.toLocaleString('vi-VN')} VND`;
+    const heroImage = getSportImage(match.sport);
+    const attendees = [
+      { id: match.host.id, name: match.host.fullName, role: 'Người tổ chức', avatar: match.host.avatarUrl },
+      ...match.participants
+        .filter((participant) => participant.userId !== match.host.id)
+        .map((participant) => ({
+          id: participant.userId,
+          name: participant.fullName,
+          role: participant.role === 'host' ? 'Người tổ chức' : 'Thành viên',
+          avatar: participant.avatarUrl,
+        })),
+    ];
+
+    return {
+      spotsLeft,
+      feeLabel,
+      heroImage,
+      attendees,
+      recurrence: match.status === 'open' ? 'Đang mở cho đăng ký' : 'Đã đóng',
+    };
+  }, [match]);
+
   const handleJoin = async () => {
     if (!match) return;
     setActionLoading(true);
     try {
       setMatch(await matchService.join(match.id));
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to join");
+      alert(e instanceof Error ? e.message : 'Không thể tham gia');
     } finally {
       setActionLoading(false);
     }
@@ -91,301 +116,209 @@ const MatchDetail: React.FC = () => {
     try {
       setMatch(await matchService.leave(match.id));
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to leave");
+      alert(e instanceof Error ? e.message : 'Không thể rời trận');
     } finally {
       setActionLoading(false);
     }
   };
 
-  if (loading)
+  const handlePostComment = () => {
+    if (!comment.trim()) return;
+    alert('Thảo luận hiện chưa kết nối backend. Nội dung bạn nhập: ' + comment.trim());
+    setComment('');
+  };
+
+  if (loading) {
     return (
-      <div className="md-page">
+      <div className="match-detail-page bg-light min-vh-100">
         <LoggedInNavbar />
         <div className="md-center-state">
           <div className="spinner-border text-primary" role="status" />
         </div>
       </div>
     );
+  }
 
-  if (error || !match)
+  if (error || !match || !derived) {
     return (
-      <div className="md-page">
+      <div className="match-detail-page bg-light min-vh-100">
         <LoggedInNavbar />
-        <div className="md-center-state md-error-text">
-          {error ?? "Match not found"}
-        </div>
+        <div className="md-center-state md-error-text">{error ?? 'Match not found'}</div>
       </div>
     );
+  }
 
-  const spotsLeft = match.maxPlayers - match.currentPlayers;
-  const fillPct = Math.min(
-    100,
-    Math.round((match.currentPlayers / match.maxPlayers) * 100),
-  );
   const isHost = user?.id === match.host.id;
-  const priceLabel =
-    match.feePerPerson === 0
-      ? "Free"
-      : `${match.feePerPerson.toLocaleString("vi-VN")} VND / person`;
-  const skillLabel =
-    match.skillLevel.charAt(0).toUpperCase() + match.skillLevel.slice(1);
+  const timeLabel = formatTime(match.startTime, match.endTime);
+  const dateLabel = formatDate(match.startTime);
+  const title = match.title;
+  const address = match.venue?.address || match.locationText || 'Chưa có địa điểm';
+  const venueName = match.venue?.name || match.locationText || 'TBD';
 
   return (
-    <div className="md-page">
+    <div className="match-detail-page bg-light min-vh-100">
       <LoggedInNavbar />
 
-      {/* ── Hero ──────────────────────────────── */}
-      <div className="md-hero" style={{ background: getSportBg(match.sport) }}>
-        <div className="md-hero-inner">
-          <span className="md-sport-icon">{getSportIcon(match.sport)}</span>
-          {match.status === "open" && (
-            <span className="md-available-badge">
-              <span className="md-dot" /> Available
-            </span>
-          )}
-          <h1 className="md-hero-title">{match.title.toUpperCase()}</h1>
+      <div className="bg-white pt-4 pb-4 border-bottom">
+        <div className="container">
+          <h1 className="fw-bolder mb-4 match-title">{title}</h1>
+          <div className="d-flex align-items-center">
+            <img
+              src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
+              alt={match.host.fullName}
+              className="rounded-circle me-3 border"
+              style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+            />
+            <div>
+              <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
+              <h6 className="fw-bold mb-0">{match.host.fullName}</h6>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Body ──────────────────────────────── */}
-      <div className="container-xl md-body">
-        <div className="row g-4">
-          {/* ── Left column ───────────────────── */}
-          <div className="col-lg-8">
-            {/* Host card */}
-            <div className="md-card md-anim-1">
-              <div className="md-host-row">
-                <div className="md-avatar md-avatar--lg">
-                  {match.host.avatarUrl ? (
-                    <img src={match.host.avatarUrl} alt={match.host.fullName} />
-                  ) : (
-                    <span>{match.host.fullName.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <div>
-                  <div className="md-host-name">{match.host.fullName}</div>
-                  <div className="md-stars">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <i
-                        key={i}
-                        className="fa-solid fa-star"
-                        style={{
-                          color: i <= 4 ? "#f59e0b" : "#e2e8f0",
-                          fontSize: "13px",
-                        }}
-                      />
-                    ))}
-                    <span className="md-rating-text">4.8 (23 reviews)</span>
-                  </div>
-                  <div className="md-host-meta">
-                    Organized {match.currentPlayers} matches
-                    <span className="md-sep">·</span>
-                    96% attendance
-                  </div>
-                </div>
+      <div className="container py-4">
+        <div className="row position-relative">
+          <div className="col-lg-8 pe-lg-5 mb-5">
+            <div className="md-cover-wrap shadow-sm mb-5">
+              <img src={derived.heroImage} alt={title} className="w-100 object-fit-cover md-cover-img" />
+              <div className="md-cover-overlay">
+                <div className="md-cover-emoji">{getSportEmoji(match.sport)}</div>
+                {match.status === 'open' && <span className="md-cover-badge">Đang mở</span>}
               </div>
             </div>
 
-            {/* Match Details */}
-            <div className="md-card md-anim-2">
-              <h3 className="md-section-title">Match Details</h3>
-              <div className="md-detail-list">
-                <div className="md-detail-row">
-                  <div className="md-detail-icon">
-                    <i className="fa-regular fa-calendar" />
-                  </div>
-                  <div>
-                    <div className="md-detail-primary">
-                      {formatDate(match.startTime)}
-                    </div>
-                    <div className="md-detail-secondary">
-                      {formatTime(match.startTime, match.endTime)}
-                    </div>
-                  </div>
-                </div>
-                <div className="md-detail-row">
-                  <div className="md-detail-icon">
-                    <i className="fa-solid fa-location-dot" />
-                  </div>
-                  <div>
-                    <div className="md-detail-primary">
-                      {match.venue?.name ?? match.locationText ?? "TBD"}
-                    </div>
-                    {(match.venue?.address ?? match.locationText) && (
-                      <div className="md-detail-secondary">
-                        {match.venue?.address ?? match.locationText}
-                      </div>
-                    )}
-                    {match.venue?.googleMapsUrl && (
-                      <a
-                        href={match.venue.googleMapsUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="md-dir-link"
-                      >
-                        Get Directions
-                        <i
-                          className="fa-solid fa-arrow-up-right-from-square ms-1"
-                          style={{ fontSize: "9px" }}
-                        />
-                      </a>
-                    )}
-                  </div>
-                </div>
-                <div className="md-detail-row">
-                  <div className="md-detail-icon">
-                    <i className="fa-solid fa-dollar-sign" />
-                  </div>
-                  <div className="md-detail-primary">{priceLabel}</div>
-                </div>
-                <div className="md-detail-row">
-                  <div className="md-detail-icon">
-                    <i className="fa-solid fa-shield-halved" />
-                  </div>
-                  <div className="md-detail-primary">Level: {skillLabel}</div>
-                </div>
-              </div>
-              {match.description && (
-                <p className="md-description">{match.description}</p>
-              )}
+            <h4 className="fw-bold mb-3">Chi tiết</h4>
+            <div className="mb-5 text-break match-description white-card p-4 rounded-4 shadow-sm">
+              {match.description || 'Chưa có mô tả cho trận đấu này.'}
             </div>
 
-            {/* Who's joining */}
-            <div className="md-card md-anim-3">
-              <div className="md-row-between mb-3">
-                <h3 className="md-section-title" style={{ margin: 0 }}>
-                  Who's joining ({match.currentPlayers}/{match.maxPlayers})
-                </h3>
-                <i className="fa-solid fa-user-group text-muted" />
-              </div>
-              <div className="md-participants">
-                {match.participants.length === 0 && (
-                  <p className="text-muted small mb-0">No participants yet.</p>
-                )}
-                {match.participants.map((p, i) => (
-                  <div
-                    className="md-participant"
-                    key={p.userId}
-                    style={{ animationDelay: `${0.08 * i}s` }}
-                  >
-                    <div className="md-avatar md-avatar--md">
-                      {p.avatarUrl ? (
-                        <img src={p.avatarUrl} alt={p.fullName} />
-                      ) : (
-                        <span>{p.fullName.charAt(0).toUpperCase()}</span>
-                      )}
-                    </div>
-                    <div className="md-participant-name">
-                      {p.fullName.split(" ")[0]}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h4 className="fw-bold mb-0 d-flex align-items-center">
+                Người tham gia
+                <span className="badge bg-secondary bg-opacity-10 text-dark rounded-pill ms-2 fs-6">
+                  {derived.attendees.length}
+                </span>
+              </h4>
+              <a href="#" className="text-primary fw-medium text-decoration-none">Xem tất cả</a>
             </div>
 
-            {/* Discussion */}
-            <div className="md-card md-anim-4">
-              <div className="md-row-between mb-3">
-                <h3 className="md-section-title" style={{ margin: 0 }}>
-                  Discussion
-                </h3>
-                <i className="fa-regular fa-comment-dots text-muted" />
-              </div>
-              <div className="md-discussion">
-                <div className="md-avatar md-avatar--sm">
-                  {user?.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.fullName} />
-                  ) : (
-                    <span>
-                      {user?.fullName?.charAt(0).toUpperCase() ?? "?"}
-                    </span>
-                  )}
+            <div className="d-flex flex-wrap gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm">
+              {derived.attendees.map((attendee) => (
+                <div key={attendee.id} className="text-center attendee-item">
+                  <img
+                    src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
+                    alt={attendee.name}
+                    className="rounded-circle mb-2 border"
+                    style={{ width: '64px', height: '64px', objectFit: 'cover' }}
+                  />
+                  <p className="fw-bold mb-0 small text-truncate" style={{ maxWidth: '80px' }}>{attendee.name.split(' ')[0]}</p>
+                  <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>{attendee.role}</p>
                 </div>
-                <div className="md-discussion-body">
+              ))}
+            </div>
+
+            <h4 className="fw-bold mb-3">Thảo luận</h4>
+            <div className="card border-0 bg-white shadow-sm rounded-4 p-4 mb-5">
+              <div className="d-flex align-items-start mb-3">
+                <img
+                  src={user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName ?? 'User')}&background=3b82f6&color=fff`}
+                  className="rounded-circle me-3 mt-1"
+                  style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                  alt="User"
+                />
+                <div className="flex-grow-1">
                   <textarea
-                    className="md-textarea"
-                    placeholder="Ask something about this match…"
+                    className="form-control bg-light border-0 rounded-3"
                     rows={2}
+                    placeholder="Thêm bình luận..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
                   />
                   <div className="text-end mt-2">
-                    <button className="md-post-btn">Post</button>
+                    <button className="btn btn-secondary fw-bold px-4 rounded-pill" onClick={handlePostComment} disabled={!comment.trim()}>
+                      Đăng
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ── Right sidebar ──────────────────── */}
-          <div className="col-lg-4">
-            <div className="md-sidebar md-anim-2">
-              {/* Spots */}
-              <div className="md-spots-header">
-                <span className="md-spots-label">
-                  {match.currentPlayers} / {match.maxPlayers} spots filled
-                </span>
-                <span className="md-spots-pct">{fillPct}%</span>
-              </div>
-              <div className="md-progress-track">
-                <div
-                  className="md-progress-fill"
-                  style={{ width: `${fillPct}%` }}
-                />
-              </div>
-
-              {/* Action */}
-              <div className="mt-4">
-                {isHost ? (
-                  <div className="md-host-badge">
-                    <i className="fa-solid fa-crown me-2" />
-                    You're the host
+          <div className="col-lg-4 d-none d-lg-block">
+            <div className="card border-0 shadow-sm rounded-4 sticky-top" style={{ top: '100px', zIndex: 10 }}>
+              <div className="card-body p-4">
+                <div className="d-flex mb-4">
+                  <div className="me-3 mt-1">
+                    <i className="fa-regular fa-clock fs-4 text-muted" />
                   </div>
-                ) : match.joined ? (
-                  <button
-                    className="md-leave-btn"
-                    onClick={handleLeave}
-                    disabled={actionLoading}
-                  >
-                    {actionLoading ? "…" : "Leave Match"}
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      className="md-join-btn"
-                      onClick={handleJoin}
-                      disabled={actionLoading || spotsLeft === 0}
-                    >
-                      {actionLoading ? "…" : "JOIN THIS MATCH"}
-                    </button>
-                    {spotsLeft === 0 && (
-                      <button className="md-waitlist-btn mt-2">
-                        Join Waitlist
-                      </button>
+                  <div>
+                    <h6 className="fw-bold mb-1">{dateLabel}</h6>
+                    <p className="text-muted small mb-0">{timeLabel}</p>
+                    <p className="text-muted small mt-1 mb-0 d-flex align-items-center">
+                      <i className="fa-solid fa-rotate-right me-1" /> {derived.recurrence}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="d-flex mb-2">
+                  <div className="me-3 mt-1">
+                    <i className="fa-solid fa-location-dot fs-4 text-muted" />
+                  </div>
+                  <div>
+                    <h6 className="fw-bold mb-1">{venueName}</h6>
+                    <p className="text-muted small mb-1">{address}</p>
+                    {match.venue?.googleMapsUrl && (
+                      <a href={match.venue.googleMapsUrl} target="_blank" rel="noreferrer" className="text-primary small text-decoration-none fw-medium d-flex align-items-center">
+                        Cách tìm vị trí <i className="fa-solid fa-arrow-up-right-from-square ms-1" style={{ fontSize: '10px' }} />
+                      </a>
                     )}
-                  </>
-                )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ height: '90px' }} />
+
+      <div className="fixed-bottom bg-white border-top py-3 sticky-bottom-bar shadow-lg" style={{ zIndex: 1000 }}>
+        <div className="container">
+          <div className="d-flex justify-content-between align-items-center">
+            <div className="d-none d-sm-block">
+              <p className="text-muted fw-bold mb-0" style={{ fontSize: '13px' }}>{dateLabel}</p>
+              <h5 className="fw-bolder mb-0 text-truncate" style={{ maxWidth: '300px' }}>{title}</h5>
+            </div>
+
+            <div className="d-flex align-items-center ms-auto">
+              <div className="text-end me-3 d-none d-md-block">
+                <span className="fw-bold fs-6 me-3">{derived.feeLabel}</span>
+                <span className="badge bg-warning bg-opacity-25 text-dark border border-warning rounded-pill px-3 py-2 fw-bold">
+                  Còn {derived.spotsLeft} chỗ trống
+                </span>
               </div>
 
-              {!isHost && (
-                <button className="md-report-btn">
-                  <i className="fa-regular fa-flag me-1" /> Report fake match
+              <button className="btn btn-light rounded-circle me-2 action-icon-btn">
+                <i className="fa-regular fa-heart" />
+              </button>
+              <button className="btn btn-light rounded-circle me-3 action-icon-btn d-none d-sm-inline-block">
+                <i className="fa-solid fa-arrow-up-from-bracket" />
+              </button>
+
+              {isHost ? (
+                <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" disabled>
+                  Bạn là host
+                </button>
+              ) : match.joined ? (
+                <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleLeave} disabled={actionLoading}>
+                  {actionLoading ? '...' : 'Rời trận'}
+                </button>
+              ) : (
+                <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleJoin} disabled={actionLoading || derived.spotsLeft === 0}>
+                  {actionLoading ? '...' : 'Tham gia'}
                 </button>
               )}
-
-              {/* Safety tip */}
-              <div className="md-safety">
-                <i className="fa-solid fa-circle-check md-safety-icon" />
-                <p className="md-safety-text">
-                  <strong>Safety tip:</strong> Never transfer money directly to
-                  hosts. Use our secure split fee feature.
-                </p>
-              </div>
-
-              <hr className="md-hr" />
-
-              <button className="md-share-btn">
-                <i className="fa-solid fa-arrow-up-from-bracket me-2" />
-                Share Match
-              </button>
             </div>
           </div>
         </div>
