@@ -7,7 +7,6 @@ import com.cdweb.be.dto.response.ParticipantDto;
 import com.cdweb.be.dto.response.VenueDto;
 import com.cdweb.be.entity.Match;
 import com.cdweb.be.entity.MatchParticipant;
-import com.cdweb.be.entity.Sport;
 import com.cdweb.be.entity.User;
 import com.cdweb.be.entity.Venue;
 import com.cdweb.be.enums.MatchStatus;
@@ -15,7 +14,6 @@ import com.cdweb.be.enums.SkillLevel;
 import com.cdweb.be.exception.AppException;
 import com.cdweb.be.repository.MatchParticipantRepository;
 import com.cdweb.be.repository.MatchRepository;
-import com.cdweb.be.repository.SportRepository;
 import com.cdweb.be.repository.UserRepository;
 import com.cdweb.be.repository.VenueRepository;
 import com.cdweb.be.service.MatchService;
@@ -35,7 +33,6 @@ public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
-    private final SportRepository sportRepository;
     private final VenueRepository venueRepository;
     private final MatchParticipantRepository matchParticipantRepository;
 
@@ -120,17 +117,12 @@ public class MatchServiceImpl implements MatchService {
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
 
         // Validate & resolve sport → String
-        String sportValue;
-        if ("other".equalsIgnoreCase(request.getSport())) {
+        String sportValue = request.getSport();
+        if ("other".equalsIgnoreCase(sportValue)) {
             if (!StringUtils.hasText(request.getCustomSport())) {
                 throw new AppException(HttpStatus.BAD_REQUEST, "Vui lòng nhập tên môn thể thao tự chọn");
             }
-            sportValue = request.getCustomSport();
-        } else {
-            Sport sport = sportRepository.findBySlug(request.getSport())
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
-                            "Không tìm thấy môn thể thao: " + request.getSport()));
-            sportValue = sport.getName();
+            sportValue = request.getCustomSport().trim();
         }
 
         // Resolve venue / location
