@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Match {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -26,12 +27,12 @@ public class Match {
     @JoinColumn(name = "host_id", nullable = false)
     private User host;
 
-    @Column(name = "sport", nullable = false, length = 100)
-    private String sport;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venue_id")
     private Venue venue;
+
+    @Column(name = "sport", nullable = false, length = 100)
+    private String sport;
 
     @Column(name = "custom_sport", length = 100)
     private String customSport;
@@ -74,11 +75,11 @@ public class Match {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
+    @Column(name = "lat")
     private Double lat;
-    private Double lng;
 
-    @Column(name = "image_url", columnDefinition = "TEXT")
-    private String imageUrl;
+    @Column(name = "lng")
+    private Double lng;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

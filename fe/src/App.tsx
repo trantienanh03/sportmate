@@ -3,6 +3,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage/LandingPage';
 import UserHome from './pages/UserHome/UserHome';
+import ProfilePage from './pages/Profile/ProfilePage';
 import MatchDetail from './pages/MatchDetail/MatchDetail';
 import CreateMatch from './pages/CreateMatch/CreateMatch';
 import { AuthProvider } from './context/AuthContext';
@@ -27,6 +28,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MatchDetail />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           } 
         />

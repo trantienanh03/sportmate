@@ -1,13 +1,14 @@
 package com.cdweb.be.entity;
 
+import com.cdweb.be.enums.VenuePlaceType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
 import java.time.LocalDateTime;
 import java.util.List;
-import com.cdweb.be.enums.VenuePlaceType;
 
 @Entity
 @Table(name = "venues")
@@ -16,6 +17,7 @@ import com.cdweb.be.enums.VenuePlaceType;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Venue {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

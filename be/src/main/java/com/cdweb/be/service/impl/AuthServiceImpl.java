@@ -2,6 +2,7 @@ package com.cdweb.be.service.impl;
 
 import com.cdweb.be.dto.request.LoginRequestDto;
 import com.cdweb.be.dto.request.RegisterRequestDto;
+import com.cdweb.be.dto.request.UpdateProfileRequestDto;
 import com.cdweb.be.dto.response.AuthResponseDto;
 import com.cdweb.be.entity.User;
 import com.cdweb.be.exception.AppException;
@@ -32,15 +33,8 @@ public class AuthServiceImpl implements AuthService {
                 .email(registerRequestDto.getEmail())
                 .passwordHash(passwordEncoder.encode(registerRequestDto.getPassword()))
                 .build();
-        User savedUser = userRepository.save(user);
 
-        return AuthResponseDto.builder()
-                .id(savedUser.getId())
-                .fullName(savedUser.getFullName())
-                .email(savedUser.getEmail())
-                .role(savedUser.getRole().name())
-                .avatarUrl(savedUser.getAvatarUrl())
-                .build();
+        return toDto(userRepository.save(user));
     }
 
     @Override
@@ -57,13 +51,7 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(HttpStatus.FORBIDDEN, "Account has been banned or inactive");
         }
 
-        return AuthResponseDto.builder()
-                .id(user.getId())
-                .fullName(user.getFullName())
-                .email(user.getEmail())
-                .role(user.getRole().name())
-                .avatarUrl(user.getAvatarUrl())
-                .build();
+        return toDto(user);
     }
 
     @Override
@@ -71,13 +59,43 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponseDto getProfile(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
+        return toDto(user);
+    }
 
+    @Override
+    @Transactional
+    public AuthResponseDto updateProfile(Integer userId, UpdateProfileRequestDto request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
+
+        user.setFullName(request.getFullName().trim());
+        user.setAvatarUrl(request.getAvatarUrl() == null || request.getAvatarUrl().isBlank()
+                ? null : request.getAvatarUrl().trim());
+        user.setBio(request.getBio() == null || request.getBio().isBlank()
+                ? null : request.getBio().trim());
+        user.setDistrict(request.getDistrict() == null || request.getDistrict().isBlank()
+                ? null : request.getDistrict().trim());
+        user.setLat(request.getLat());
+        user.setLng(request.getLng());
+
+        return toDto(userRepository.save(user));
+    }
+
+    private AuthResponseDto toDto(User user) {
         return AuthResponseDto.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .avatarUrl(user.getAvatarUrl())
+                .bio(user.getBio())
+                .district(user.getDistrict())
+                .lat(user.getLat())
+                .lng(user.getLng())
+                .isActive(user.getIsActive())
+                .isBanned(user.getIsBanned())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
                 .build();
     }
 }

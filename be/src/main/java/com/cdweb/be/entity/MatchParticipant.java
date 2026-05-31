@@ -7,12 +7,15 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "match_participants")
+@Table(name = "match_participants", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"match_id", "user_id"})
+})
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class MatchParticipant {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -25,11 +28,11 @@ public class MatchParticipant {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "role", nullable = false, length = 50)
     @Builder.Default
     private String role = "member";
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "status", nullable = false, length = 50)
     @Builder.Default
     private String status = "joined";
 
