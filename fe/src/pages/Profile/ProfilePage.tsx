@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
 import { useAuth } from '../../context/AuthContext';
@@ -107,6 +107,7 @@ const REVIEWS: ReviewItem[] = [
 
 const ProfilePage: React.FC = () => {
   const { user, login } = useAuth();
+  const editorRef = useRef<HTMLElement | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -148,6 +149,13 @@ const ProfilePage: React.FC = () => {
     const timer = window.setTimeout(() => setShowEditBanner(false), 4500);
     return () => window.clearTimeout(timer);
   }, [showEditBanner]);
+
+  useEffect(() => {
+    document.body.style.overflow = isEditing ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isEditing]);
 
   const profileInitial = user?.fullName?.trim()?.charAt(0).toUpperCase() || 'U';
   const communityRating = '4.9 / 5';
@@ -221,6 +229,18 @@ const ProfilePage: React.FC = () => {
     );
   };
 
+  const openEditor = () => {
+    setErrorMessage('');
+    setSuccessMessage('');
+    setIsEditing(true);
+    setShowEditBanner(true);
+  };
+
+  const closeEditor = () => {
+    setIsEditing(false);
+    setShowEditBanner(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSaving) return;
@@ -281,12 +301,7 @@ const ProfilePage: React.FC = () => {
                     <button
                       type="button"
                       className="btn btn-primary profile-main-btn w-100"
-                      onClick={() => {
-                        setErrorMessage('');
-                        setSuccessMessage('');
-                        setIsEditing(true);
-                        setShowEditBanner(true);
-                      }}
+                      onClick={openEditor}
                     >
                       <i className="fa-regular fa-pen-to-square me-2" />
                       Chỉnh sửa hồ sơ
@@ -414,289 +429,299 @@ const ProfilePage: React.FC = () => {
       </main>
 
       {isEditing && (
-        <div
-          className="profile-modal-backdrop"
-          role="presentation"
-          onClick={() => {
-            setIsEditing(false);
-            setShowEditBanner(false);
-          }}
-        >
-          <div
-            className="profile-modal-shell"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Chỉnh sửa hồ sơ"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="profile-modal-header">
-              <div>
-                <h2 className="profile-card-title">Thiết lập hồ sơ của bạn</h2>
+        <div className="profile-editor-backdrop" role="presentation" onClick={closeEditor}>
+          <main className="profile-editor-page" aria-label="Chỉnh sửa hồ sơ" ref={editorRef} onClick={(event) => event.stopPropagation()}>
+            <div className="profile-editor-shell card-shell">
+              <div className="profile-editor-topbar">
+                <button
+                  type="button"
+                  className="profile-editor-close"
+                  onClick={closeEditor}
+                  aria-label="Đóng"
+                >
+                  ×
+                </button>
+                <h2 className="profile-editor-title profile-editor-title-center">Thiết lập hồ sơ của bạn</h2>
+                <button
+                  className="btn btn-primary profile-editor-save"
+                  type="submit"
+                  form="profile-editor-form"
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Đang lưu...' : 'Lưu'}
+                </button>
               </div>
-              <button
-                type="button"
-                className="profile-modal-close"
-                onClick={() => {
-                  setIsEditing(false);
-                  setShowEditBanner(false);
-                }}
-                aria-label="Đóng"
-              >
-                ×
-              </button>
-            </div>
 
-            {showEditBanner && (
-              <div className="profile-edit-banner" role="status">
-                <i className="fa-solid fa-pen-to-square me-2" />
-                Bạn đang ở chế độ chỉnh sửa. Hãy cập nhật thông tin rồi bấm lưu.
+              <div className="profile-editor-summary-row">
+                <div className="profile-editor-summary-item">
+                  <span className="profile-editor-summary-label">Tên hiển thị</span>
+                  <strong>{user?.fullName || 'Chưa cập nhật'}</strong>
+                </div>
+                <div className="profile-editor-summary-item">
+                  <span className="profile-editor-summary-label">Khu vực</span>
+                  <strong>{user?.district || 'Chưa cập nhật'}</strong>
+                </div>
+                <div className="profile-editor-summary-item">
+                  <span className="profile-editor-summary-label">Thành viên từ</span>
+                  <strong>{memberSince}</strong>
+                </div>
               </div>
-            )}
 
-            <form className="profile-edit-form" onSubmit={handleSubmit}>
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="form-label fw-semibold">Họ và tên</label>
-                  <input
-                    className="form-control profile-input"
-                    value={formData.fullName}
-                    onChange={handleChange('fullName')}
-                    placeholder="Nhập họ và tên"
-                    maxLength={100}
-                  />
+              {showEditBanner && (
+                <div className="profile-edit-banner profile-edit-banner-compact" role="status">
+                  <i className="fa-solid fa-pen-to-square me-2" />
+                  Bạn đang ở chế độ chỉnh sửa. Hãy cập nhật thông tin rồi bấm lưu.
                 </div>
+              )}
 
-                <div className="col-md-6">
-                  <label className="form-label fw-semibold">Quận / khu vực</label>
-                  <input
-                    className="form-control profile-input"
-                    value={formData.district}
-                    onChange={handleChange('district')}
-                    placeholder="Quận 7, TP. Hồ Chí Minh"
-                    maxLength={60}
-                  />
-                </div>
-
-                <div className="col-12">
-                  <label className="form-label fw-semibold">Avatar</label>
-                  <div className="profile-avatar-switcher">
-                    <button
-                      type="button"
-                      className={`btn btn-sm ${avatarMode === 'upload' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                      onClick={() => setAvatarMode('upload')}
-                    >
-                      Tải ảnh từ máy
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn btn-sm ${avatarMode === 'url' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                      onClick={() => setAvatarMode('url')}
-                    >
-                      Dán URL ảnh
-                    </button>
+              <form id="profile-editor-form" className="profile-editor-form" onSubmit={handleSubmit}>
+              <section className="profile-editor-section card-shell">
+                <div className="profile-editor-section-header">
+                  <div>
+                    <h3 className="profile-editor-section-title">Thông tin cơ bản</h3>
+                    <p className="profile-editor-section-subtitle">Cập nhật thông tin cá nhân, ảnh đại diện và giới thiệu ngắn.</p>
                   </div>
+                </div>
 
-                  {avatarMode === 'upload' ? (
-                    <div className="profile-upload-box">
-                      <input type="file" accept="image/*" onChange={handleFileChange} />
-                      {formData.avatarUrl && (
-                        <div className="profile-upload-preview">
-                          <img src={formData.avatarUrl} alt="Avatar preview" />
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={() =>
-                              setFormData((current) => ({
-                                ...current,
-                                avatarUrl: '',
-                              }))
-                            }
-                          >
-                            Xóa ảnh
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
+                <div className="profile-editor-section-body">
+                  <div className="profile-editor-field">
+                    <label className="form-label fw-semibold">Họ và tên</label>
                     <input
                       className="form-control profile-input"
-                      value={formData.avatarUrl}
-                      onChange={handleChange('avatarUrl')}
-                      placeholder="https://..."
-                      maxLength={200}
+                      value={formData.fullName}
+                      onChange={handleChange('fullName')}
+                      placeholder="Nguyễn Văn A"
+                      maxLength={100}
                     />
-                  )}
-                </div>
+                  </div>
 
-                <div className="col-12">
-                  <label className="form-label fw-semibold">Giới thiệu</label>
-                  <textarea
-                    className="form-control profile-input profile-textarea"
-                    rows={4}
-                    value={formData.bio}
-                    onChange={handleChange('bio')}
-                    placeholder="Nói ngắn gọn về bản thân, môn thể thao yêu thích, và kiểu trận bạn thích tham gia."
-                  />
-                </div>
+                  <div className="profile-editor-field">
+                    <label className="form-label fw-semibold">Quận / khu vực</label>
+                    <input
+                      className="form-control profile-input"
+                      value={formData.district}
+                      onChange={handleChange('district')}
+                      placeholder="Quận 7, TP. Hồ Chí Minh"
+                      maxLength={60}
+                    />
+                  </div>
 
-                <div className="col-12">
-                  <div className="profile-sport-editor">
-                    <div className="profile-sport-editor-head">
-                      <label className="form-label fw-semibold mb-0">Phong cách chơi</label>
-                      <span className="profile-sport-editor-hint">Chỉnh nội dung thẻ bên dưới</span>
-                    </div>
-
-                    <div className="profile-sport-tip-row">
-                      {sportEditorTips.map((tip) => (
-                        <span className="profile-sport-tip" key={tip}>
-                          {tip}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="sports-grid profile-sport-editor-grid">
-                      {sportCards.map((sport, index) => (
-                        <div className="sport-card profile-sport-editor-card" key={`${sport.name}-${index}`}>
-                          <div className="profile-sport-card-head">
-                            <span className="profile-sport-card-index">#{index + 1}</span>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-danger profile-sport-remove-btn"
-                              onClick={() => removeSportCard(index)}
-                              disabled={sportCards.length === 1}
-                            >
-                              Xóa
-                            </button>
-                          </div>
-                          <div className="row g-2">
-                            <div className="col-12">
-                              <div className="profile-sport-tag-group">
-                                {SPORT_TAG_OPTIONS.map((tagOption) => (
-                                  <button
-                                    key={tagOption}
-                                    type="button"
-                                    className={`profile-sport-tag-chip ${sport.tag === tagOption ? 'active' : ''}`}
-                                    onClick={() => updateSportCard(index, 'tag', tagOption)}
-                                  >
-                                    {tagOption}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="col-12">
-                              <input
-                                className="form-control profile-input profile-mini-input"
-                                value={sport.level}
-                                onChange={(event) => updateSportCard(index, 'level', event.target.value)}
-                                placeholder="Mức độ"
-                              />
-                            </div>
-                            <div className="col-12">
-                              <input
-                                className="form-control profile-input profile-mini-input"
-                                value={sport.name}
-                                onChange={(event) => updateSportCard(index, 'name', event.target.value)}
-                                placeholder="Tên môn"
-                              />
-                            </div>
-                            <div className="col-12">
-                              <textarea
-                                className="form-control profile-input profile-textarea profile-sport-note"
-                                rows={3}
-                                value={sport.note}
-                                onChange={(event) => updateSportCard(index, 'note', event.target.value)}
-                                placeholder="Mô tả ngắn"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-3 d-flex justify-content-end">
-                      <button type="button" className="btn btn-outline-primary profile-add-sport-btn" onClick={addSportCard}>
-                        <i className="fa-solid fa-plus me-2" />
-                        Thêm môn thể thao
+                  <div className="profile-editor-field">
+                    <label className="form-label fw-semibold">Avatar</label>
+                    <div className="profile-avatar-switcher">
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${avatarMode === 'upload' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                        onClick={() => setAvatarMode('upload')}
+                      >
+                        Tải ảnh từ máy
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${avatarMode === 'url' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                        onClick={() => setAvatarMode('url')}
+                      >
+                        Dán URL ảnh
                       </button>
                     </div>
-                  </div>
-                </div>
 
-                <div className="col-12">
-                  <div className="profile-schedule-editor">
-                    <div className="profile-schedule-editor-head">
-                      <label className="form-label fw-semibold mb-0">Thời gian có thể ghép trận</label>
-                      <span className="profile-schedule-editor-hint">Bấm vào ô để đổi Rảnh / Bận</span>
-                    </div>
-
-                    <div className="schedule-table-wrap profile-schedule-editor-wrap">
-                      <div className="schedule-grid schedule-head">
-                        <span>Buổi</span>
-                        <span>T2</span>
-                        <span>T3</span>
-                        <span>T4</span>
-                        <span>T5</span>
-                        <span>T6</span>
-                        <span>T7</span>
-                        <span>CN</span>
+                    {avatarMode === 'upload' ? (
+                      <div className="profile-upload-box">
+                        <input type="file" accept="image/*" onChange={handleFileChange} />
+                        {formData.avatarUrl && (
+                          <div className="profile-upload-preview">
+                            <img src={formData.avatarUrl} alt="Avatar preview" />
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() =>
+                                setFormData((current) => ({
+                                  ...current,
+                                  avatarUrl: '',
+                                }))
+                              }
+                            >
+                              Xóa ảnh
+                            </button>
+                          </div>
+                        )}
                       </div>
+                    ) : (
+                      <input
+                        className="form-control profile-input"
+                        value={formData.avatarUrl}
+                        onChange={handleChange('avatarUrl')}
+                        placeholder="https://..."
+                        maxLength={200}
+                      />
+                    )}
+                  </div>
 
-                      {(['Sáng', 'Chiều', 'Tối'] as const).map((slot) => (
-                        <div className="schedule-grid" key={slot}>
-                          <span className="schedule-row-label">{slot}</span>
-                          {availabilitySlots.map((day) => {
-                            const period = slot === 'Sáng' ? 'morning' : slot === 'Chiều' ? 'afternoon' : 'evening';
-                            const status = day[period];
+                  <div className="profile-editor-field profile-editor-field-wide">
+                    <label className="form-label fw-semibold">Giới thiệu</label>
+                    <textarea
+                      className="form-control profile-input profile-textarea"
+                      rows={4}
+                      value={formData.bio}
+                      onChange={handleChange('bio')}
+                      placeholder="Đam mê bóng đá và cầu lông. Tìm team để ghép trận hữu ích vào cuối tuần."
+                    />
+                  </div>
 
-                            return (
-                              <button
-                                key={`${slot}-${day.label}`}
-                                type="button"
-                                className={`schedule-cell schedule-toggle ${status === 'Rảnh' ? 'free' : 'busy'}`}
-                                onClick={() => toggleAvailability(day.label, period)}
-                              >
-                                {status}
-                              </button>
-                            );
-                          })}
+                </div>
+              </section>
+
+              <section className="profile-editor-section card-shell">
+                <div className="profile-editor-section-header">
+                  <div>
+                    <h3 className="profile-editor-section-title">Môn thể thao</h3>
+                    <p className="profile-editor-section-subtitle">Chọn tag, mức độ và ghi chú để người khác hiểu rõ phong cách của bạn.</p>
+                  </div>
+                </div>
+
+                <div className="profile-editor-section-body">
+                  <div className="profile-sport-tip-row">
+                    {sportEditorTips.map((tip) => (
+                      <span className="profile-sport-tip" key={tip}>
+                        {tip}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="sports-grid profile-sport-editor-grid">
+                    {sportCards.map((sport, index) => (
+                      <div className="sport-card profile-sport-editor-card" key={`${sport.name}-${index}`}>
+                        <div className="profile-sport-card-head">
+                          <span className="profile-sport-card-index">#{index + 1}</span>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger profile-sport-remove-btn"
+                            onClick={() => removeSportCard(index)}
+                            disabled={sportCards.length === 1}
+                          >
+                            Xóa
+                          </button>
                         </div>
-                      ))}
+                        <div className="profile-editor-field">
+                          <label className="form-label fw-semibold">Tên môn</label>
+                          <input
+                            className="form-control profile-input profile-mini-input"
+                            value={sport.name}
+                            onChange={(event) => updateSportCard(index, 'name', event.target.value)}
+                            placeholder="Tên môn"
+                          />
+                        </div>
+                        <div className="profile-editor-field">
+                          <label className="form-label fw-semibold">Thẻ</label>
+                          <div className="profile-sport-tag-group">
+                            {SPORT_TAG_OPTIONS.map((tagOption) => (
+                              <button
+                                key={tagOption}
+                                type="button"
+                                className={`profile-sport-tag-chip ${sport.tag === tagOption ? 'active' : ''}`}
+                                onClick={() => updateSportCard(index, 'tag', tagOption)}
+                              >
+                                {tagOption}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="profile-editor-field">
+                          <label className="form-label fw-semibold">Mức độ</label>
+                          <input
+                            className="form-control profile-input profile-mini-input"
+                            value={sport.level}
+                            onChange={(event) => updateSportCard(index, 'level', event.target.value)}
+                            placeholder="Mới / Trung bình / Tốt"
+                          />
+                        </div>
+                        <div className="profile-editor-field profile-editor-field-wide">
+                          <label className="form-label fw-semibold">Mô tả ngắn</label>
+                          <textarea
+                            className="form-control profile-input profile-textarea profile-sport-note"
+                            rows={3}
+                            value={sport.note}
+                            onChange={(event) => updateSportCard(index, 'note', event.target.value)}
+                            placeholder="Mô tả ngắn về phong cách chơi"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 d-flex justify-content-end">
+                    <button type="button" className="btn btn-outline-primary profile-add-sport-btn" onClick={addSportCard}>
+                      <i className="fa-solid fa-plus me-2" />
+                      Thêm môn thể thao
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <section className="profile-editor-section card-shell">
+                <div className="profile-editor-section-header">
+                  <div>
+                    <h3 className="profile-editor-section-title">Thời gian có thể ghép trận</h3>
+                    <p className="profile-editor-section-subtitle">Bấm vào ô để đổi Rảnh / Bận, hiển thị rõ trên hồ sơ của bạn.</p>
+                  </div>
+                </div>
+
+                <div className="profile-editor-section-body">
+                  <div className="schedule-table-wrap profile-schedule-editor-wrap">
+                    <div className="schedule-grid schedule-head">
+                      <span>Buổi</span>
+                      <span>T2</span>
+                      <span>T3</span>
+                      <span>T4</span>
+                      <span>T5</span>
+                      <span>T6</span>
+                      <span>T7</span>
+                      <span>CN</span>
                     </div>
+
+                    {(['Sáng', 'Chiều', 'Tối'] as const).map((slot) => (
+                      <div className="schedule-grid" key={slot}>
+                        <span className="schedule-row-label">{slot}</span>
+                        {availabilitySlots.map((day) => {
+                          const period = slot === 'Sáng' ? 'morning' : slot === 'Chiều' ? 'afternoon' : 'evening';
+                          const status = day[period];
+
+                          return (
+                            <button
+                              key={`${slot}-${day.label}`}
+                              type="button"
+                              className={`schedule-cell schedule-toggle ${status === 'Rảnh' ? 'free' : 'busy'}`}
+                              onClick={() => toggleAvailability(day.label, period)}
+                            >
+                              {status}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
                 </div>
+              </section>
 
-                {errorMessage && (
-                  <div className="col-12">
-                    <div className="alert alert-danger mb-0 profile-alert">{errorMessage}</div>
-                  </div>
-                )}
+              {errorMessage && (
+                <div className="alert alert-danger mb-0 profile-alert">{errorMessage}</div>
+              )}
 
-                {successMessage && (
-                  <div className="col-12">
-                    <div className="alert alert-success mb-0 profile-alert">{successMessage}</div>
-                  </div>
-                )}
+              {successMessage && (
+                <div className="alert alert-success mb-0 profile-alert">{successMessage}</div>
+              )}
 
-                <div className="col-12 d-flex flex-wrap gap-2 pt-1">
-                  <button className="btn btn-primary profile-main-btn" type="submit" disabled={isSaving}>
-                    {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
-                  </button>
-                  <button
-                    className="btn btn-outline-secondary profile-secondary-btn"
-                    type="button"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setShowEditBanner(false);
-                      setSuccessMessage('');
-                      setErrorMessage('');
-                    }}
-                  >
-                    Hủy
-                  </button>
-                </div>
+              <div className="profile-editor-actions">
+                <button className="btn btn-outline-secondary profile-secondary-btn" type="button" onClick={closeEditor}>
+                  Hủy
+                </button>
+                <button className="btn btn-primary profile-main-btn" type="submit" disabled={isSaving}>
+                  {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
               </div>
             </form>
-          </div>
+            </div>
+          </main>
         </div>
       )}
 
