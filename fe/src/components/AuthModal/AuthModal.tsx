@@ -25,6 +25,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [keepLoggedIn, setKeepLoggedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [isEmailChecking, setIsEmailChecking] = useState(false);
 
   useEffect(() => {
     setMode(initialMode);
@@ -36,17 +38,65 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     setIsAgeChecked(false);
     setKeepLoggedIn(false);
     setError(null);
+    setEmailError(null);
+    setIsEmailChecking(false);
   }, [initialMode, isOpen]);
+
+  useEffect(() => {
+    if (mode !== 'signup' || !email) {
+      setEmailError(null);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Email không đúng định dạng");
+      return;
+    }
+
+    setEmailError(null);
+    setIsEmailChecking(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const exists = await authService.checkEmailExists(email);
+        if (exists) {
+          setEmailError("Email này đã được đăng ký!");
+        } else {
+          setEmailError(null);
+        }
+      } catch (err) {
+        console.error("Lỗi check email:", err);
+      } finally {
+        setIsEmailChecking(false);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [email, mode]);
 
   if (!isOpen) return null;
 
   const isLoginFormValid = email.trim() !== '' && password.trim() !== '';
-  const isSignupFormValid = email.trim() !== '' && password.trim().length >= 10 && name.trim() !== '' && location.trim() !== '' && isAgeChecked;
+
+  const isPasswordLengthValid = password.length >= 8;
+  const isPasswordUppercaseValid = /[A-Z]/.test(password);
+  const isPasswordSpecialCharValid = /[\W_]/.test(password);
+  const isPasswordValid = isPasswordLengthValid && isPasswordUppercaseValid && isPasswordSpecialCharValid;
+
+  const isSignupFormValid =
+    email.trim() !== '' &&
+    emailError === null &&
+    !isEmailChecking &&
+    isPasswordValid &&
+    name.trim() !== '' &&
+    location.trim() !== '' &&
+    isAgeChecked;
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoginFormValid) return;
-    
+
     setIsLoading(true);
     setError(null);
     try {
@@ -243,11 +293,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 <label className="auth-form-label">Địa chỉ Email</label>
                 <input
                   type="email"
-                  className="auth-form-input"
+                  className={`auth-form-input ${emailError ? 'is-invalid' : ''}`}
                   placeholder="example@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
+                {emailError && <div className="text-danger mt-1" style={{ fontSize: '13px' }}>{emailError}</div>}
+                {isEmailChecking && <div className="text-muted mt-1" style={{ fontSize: '13px' }}><i className="fas fa-spinner fa-spin me-1"></i>Đang kiểm tra email...</div>}
+                {!emailError && !isEmailChecking && email.trim() !== '' && <div className="text-success mt-1" style={{ fontSize: '13px' }}>Email khả dụng</div>}
                 <div className="auth-form-hint">Dùng để nhận thông báo và xác minh tài khoản</div>
               </div>
 
@@ -270,13 +323,27 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                     <i className={`far ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
                 </div>
-                <div className="auth-form-hint">Mật khẩu phải chứa ít nhất 10 ký tự</div>
+                <div className="auth-form-hint">Mật khẩu tối thiểu 8 ký tự, chứa chữ hoa và ký tự đặc biệt</div>
                 <div className="auth-password-strength mt-2">
                   <div className={`strength-bar ${password.length > 0 ? 'active' : ''}`}></div>
-                  <div className={`strength-bar ${password.length > 5 ? 'active' : ''}`}></div>
-                  <div className={`strength-bar ${password.length >= 10 ? 'active' : ''}`}></div>
-                  <div className={`strength-bar ${password.length > 12 ? 'active' : ''}`}></div>
+                  <div className={`strength-bar ${password.length >= 4 ? 'active' : ''}`}></div>
+                  <div className={`strength-bar ${password.length >= 8 ? 'active' : ''}`}></div>
+                  <div className={`strength-bar ${isPasswordValid ? 'active' : ''}`}></div>
                 </div>
+                <ul className="auth-password-criteria">
+                  <li className={password ? (isPasswordLengthValid ? 'valid' : 'invalid') : ''}>
+                    <i className={`fas ${password ? (isPasswordLengthValid ? 'fa-check-circle' : 'fa-times-circle') : 'fa-circle'}`}></i>
+                    Độ dài tối thiểu 8 ký tự
+                  </li>
+                  <li className={password ? (isPasswordUppercaseValid ? 'valid' : 'invalid') : ''}>
+                    <i className={`fas ${password ? (isPasswordUppercaseValid ? 'fa-check-circle' : 'fa-times-circle') : 'fa-circle'}`}></i>
+                    Chứa ít nhất 1 chữ cái viết hoa (A-Z)
+                  </li>
+                  <li className={password ? (isPasswordSpecialCharValid ? 'valid' : 'invalid') : ''}>
+                    <i className={`fas ${password ? (isPasswordSpecialCharValid ? 'fa-check-circle' : 'fa-times-circle') : 'fa-circle'}`}></i>
+                    Chứa ít nhất 1 ký tự đặc biệt (ví dụ: @, #, $, ...)
+                  </li>
+                </ul>
               </div>
 
               <div className="auth-form-group mb-4">

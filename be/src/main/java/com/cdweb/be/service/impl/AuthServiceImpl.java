@@ -81,6 +81,12 @@ public class AuthServiceImpl implements AuthService {
         return toDto(userRepository.save(user));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
     private AuthResponseDto toDto(User user) {
         return AuthResponseDto.builder()
                 .id(user.getId())

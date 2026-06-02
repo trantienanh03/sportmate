@@ -10,4 +10,5 @@ public interface AuthService {
     AuthResponseDto login(LoginRequestDto loginRequestDto);
     AuthResponseDto getProfile(Integer userId);
     AuthResponseDto updateProfile(Integer userId, UpdateProfileRequestDto request);
+    boolean existsByEmail(String email);
 }
