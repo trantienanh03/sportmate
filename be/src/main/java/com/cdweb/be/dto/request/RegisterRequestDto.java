@@ -17,4 +17,6 @@ public class RegisterRequestDto {
     @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*[\\W_]).*$", message = "Mật khẩu phải chứa ít nhất 1 chữ cái viết hoa và 1 ký tự đặc biệt")
     private String password;
+    @NotBlank(message = "Quận/Huyện không được để trống")
+    private String district;
 }

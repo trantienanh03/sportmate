@@ -32,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
                 .fullName(registerRequestDto.getFullName())
                 .email(registerRequestDto.getEmail())
                 .passwordHash(passwordEncoder.encode(registerRequestDto.getPassword()))
+                .district(registerRequestDto.getDistrict() != null ? registerRequestDto.getDistrict().trim() : null)
                 .build();
 
         return toDto(userRepository.save(user));
