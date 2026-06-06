@@ -7,6 +7,7 @@ import ProfilePage from './pages/Profile/ProfilePage';
 import MatchDetail from './pages/MatchDetail/MatchDetail';
 import CreateMatch from './pages/CreateMatch/CreateMatch';
 import MyRooms from './pages/MyRooms/MyRooms';
+import ExplorePage from './pages/Explore/ExplorePage';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -53,6 +54,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MyRooms />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/explore" 
+          element={
+            <ProtectedRoute>
+              <ExplorePage />
             </ProtectedRoute>
           } 
         />

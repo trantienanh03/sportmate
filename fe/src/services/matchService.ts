@@ -46,6 +46,8 @@ export interface MatchDetail {
   venue?: MatchVenue | null;
   participants: MatchParticipant[];
   joined: boolean;
+  distance?: number;
+  imageUrl?: string;
 }
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
@@ -61,6 +63,16 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
   }
   return response.json() as Promise<T>;
 };
+
+export interface ExploreParams {
+  keyword?: string;
+  sport?: string;
+  skillLevel?: string;
+  feeType?: string;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+}
 
 export const matchService = {
   getMatch: async (id: number): Promise<MatchDetail> => {
@@ -139,6 +151,24 @@ export const matchService = {
     const data = await handleResponse<MatchDetail[]>(response);
     cachedMatches = data;
     return data;
+  },
+
+  exploreMatches: async (params: ExploreParams): Promise<MatchDetail[]> => {
+    const queryParams = new URLSearchParams();
+    if (params.keyword) queryParams.append("keyword", params.keyword);
+    if (params.sport) queryParams.append("sport", params.sport);
+    if (params.skillLevel) queryParams.append("skillLevel", params.skillLevel);
+    if (params.feeType) queryParams.append("feeType", params.feeType);
+    if (params.lat) queryParams.append("lat", params.lat.toString());
+    if (params.lng) queryParams.append("lng", params.lng.toString());
+    if (params.radiusKm) queryParams.append("radiusKm", params.radiusKm.toString());
+
+    const response = await fetch(`${API_URL}/matches/explore?${queryParams.toString()}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    return handleResponse<MatchDetail[]>(response);
   },
 
   getMyRooms: async (): Promise<MatchDetail[]> => {

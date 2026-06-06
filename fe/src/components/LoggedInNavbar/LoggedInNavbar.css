@@ -209,3 +209,71 @@
   background-color: rgba(239, 68, 68, 0.05) !important;
   color: var(--danger) !important;
 }
+
+/* Advanced Filter Panel */
+.search-form-container {
+  max-width: 500px;
+  width: 100%;
+}
+
+.filter-toggle-btn {
+  background-color: transparent;
+  border: none;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  color: var(--text-secondary);
+  padding: 0 12px;
+  transition: all var(--transition);
+}
+
+.filter-toggle-btn:hover {
+  color: var(--primary);
+  background-color: var(--surface-2);
+}
+
+.advanced-filter-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 100%;
+  background-color: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  padding: 20px;
+  z-index: 1050;
+  animation: slideDown 0.2s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.advanced-filter-panel label {
+  color: var(--text-secondary);
+}
+
+.advanced-filter-panel .form-select,
+.advanced-filter-panel .form-control {
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.advanced-filter-panel .form-select:focus,
+.advanced-filter-panel .form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.filter-header .btn-close {
+  font-size: 0.8rem;
+}
+

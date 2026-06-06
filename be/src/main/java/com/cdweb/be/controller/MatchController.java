@@ -1,6 +1,7 @@
 package com.cdweb.be.controller;
 
 import com.cdweb.be.dto.request.CreateMatchRequest;
+import com.cdweb.be.dto.request.ExploreMatchRequest;
 import com.cdweb.be.dto.response.MatchDetailDto;
 import com.cdweb.be.entity.Match;
 import com.cdweb.be.enums.MatchStatus;
@@ -28,6 +29,15 @@ public class MatchController {
         HttpSession session = httpRequest.getSession(false);
         Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
         return ResponseEntity.ok(matchService.getMatches(userId));
+    }
+
+    @GetMapping("/explore")
+    public ResponseEntity<List<MatchDetailDto>> exploreMatches(
+            @ModelAttribute ExploreMatchRequest request,
+            HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
+        return ResponseEntity.ok(matchService.exploreMatches(request, userId));
     }
 
     @GetMapping("/{id}")

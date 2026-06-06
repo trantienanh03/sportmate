@@ -1,6 +1,7 @@
 package com.cdweb.be.service.impl;
 
 import com.cdweb.be.dto.request.CreateMatchRequest;
+import com.cdweb.be.dto.request.ExploreMatchRequest;
 import com.cdweb.be.dto.response.HostDto;
 import com.cdweb.be.dto.response.MatchDetailDto;
 import com.cdweb.be.dto.response.ParticipantDto;
@@ -272,6 +273,59 @@ public class MatchServiceImpl implements MatchService {
         matchRepository.save(match);
 
         return buildDto(match, hostId);
+    }
+
+    // ── Explore Matches ──────────────────────────────────────────────
+    @Override
+    @Transactional(readOnly = true)
+    public List<MatchDetailDto> exploreMatches(ExploreMatchRequest request, Integer currentUserId) {
+        Double radiusKm = request.getRadiusKm();
+        if (radiusKm == null && request.getLat() != null && request.getLng() != null) {
+            radiusKm = 10.0; // default 10km when location is provided
+        }
+
+        List<Match> matches = matchRepository.exploreMatches(
+                request.getKeyword(),
+                request.getSport(),
+                request.getSkillLevel(),
+                request.getFeeType(),
+                request.getLat(),
+                request.getLng(),
+                radiusKm
+        );
+
+        List<MatchDetailDto> dtos = buildDtos(matches, currentUserId);
+
+        // Compute distance for each DTO if user coordinates are provided
+        if (request.getLat() != null && request.getLng() != null) {
+            for (MatchDetailDto dto : dtos) {
+                Double matchLat = null;
+                Double matchLng = null;
+                if (dto.getVenue() != null && dto.getVenue().getLat() != null) {
+                    matchLat = dto.getVenue().getLat();
+                    matchLng = dto.getVenue().getLng();
+                } else if (dto.getLat() != null && dto.getLng() != null) {
+                    matchLat = dto.getLat();
+                    matchLng = dto.getLng();
+                }
+                if (matchLat != null && matchLng != null) {
+                    dto.setDistance(haversineKm(request.getLat(), request.getLng(), matchLat, matchLng));
+                }
+            }
+        }
+
+        return dtos;
+    }
+
+    private double haversineKm(double lat1, double lng1, double lat2, double lng2) {
+        double R = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return Math.round(R * c * 10.0) / 10.0; // round to 1 decimal
     }
 
     // ── Internal DTO builder ─────────────────────────────────────────
