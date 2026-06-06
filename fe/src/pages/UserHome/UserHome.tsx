@@ -8,17 +8,26 @@ import './UserHome.css';
 
 const UserHome: React.FC = () => {
   const { user } = useAuth();
-  const [matches, setMatches] = useState<any[]>([]);
-  const [isMatchesLoading, setIsMatchesLoading] = useState<boolean>(true);
+  const [matches, setMatches] = useState<any[]>(() => {
+    return matchService.getCachedMatches() || [];
+  });
+  const [isMatchesLoading, setIsMatchesLoading] = useState<boolean>(() => {
+    return !matchService.hasCachedMatches();
+  });
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const fetchMatches = async () => {
       try {
+        if (!matchService.hasCachedMatches()) {
+          setIsMatchesLoading(true);
+        }
         const data = await matchService.getMatches();
         setMatches(data);
       } catch (err: any) {
-        setError(err.message || "Không thể tải danh sách trận đấu");
+        if (!matchService.hasCachedMatches()) {
+          setError(err.message || "Không thể tải danh sách trận đấu");
+        }
       } finally {
         setIsMatchesLoading(false);
       }

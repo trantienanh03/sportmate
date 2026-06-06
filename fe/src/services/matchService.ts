@@ -1,5 +1,8 @@
 const API_URL = "http://localhost:8080/api";
 
+let cachedMatches: MatchDetail[] | null = null;
+let cachedMyRooms: MatchDetail[] | null = null;
+
 export interface MatchHost {
   id: number;
   fullName: string;
@@ -99,6 +102,44 @@ export const matchService = {
       headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
-    return handleResponse<MatchDetail[]>(response);
+    const data = await handleResponse<MatchDetail[]>(response);
+    cachedMatches = data;
+    return data;
   },
+
+  getMyRooms: async (): Promise<MatchDetail[]> => {
+    const response = await fetch(`${API_URL}/matches/my-rooms`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    const data = await handleResponse<MatchDetail[]>(response);
+    cachedMyRooms = data;
+    return data;
+  },
+
+  updateMatchStatus: async (id: number, status: string): Promise<MatchDetail> => {
+    const response = await fetch(`${API_URL}/matches/${id}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ status }),
+    });
+    const updated = await handleResponse<MatchDetail>(response);
+    
+    // Update local caches on status change
+    if (cachedMatches) {
+      cachedMatches = cachedMatches.map(m => m.id === id ? updated : m);
+    }
+    if (cachedMyRooms) {
+      cachedMyRooms = cachedMyRooms.map(m => m.id === id ? updated : m);
+    }
+    
+    return updated;
+  },
+
+  getCachedMatches: (): MatchDetail[] | null => cachedMatches,
+  hasCachedMatches: (): boolean => cachedMatches !== null,
+  getCachedMyRooms: (): MatchDetail[] | null => cachedMyRooms,
+  hasCachedMyRooms: (): boolean => cachedMyRooms !== null,
 };
