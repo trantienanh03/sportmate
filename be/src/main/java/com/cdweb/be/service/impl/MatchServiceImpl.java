@@ -56,9 +56,10 @@ public class MatchServiceImpl implements MatchService {
     @Override
     @Transactional
     public MatchDetailDto joinMatch(Integer matchId, Integer userId) {
-        Match match = matchRepository.findById(matchId)
+        Match match = matchRepository.findByIdForUpdate(matchId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
 
+        refreshStatusByCapacity(match);
         if (match.getStatus() != MatchStatus.open) {
             throw new AppException(HttpStatus.BAD_REQUEST, "Match is not open for joining");
         }
@@ -76,6 +77,7 @@ public class MatchServiceImpl implements MatchService {
                 .match(match).user(user).role("member").status("joined").build());
 
         match.setCurrentPlayers((short) (match.getCurrentPlayers() + 1));
+        refreshStatusByCapacity(match);
         matchRepository.save(match);
 
         return buildDto(match, userId);
@@ -85,7 +87,7 @@ public class MatchServiceImpl implements MatchService {
     @Override
     @Transactional
     public MatchDetailDto leaveMatch(Integer matchId, Integer userId) {
-        Match match = matchRepository.findById(matchId)
+        Match match = matchRepository.findByIdForUpdate(matchId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
 
         MatchParticipant participant = matchParticipantRepository
@@ -101,8 +103,10 @@ public class MatchServiceImpl implements MatchService {
 
         if (match.getCurrentPlayers() > 0) {
             match.setCurrentPlayers((short) (match.getCurrentPlayers() - 1));
-            matchRepository.save(match);
         }
+
+        refreshStatusByCapacity(match);
+        matchRepository.save(match);
 
         return buildDto(match, userId);
     }
@@ -184,6 +188,8 @@ public class MatchServiceImpl implements MatchService {
                 .startTime(start)
                 .endTime(end)
                 .build();
+
+            refreshStatusByCapacity(match);
 
         Match saved = matchRepository.save(match);
 
@@ -304,5 +310,18 @@ public class MatchServiceImpl implements MatchService {
                     return buildDto(match, participants, joined);
                 })
                 .collect(Collectors.toList());
+    }
+
+    private void refreshStatusByCapacity(Match match) {
+        if (match.getStatus() == MatchStatus.cancelled || match.getStatus() == MatchStatus.completed) {
+            return;
+        }
+
+        if (match.getCurrentPlayers() >= match.getMaxPlayers()) {
+            match.setStatus(MatchStatus.full);
+            return;
+        }
+
+        match.setStatus(MatchStatus.open);
     }
 }
