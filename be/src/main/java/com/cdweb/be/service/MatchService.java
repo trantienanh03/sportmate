@@ -12,4 +12,6 @@ public interface MatchService {
     MatchDetailDto joinMatch(Integer matchId, Integer userId);
     MatchDetailDto leaveMatch(Integer matchId, Integer userId);
     Match createMatch(CreateMatchRequest request, Integer hostId);
+    List<MatchDetailDto> getMyCreatedMatches(Integer hostId);
+    MatchDetailDto updateMatchStatus(Integer matchId, com.cdweb.be.enums.MatchStatus status, Integer hostId);
 }
