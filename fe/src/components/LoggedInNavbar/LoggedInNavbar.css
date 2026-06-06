@@ -172,3 +172,40 @@
 .dropdown.show .user-avatar {
   border-color: var(--primary);
 }
+
+/* Dropdown Menu Font & Style Unification */
+.logged-in-nav .dropdown-menu {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-md) !important;
+  padding: 8px 0 !important;
+}
+
+.logged-in-nav .dropdown-menu span,
+.logged-in-nav .dropdown-menu small {
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+.logged-in-nav .dropdown-item {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  color: var(--text-primary) !important;
+  padding: 8px 20px !important;
+  transition: all var(--transition) !important;
+}
+
+.logged-in-nav .dropdown-item:hover {
+  background-color: var(--surface-3) !important;
+  color: var(--primary) !important;
+}
+
+.logged-in-nav .dropdown-item.text-danger {
+  color: var(--danger) !important;
+}
+
+.logged-in-nav .dropdown-item.text-danger:hover {
+  background-color: rgba(239, 68, 68, 0.05) !important;
+  color: var(--danger) !important;
+}

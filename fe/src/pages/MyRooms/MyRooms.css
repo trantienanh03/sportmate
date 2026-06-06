@@ -1,0 +1,328 @@
+/* ================================================================
+   SportMatcher — My Rooms Page Styles
+   ================================================================ */
+
+.my-rooms-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--surface-2);
+}
+
+.my-rooms-main {
+  flex: 1;
+}
+
+/* Page Title */
+.my-rooms-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.75px;
+}
+
+/* Segmented Tab Bar */
+.tabs-container {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+.segmented-control {
+  display: flex;
+  background-color: var(--surface-3);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.segmented-button {
+  border: none;
+  background: transparent;
+  padding: 6px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-radius: 10px;
+  transition: all var(--transition);
+  cursor: pointer;
+  outline: none;
+}
+
+.segmented-button:hover {
+  color: var(--text-primary);
+}
+
+.segmented-button.active {
+  background-color: var(--surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Room Cards Grid */
+.room-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  transition: all var(--transition);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.room-card-link:hover .room-card {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Badges */
+.badge-custom {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 50px;
+}
+
+.sport-football {
+  background-color: rgba(37, 99, 235, 0.08);
+  color: var(--primary);
+}
+
+.sport-basketball {
+  background-color: rgba(249, 115, 22, 0.08);
+  color: var(--accent);
+}
+
+.sport-badminton {
+  background-color: rgba(34, 197, 94, 0.08);
+  color: var(--success);
+}
+
+.sport-tennis {
+  background-color: rgba(245, 158, 11, 0.08);
+  color: var(--warning);
+}
+
+.badge-time {
+  background-color: var(--surface-3);
+  color: var(--text-secondary);
+}
+
+.badge-status {
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.badge-status.open {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: var(--success);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.badge-status.full {
+  background-color: var(--surface-3);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.badge-status.completed {
+  background-color: rgba(37, 99, 235, 0.08);
+  color: var(--primary);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+.badge-status.cancelled {
+  background-color: rgba(239, 68, 68, 0.08);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+/* Room details */
+.room-card-title {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.room-card-location {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+}
+
+.card-divider {
+  margin: 16px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+  opacity: 1;
+}
+
+/* Roster Section */
+.roster-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.roster-count {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.roster-progress {
+  background-color: var(--surface-3);
+  border-radius: 50px;
+  overflow: hidden;
+}
+
+/* Avatar overlays */
+.avatar-group {
+  display: flex;
+  padding-left: 8px; /* space for overlapping alignment */
+}
+
+.avatar-item {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  margin-left: -8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--primary-light);
+  color: var(--surface);
+  font-weight: bold;
+  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-more {
+  background-color: var(--surface-3);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-status-text {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Buttons in card footer */
+.btn-card-chat,
+.btn-card-manage {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  border: 1.5px solid var(--border);
+  border-radius: 50px;
+  padding: 8px 16px;
+  background-color: transparent;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+
+.btn-card-chat:hover,
+.btn-card-manage:hover {
+  border-color: var(--text-primary);
+  background-color: var(--surface-2);
+}
+
+.btn-card-cancel {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid #fee2e2;
+  color: var(--danger);
+  background-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  padding: 0;
+}
+
+.btn-card-cancel:hover {
+  background-color: var(--danger);
+  color: var(--surface);
+  border-color: var(--danger);
+}
+
+/* Buttons for FULL state */
+.btn-card-start {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--surface);
+  background-color: var(--primary);
+  border: none;
+  border-radius: 50px;
+  padding: 10px 16px;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-card-start:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-card-chat-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
+  background-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  padding: 0;
+}
+
+.btn-card-chat-circle:hover {
+  color: var(--text-primary);
+  border-color: var(--text-primary);
+  background-color: var(--surface-2);
+}
+
+/* Empty State */
+.empty-rooms-state {
+  border: 1px dashed var(--border);
+  background-color: var(--surface);
+  border-radius: var(--radius-md);
+  margin-top: 15px;
+}
