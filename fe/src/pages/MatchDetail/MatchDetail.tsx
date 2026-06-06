@@ -58,6 +58,8 @@ const MatchDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [comment, setComment] = useState('');
+  const [confirmAction, setConfirmAction] = useState<'cancel' | 'resume' | null>(null);
+  const [popup, setPopup] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -104,7 +106,7 @@ const MatchDetail: React.FC = () => {
     try {
       setMatch(await matchService.join(match.id));
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Không thể tham gia');
+      setPopup({ type: 'error', message: e instanceof Error ? e.message : 'Không thể tham gia' });
     } finally {
       setActionLoading(false);
     }
@@ -116,7 +118,38 @@ const MatchDetail: React.FC = () => {
     try {
       setMatch(await matchService.leave(match.id));
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Không thể rời trận');
+      setPopup({ type: 'error', message: e instanceof Error ? e.message : 'Không thể rời trận' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancelMatch = async () => {
+    setConfirmAction('cancel');
+  };
+
+  const handleResumeMatch = async () => {
+    setConfirmAction('resume');
+  };
+
+  const handleConfirmAction = async () => {
+    if (!match || !confirmAction) return;
+
+    const isCancel = confirmAction === 'cancel';
+    setActionLoading(true);
+    try {
+      const updated = isCancel ? await matchService.cancelMatch(match.id) : await matchService.resumeMatch(match.id);
+      setMatch(updated);
+      setPopup({
+        type: 'success',
+        message: isCancel ? 'Trận đấu đã được hủy.' : 'Trận đấu đã được khôi phục.',
+      });
+      setConfirmAction(null);
+    } catch (e) {
+      setPopup({
+        type: 'error',
+        message: e instanceof Error ? e.message : isCancel ? 'Không thể hủy trận đấu' : 'Không thể khôi phục trận đấu',
+      });
     } finally {
       setActionLoading(false);
     }
@@ -124,7 +157,7 @@ const MatchDetail: React.FC = () => {
 
   const handlePostComment = () => {
     if (!comment.trim()) return;
-    alert('Thảo luận hiện chưa kết nối backend. Nội dung bạn nhập: ' + comment.trim());
+    setPopup({ type: 'info', message: 'Thảo luận hiện chưa kết nối backend. Nội dung bạn nhập: ' + comment.trim() });
     setComment('');
   };
 
@@ -149,11 +182,21 @@ const MatchDetail: React.FC = () => {
   }
 
   const isHost = user?.id === match.host.id;
+  const isLocked = match.status === 'cancelled' || match.status === 'completed';
+  const canHostCancel = isHost && (match.status === 'open' || match.status === 'full');
+  const canHostResume = isHost && match.status === 'cancelled';
   const timeLabel = formatTime(match.startTime, match.endTime);
   const dateLabel = formatDate(match.startTime);
   const title = match.title;
   const address = match.venue?.address || match.locationText || 'Chưa có địa điểm';
   const venueName = match.venue?.name || match.locationText || 'TBD';
+  const confirmTitle = confirmAction === 'cancel' ? 'Xác nhận hủy trận' : 'Khôi phục trận đấu';
+  const confirmMessage =
+    confirmAction === 'cancel'
+      ? 'Bạn có chắc muốn hủy trận đấu này không?'
+      : 'Khôi phục trận đấu để tiếp tục tuyển người?';
+  const popupTitle =
+    popup?.type === 'success' ? 'Thành công' : popup?.type === 'error' ? 'Có lỗi xảy ra' : 'Thông báo';
 
   return (
     <div className="match-detail-page bg-light min-vh-100">
@@ -306,16 +349,28 @@ const MatchDetail: React.FC = () => {
                 <i className="fa-solid fa-arrow-up-from-bracket" />
               </button>
 
-              {isHost ? (
+              {canHostCancel ? (
+                <button className="btn btn-danger rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleCancelMatch} disabled={actionLoading}>
+                  {actionLoading ? '...' : 'Hủy trận đấu'}
+                </button>
+              ) : canHostResume ? (
+                <button className="btn btn-success rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleResumeMatch} disabled={actionLoading}>
+                  {actionLoading ? '...' : 'Ngừng hủy & tiếp tục'}
+                </button>
+              ) : isHost ? (
                 <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" disabled>
-                  Bạn là host
+                  {match.status === 'cancelled' ? 'Trận đã hủy' : match.status === 'completed' ? 'Trận đã kết thúc' : 'Bạn là host'}
+                </button>
+              ) : isLocked ? (
+                <button className="btn btn-secondary rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" disabled>
+                  {match.status === 'cancelled' ? 'Host đã ngừng hoạt động trận này' : 'Trận đã kết thúc'}
                 </button>
               ) : match.joined ? (
-                <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleLeave} disabled={actionLoading}>
+                <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleLeave} disabled={actionLoading || isLocked}>
                   {actionLoading ? '...' : 'Rời trận'}
                 </button>
               ) : (
-                <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleJoin} disabled={actionLoading || derived.spotsLeft === 0}>
+                <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleJoin} disabled={actionLoading || derived.spotsLeft === 0 || isLocked}>
                   {actionLoading ? '...' : 'Tham gia'}
                 </button>
               )}
@@ -323,6 +378,41 @@ const MatchDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {confirmAction && (
+        <div className="md-popup-overlay" onClick={() => !actionLoading && setConfirmAction(null)}>
+          <div className="md-popup-card" onClick={(event) => event.stopPropagation()}>
+            <h5 className="md-popup-title">{confirmTitle}</h5>
+            <p className="md-popup-message">{confirmMessage}</p>
+            <div className="md-popup-actions">
+              <button className="btn btn-outline-secondary rounded-pill px-4" onClick={() => setConfirmAction(null)} disabled={actionLoading}>
+                Hủy
+              </button>
+              <button
+                className={`btn rounded-pill px-4 ${confirmAction === 'cancel' ? 'btn-danger' : 'btn-success'}`}
+                onClick={handleConfirmAction}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Đang xử lý...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {popup && (
+        <div className="md-popup-overlay" onClick={() => setPopup(null)}>
+          <div className="md-popup-card" onClick={(event) => event.stopPropagation()}>
+            <h5 className={`md-popup-title ${popup.type === 'error' ? 'text-danger' : popup.type === 'success' ? 'text-success' : ''}`}>{popupTitle}</h5>
+            <p className="md-popup-message">{popup.message}</p>
+            <div className="md-popup-actions md-popup-actions--single">
+              <button className="btn btn-dark rounded-pill px-4" onClick={() => setPopup(null)}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

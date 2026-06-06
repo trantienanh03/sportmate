@@ -63,6 +63,30 @@ public class MatchController {
         return ResponseEntity.ok(matchService.leaveMatch(id, userId));
     }
 
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<MatchDetailDto> cancelMatch(
+            @PathVariable Integer id,
+            HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Integer userId = (Integer) session.getAttribute("userId");
+        return ResponseEntity.ok(matchService.cancelMatch(id, userId));
+    }
+
+    @PostMapping("/{id}/resume")
+    public ResponseEntity<MatchDetailDto> resumeMatch(
+            @PathVariable Integer id,
+            HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Integer userId = (Integer) session.getAttribute("userId");
+        return ResponseEntity.ok(matchService.resumeMatch(id, userId));
+    }
+
     @PostMapping
     public ResponseEntity<?> createMatch(
             @Valid @RequestBody CreateMatchRequest request,

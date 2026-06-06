@@ -86,6 +86,40 @@ export const matchService = {
     return handleResponse<MatchDetail>(response);
   },
 
+  cancelMatch: async (id: number): Promise<MatchDetail> => {
+    const response = await fetch(`${API_URL}/matches/${id}/cancel`, {
+      method: "POST",
+      credentials: "include",
+    });
+    const updated = await handleResponse<MatchDetail>(response);
+
+    if (cachedMatches) {
+      cachedMatches = cachedMatches.map((m) => (m.id === id ? updated : m));
+    }
+    if (cachedMyRooms) {
+      cachedMyRooms = cachedMyRooms.map((m) => (m.id === id ? updated : m));
+    }
+
+    return updated;
+  },
+
+  resumeMatch: async (id: number): Promise<MatchDetail> => {
+    const response = await fetch(`${API_URL}/matches/${id}/resume`, {
+      method: "POST",
+      credentials: "include",
+    });
+    const updated = await handleResponse<MatchDetail>(response);
+
+    if (cachedMatches) {
+      cachedMatches = cachedMatches.map((m) => (m.id === id ? updated : m));
+    }
+    if (cachedMyRooms) {
+      cachedMyRooms = cachedMyRooms.map((m) => (m.id === id ? updated : m));
+    }
+
+    return updated;
+  },
+
   createMatch: async (data: object): Promise<MatchDetail> => {
     const response = await fetch(`${API_URL}/matches`, {
       method: "POST",

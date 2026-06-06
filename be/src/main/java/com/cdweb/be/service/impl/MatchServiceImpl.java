@@ -90,6 +90,10 @@ public class MatchServiceImpl implements MatchService {
         Match match = matchRepository.findByIdForUpdate(matchId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
 
+        if (match.getStatus() == MatchStatus.cancelled || match.getStatus() == MatchStatus.completed) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Match is locked and cannot be modified");
+        }
+
         MatchParticipant participant = matchParticipantRepository
                 .findByMatch_IdAndUser_Id(matchId, userId)
                 .orElseThrow(() -> new AppException(HttpStatus.BAD_REQUEST, "You have not joined this match"));
@@ -109,6 +113,46 @@ public class MatchServiceImpl implements MatchService {
         matchRepository.save(match);
 
         return buildDto(match, userId);
+    }
+
+    @Override
+    @Transactional
+    public MatchDetailDto cancelMatch(Integer matchId, Integer hostId) {
+        Match match = matchRepository.findByIdForUpdate(matchId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
+
+        if (!match.getHost().getId().equals(hostId)) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Only host can cancel this match");
+        }
+        if (match.getStatus() == MatchStatus.cancelled) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Match has already been cancelled");
+        }
+        if (match.getStatus() == MatchStatus.completed) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Completed match cannot be cancelled");
+        }
+
+        match.setStatus(MatchStatus.cancelled);
+        matchRepository.save(match);
+        return buildDto(match, hostId);
+    }
+
+    @Override
+    @Transactional
+    public MatchDetailDto resumeMatch(Integer matchId, Integer hostId) {
+        Match match = matchRepository.findByIdForUpdate(matchId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
+
+        if (!match.getHost().getId().equals(hostId)) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Only host can resume this match");
+        }
+        if (match.getStatus() != MatchStatus.cancelled) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Only cancelled match can be resumed");
+        }
+
+        match.setStatus(MatchStatus.open);
+        refreshStatusByCapacity(match);
+        matchRepository.save(match);
+        return buildDto(match, hostId);
     }
 
     // ── Create Match ─────────────────────────────────────────────────
@@ -214,6 +258,14 @@ public class MatchServiceImpl implements MatchService {
 
         if (!match.getHost().getId().equals(hostId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "Bạn không có quyền cập nhật trạng thái trận đấu này");
+        }
+
+        if (match.getStatus() == MatchStatus.cancelled || match.getStatus() == MatchStatus.completed) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Trận đấu đã kết thúc hoặc đã hủy, không thể cập nhật");
+        }
+
+        if (status == MatchStatus.cancelled) {
+            return cancelMatch(matchId, hostId);
         }
 
         match.setStatus(status);
