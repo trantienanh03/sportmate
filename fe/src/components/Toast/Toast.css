@@ -1,6 +1,6 @@
 .sm-toast {
   position: fixed;
-  top: 72px;          /* just below the navbar */
+  top: 72px; /* just below the navbar */
   right: 24px;
   transform: translateY(-12px);
   display: flex;
@@ -15,7 +15,9 @@
   min-width: 280px;
   max-width: 400px;
   opacity: 0;
-  transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    opacity 0.3s ease,
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
 }
 
@@ -27,19 +29,19 @@
 
 .sm-toast--success {
   background: #fff;
-  border-left: 4px solid #22c55e;
+  border: 1px solid #22c55e;
   color: #1a1a1a;
 }
 
 .sm-toast--error {
   background: #fff;
-  border-left: 4px solid #ef4444;
+  border: 1px solid #ef4444;
   color: #1a1a1a;
 }
 
 .sm-toast--info {
   background: #fff;
-  border-left: 4px solid #3b82f6;
+  border: 1px solid #3b82f6;
   color: #1a1a1a;
 }
 
@@ -48,9 +50,15 @@
   flex-shrink: 0;
 }
 
-.sm-toast--success .sm-toast__icon { color: #22c55e; }
-.sm-toast--error   .sm-toast__icon { color: #ef4444; }
-.sm-toast--info    .sm-toast__icon { color: #3b82f6; }
+.sm-toast--success .sm-toast__icon {
+  color: #22c55e;
+}
+.sm-toast--error .sm-toast__icon {
+  color: #ef4444;
+}
+.sm-toast--info .sm-toast__icon {
+  color: #3b82f6;
+}
 
 .sm-toast__message {
   flex: 1;

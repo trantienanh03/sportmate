@@ -121,6 +121,11 @@ const LoggedInNavbar: React.FC = () => {
                     </Link>
                   </li>
                   <li>
+                    <Link className="dropdown-item" to="/my-rooms">
+                      Phòng của tôi
+                    </Link>
+                  </li>
+                  <li>
                     <Link className="dropdown-item" to="/settings">
                       Cài đặt
                     </Link>

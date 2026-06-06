@@ -51,6 +51,24 @@ export const authService = {
     return response.json();
   },
 
+  checkEmailExists: async (email: string): Promise<boolean> => {
+    const response = await fetch(`${API_URL}/check-email?email=${encodeURIComponent(email)}&t=${Date.now()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Kiểm tra email thất bại");
+    }
+
+    return response.json();
+  },
+
   getProfile: async () => {
     const response = await fetch(`${API_URL}/profile`, {
       method: "GET",

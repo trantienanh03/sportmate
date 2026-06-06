@@ -32,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
                 .fullName(registerRequestDto.getFullName())
                 .email(registerRequestDto.getEmail())
                 .passwordHash(passwordEncoder.encode(registerRequestDto.getPassword()))
+                .district(registerRequestDto.getDistrict() != null ? registerRequestDto.getDistrict().trim() : null)
                 .build();
 
         return toDto(userRepository.save(user));
@@ -79,6 +80,12 @@ public class AuthServiceImpl implements AuthService {
         user.setLng(request.getLng());
 
         return toDto(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
     }
 
     private AuthResponseDto toDto(User user) {

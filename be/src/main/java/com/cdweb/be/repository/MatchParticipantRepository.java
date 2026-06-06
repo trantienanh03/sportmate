@@ -13,4 +13,12 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
     Optional<MatchParticipant> findByMatch_IdAndUser_Id(Integer matchId, Integer userId);
 
     boolean existsByMatch_IdAndUser_Id(Integer matchId, Integer userId);
+
+    List<MatchParticipant> findByMatch_IdIn(List<Integer> matchIds);
+
+    @org.springframework.data.jpa.repository.Query("SELECT mp.match.id FROM MatchParticipant mp WHERE mp.user.id = :userId AND mp.match.id IN :matchIds")
+    List<Integer> findJoinedMatchIds(
+            @org.springframework.data.repository.query.Param("userId") Integer userId,
+            @org.springframework.data.repository.query.Param("matchIds") List<Integer> matchIds
+    );
 }

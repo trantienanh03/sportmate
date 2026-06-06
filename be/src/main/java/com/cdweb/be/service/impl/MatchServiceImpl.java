@@ -40,9 +40,7 @@ public class MatchServiceImpl implements MatchService {
     @Override
     @Transactional(readOnly = true)
     public List<MatchDetailDto> getMatches(Integer currentUserId) {
-        return matchRepository.findAll().stream()
-                .map(match -> buildDto(match, currentUserId))
-                .collect(Collectors.toList());
+        return buildDtos(matchRepository.findAll(), currentUserId);
     }
 
     // ── Match Detail ─────────────────────────────────────────────────
@@ -196,6 +194,28 @@ public class MatchServiceImpl implements MatchService {
         return saved;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<MatchDetailDto> getMyCreatedMatches(Integer hostId) {
+        return buildDtos(matchRepository.findByHostIdOrderByStartTimeDesc(hostId), hostId);
+    }
+
+    @Override
+    @Transactional
+    public MatchDetailDto updateMatchStatus(Integer matchId, MatchStatus status, Integer hostId) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy trận đấu"));
+
+        if (!match.getHost().getId().equals(hostId)) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Bạn không có quyền cập nhật trạng thái trận đấu này");
+        }
+
+        match.setStatus(status);
+        matchRepository.save(match);
+
+        return buildDto(match, hostId);
+    }
+
     // ── Internal DTO builder ─────────────────────────────────────────
     private MatchDetailDto buildDto(Match match, Integer currentUserId) {
         List<MatchParticipant> participants =
@@ -204,6 +224,10 @@ public class MatchServiceImpl implements MatchService {
         boolean joined = currentUserId != null &&
                 matchParticipantRepository.existsByMatch_IdAndUser_Id(match.getId(), currentUserId);
 
+        return buildDto(match, participants, joined);
+    }
+
+    private MatchDetailDto buildDto(Match match, List<MatchParticipant> participants, boolean joined) {
         HostDto hostDto = null;
         if (match.getHost() != null) {
             hostDto = HostDto.builder()
@@ -256,5 +280,29 @@ public class MatchServiceImpl implements MatchService {
                 .participants(participantDtos)
                 .joined(joined)
                 .build();
+    }
+
+    private List<MatchDetailDto> buildDtos(List<Match> matches, Integer currentUserId) {
+        if (matches.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        List<Integer> matchIds = matches.stream().map(Match::getId).collect(Collectors.toList());
+
+        List<MatchParticipant> allParticipants = matchParticipantRepository.findByMatch_IdIn(matchIds);
+        java.util.Map<Integer, List<MatchParticipant>> participantsMap = allParticipants.stream()
+                .collect(Collectors.groupingBy(p -> p.getMatch().getId()));
+
+        java.util.Set<Integer> joinedMatchIds = new java.util.HashSet<>();
+        if (currentUserId != null) {
+            joinedMatchIds.addAll(matchParticipantRepository.findJoinedMatchIds(currentUserId, matchIds));
+        }
+
+        return matches.stream()
+                .map(match -> {
+                    List<MatchParticipant> participants = participantsMap.getOrDefault(match.getId(), java.util.Collections.emptyList());
+                    boolean joined = joinedMatchIds.contains(match.getId());
+                    return buildDto(match, participants, joined);
+                })
+                .collect(Collectors.toList());
     }
 }

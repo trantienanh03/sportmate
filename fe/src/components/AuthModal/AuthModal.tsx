@@ -19,12 +19,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [location, setLocation] = useState('');
+  const [district, setDistrict] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isAgeChecked, setIsAgeChecked] = useState(false);
   const [keepLoggedIn, setKeepLoggedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [isEmailChecking, setIsEmailChecking] = useState(false);
 
   useEffect(() => {
     setMode(initialMode);
@@ -32,21 +33,72 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     setEmail('');
     setPassword('');
     setName('');
-    setLocation('');
-    setIsAgeChecked(false);
+    setDistrict('');
     setKeepLoggedIn(false);
     setError(null);
+    setEmailError(null);
+    setIsEmailChecking(false);
   }, [initialMode, isOpen]);
+
+  useEffect(() => {
+    if (mode !== 'signup' || !email) {
+      setEmailError(null);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Email không đúng định dạng");
+      return;
+    }
+
+    setEmailError(null);
+    setIsEmailChecking(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const exists = await authService.checkEmailExists(email);
+        if (exists) {
+          setEmailError("Email này đã được đăng ký!");
+        } else {
+          setEmailError(null);
+        }
+      } catch (err) {
+        console.error("Lỗi check email:", err);
+        setEmailError("Không thể kết nối máy chủ để kiểm tra email");
+      } finally {
+        setIsEmailChecking(false);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [email, mode]);
+
+  useEffect(() => {
+    setError(null);
+  }, [email, password, name, district]);
 
   if (!isOpen) return null;
 
   const isLoginFormValid = email.trim() !== '' && password.trim() !== '';
-  const isSignupFormValid = email.trim() !== '' && password.trim().length >= 10 && name.trim() !== '' && location.trim() !== '' && isAgeChecked;
+
+  const isPasswordLengthValid = password.length >= 8;
+  const isPasswordUppercaseValid = /[A-Z]/.test(password);
+  const isPasswordSpecialCharValid = /[\W_]/.test(password);
+  const isPasswordValid = isPasswordLengthValid && isPasswordUppercaseValid && isPasswordSpecialCharValid;
+
+  const isSignupFormValid =
+    email.trim() !== '' &&
+    emailError === null &&
+    !isEmailChecking &&
+    isPasswordValid &&
+    name.trim() !== '' &&
+    district.trim() !== '';
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoginFormValid) return;
-    
+
     setIsLoading(true);
     setError(null);
     try {
@@ -68,7 +120,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     setIsLoading(true);
     setError(null);
     try {
-      await authService.register({ fullName: name, email, password });
+      await authService.register({ fullName: name, email, password, district });
       onClose();
       setMode('login');
       setSignupStep(1);
@@ -243,11 +295,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 <label className="auth-form-label">Địa chỉ Email</label>
                 <input
                   type="email"
-                  className="auth-form-input"
+                  className={`auth-form-input ${emailError ? 'is-invalid' : ''}`}
                   placeholder="example@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
+                {emailError && <div className="text-danger mt-1" style={{ fontSize: '13px' }}>{emailError}</div>}
+                {isEmailChecking && <div className="text-muted mt-1" style={{ fontSize: '13px' }}><i className="fas fa-spinner fa-spin me-1"></i>Đang kiểm tra email...</div>}
+                {!emailError && !isEmailChecking && email.trim() !== '' && <div className="text-success mt-1" style={{ fontSize: '13px' }}>Email khả dụng</div>}
                 <div className="auth-form-hint">Dùng để nhận thông báo và xác minh tài khoản</div>
               </div>
 
@@ -270,46 +325,65 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                     <i className={`far ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
                 </div>
-                <div className="auth-form-hint">Mật khẩu phải chứa ít nhất 10 ký tự</div>
+                <div className="auth-form-hint">Mật khẩu tối thiểu 8 ký tự, chứa chữ hoa và ký tự đặc biệt</div>
                 <div className="auth-password-strength mt-2">
                   <div className={`strength-bar ${password.length > 0 ? 'active' : ''}`}></div>
-                  <div className={`strength-bar ${password.length > 5 ? 'active' : ''}`}></div>
-                  <div className={`strength-bar ${password.length >= 10 ? 'active' : ''}`}></div>
-                  <div className={`strength-bar ${password.length > 12 ? 'active' : ''}`}></div>
+                  <div className={`strength-bar ${password.length >= 4 ? 'active' : ''}`}></div>
+                  <div className={`strength-bar ${password.length >= 8 ? 'active' : ''}`}></div>
+                  <div className={`strength-bar ${isPasswordValid ? 'active' : ''}`}></div>
                 </div>
+                <ul className="auth-password-criteria">
+                  <li className={password ? (isPasswordLengthValid ? 'valid' : 'invalid') : ''}>
+                    <i className={`fas ${password ? (isPasswordLengthValid ? 'fa-check-circle' : 'fa-times-circle') : 'fa-circle'}`}></i>
+                    Độ dài tối thiểu 8 ký tự
+                  </li>
+                  <li className={password ? (isPasswordUppercaseValid ? 'valid' : 'invalid') : ''}>
+                    <i className={`fas ${password ? (isPasswordUppercaseValid ? 'fa-check-circle' : 'fa-times-circle') : 'fa-circle'}`}></i>
+                    Chứa ít nhất 1 chữ cái viết hoa (A-Z)
+                  </li>
+                  <li className={password ? (isPasswordSpecialCharValid ? 'valid' : 'invalid') : ''}>
+                    <i className={`fas ${password ? (isPasswordSpecialCharValid ? 'fa-check-circle' : 'fa-times-circle') : 'fa-circle'}`}></i>
+                    Chứa ít nhất 1 ký tự đặc biệt (ví dụ: @, #, $, ...)
+                  </li>
+                </ul>
               </div>
 
               <div className="auth-form-group mb-4">
-                <label className="auth-form-label">Địa điểm</label>
+                <label className="auth-form-label">Quận/Huyện</label>
                 <div className="auth-input-with-icon">
                   <i className="fas fa-map-marker-alt"></i>
-                  <input
-                    type="text"
+                  <select
                     className="auth-form-input"
-                    placeholder="TP. HCM, VN"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                  />
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    style={{ paddingLeft: '36px' }}
+                  >
+                    <option value="">Chọn Quận/Huyện</option>
+                    <option value="Quận 1">Quận 1</option>
+                    <option value="Quận 3">Quận 3</option>
+                    <option value="Quận 4">Quận 4</option>
+                    <option value="Quận 5">Quận 5</option>
+                    <option value="Quận 6">Quận 6</option>
+                    <option value="Quận 7">Quận 7</option>
+                    <option value="Quận 8">Quận 8</option>
+                    <option value="Quận 10">Quận 10</option>
+                    <option value="Quận 11">Quận 11</option>
+                    <option value="Quận 12">Quận 12</option>
+                    <option value="Bình Thạnh">Bình Thạnh</option>
+                    <option value="Bình Tân">Bình Tân</option>
+                    <option value="Gò Vấp">Gò Vấp</option>
+                    <option value="Phú Nhuận">Phú Nhuận</option>
+                    <option value="Tân Bình">Tân Bình</option>
+                    <option value="Tân Phú">Tân Phú</option>
+                    <option value="Bình Chánh">Bình Chánh</option>
+                    <option value="Cần Giờ">Cần Giờ</option>
+                    <option value="Củ Chi">Củ Chi</option>
+                    <option value="Hóc Môn">Hóc Môn</option>
+                    <option value="Nhà Bè">Nhà Bè</option>
+                    <option value="TP. Thủ Đức">TP. Thủ Đức</option>
+                  </select>
                 </div>
                 <div className="auth-form-hint">Dùng để hiển thị các trận đấu gần bạn.</div>
-              </div>
-
-              <div className="auth-form-group mb-4">
-                <label className="auth-form-label">
-                  Tuổi <i className="far fa-question-circle ms-1 text-muted"></i>
-                </label>
-                <div className="d-flex align-items-center mt-1">
-                  <input
-                    type="checkbox"
-                    id="ageCheck"
-                    checked={isAgeChecked}
-                    onChange={(e) => setIsAgeChecked(e.target.checked)}
-                    className="me-2"
-                  />
-                  <label htmlFor="ageCheck" className="fw-semibold" style={{ fontSize: '14px' }}>
-                    Tôi từ 18 tuổi trở lên.
-                  </label>
-                </div>
               </div>
 
               <button
