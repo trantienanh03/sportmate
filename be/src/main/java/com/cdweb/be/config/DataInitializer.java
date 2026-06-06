@@ -14,23 +14,28 @@ public class DataInitializer {
     @Bean
     public CommandLineRunner initSports(SportRepository sportRepository) {
         return args -> {
+            if (sportRepository.count() > 0) {
+                sportRepository.deleteAll();
+                System.out.println("Cleared old sports data.");
+            }
+            
             if (sportRepository.count() == 0) {
                 System.out.println("No sports found in the database. Initializing default sports...");
                 Sport football = new Sport();
                 football.setName("Bóng đá");
-                football.setSlug("bong-da");
+                football.setSlug("football");
                 football.setDisplayOrder((short) 1);
                 football.setIsActive(true);
 
                 Sport badminton = new Sport();
                 badminton.setName("Cầu lông");
-                badminton.setSlug("cau-long");
+                badminton.setSlug("badminton");
                 badminton.setDisplayOrder((short) 2);
                 badminton.setIsActive(true);
 
                 Sport basketball = new Sport();
                 basketball.setName("Bóng rổ");
-                basketball.setSlug("bong-ro");
+                basketball.setSlug("basketball");
                 basketball.setDisplayOrder((short) 3);
                 basketball.setIsActive(true);
 
@@ -42,11 +47,29 @@ public class DataInitializer {
                 
                 Sport tableTennis = new Sport();
                 tableTennis.setName("Bóng bàn");
-                tableTennis.setSlug("bong-ban");
+                tableTennis.setSlug("tabletennis");
                 tableTennis.setDisplayOrder((short) 5);
                 tableTennis.setIsActive(true);
 
-                sportRepository.saveAll(List.of(football, badminton, basketball, tennis, tableTennis));
+                Sport pickleball = new Sport();
+                pickleball.setName("Pickleball");
+                pickleball.setSlug("pickleball");
+                pickleball.setDisplayOrder((short) 6);
+                pickleball.setIsActive(true);
+
+                Sport esports = new Sport();
+                esports.setName("Thể thao điện tử");
+                esports.setSlug("esports");
+                esports.setDisplayOrder((short) 7);
+                esports.setIsActive(true);
+
+                Sport volleyball = new Sport();
+                volleyball.setName("Bóng chuyền");
+                volleyball.setSlug("volleyball");
+                volleyball.setDisplayOrder((short) 8);
+                volleyball.setIsActive(true);
+
+                sportRepository.saveAll(List.of(football, badminton, basketball, tennis, tableTennis, pickleball, esports, volleyball));
                 System.out.println("Default sports have been successfully inserted.");
             }
         };

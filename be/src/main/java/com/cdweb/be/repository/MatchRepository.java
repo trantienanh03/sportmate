@@ -24,7 +24,7 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
           AND m.start_time > NOW()
           AND (:keyword IS NULL OR LOWER(m.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
           AND (:sport IS NULL OR LOWER(m.sport) = LOWER(:sport))
-          AND (:skillLevel IS NULL OR CAST(m.skill_level AS TEXT) = :skillLevel)
+          AND (:skillLevel IS NULL OR CAST(m.skill_level AS TEXT) = :skillLevel OR CAST(m.skill_level AS TEXT) = 'all')
           AND (:feeType IS NULL
                OR (:feeType = 'free' AND m.fee_per_person = 0)
                OR (:feeType = 'paid' AND m.fee_per_person > 0))

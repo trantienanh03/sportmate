@@ -87,7 +87,10 @@ export const matchService = {
       method: "POST",
       credentials: "include",
     });
-    return handleResponse<MatchDetail>(response);
+    const updated = await handleResponse<MatchDetail>(response);
+    if (cachedMatches) cachedMatches = cachedMatches.map(m => m.id === id ? updated : m);
+    if (cachedMyRooms) cachedMyRooms = cachedMyRooms.map(m => m.id === id ? updated : m);
+    return updated;
   },
 
   leave: async (id: number): Promise<MatchDetail> => {
@@ -95,7 +98,10 @@ export const matchService = {
       method: "DELETE",
       credentials: "include",
     });
-    return handleResponse<MatchDetail>(response);
+    const updated = await handleResponse<MatchDetail>(response);
+    if (cachedMatches) cachedMatches = cachedMatches.map(m => m.id === id ? updated : m);
+    if (cachedMyRooms) cachedMyRooms = cachedMyRooms.map(m => m.id === id ? updated : m);
+    return updated;
   },
 
   cancelMatch: async (id: number): Promise<MatchDetail> => {
