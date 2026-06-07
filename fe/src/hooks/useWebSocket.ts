@@ -18,9 +18,7 @@ export const useWebSocket = (
     const client = new Client({
       webSocketFactory: () => new SockJS(WS_URL),
       connectHeaders: {},
-      debug: (_str) => {
-        // console.log("STOMP Debug:", str);
-      },
+      debug: (_str) => {},
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
@@ -29,11 +27,9 @@ export const useWebSocket = (
     client.onConnect = () => {
       setIsConnected(true);
 
-      // Đăng ký nhận tin nhắn từ server cho phòng hiện tại
       client.subscribe(`/topic/room/${roomId}`, (message) => {
         if (message.body) {
           const parsedMsg: MessageDto = JSON.parse(message.body);
-          // Truyền tin nhắn mới lên component cha
           onMessageReceived(parsedMsg);
         }
       });
@@ -41,7 +37,6 @@ export const useWebSocket = (
 
     client.onStompError = (frame) => {
       console.error("STOMP Error:", frame.headers["message"]);
-      console.error("Details:", frame.body);
     };
 
     client.onWebSocketClose = () => {
@@ -57,7 +52,9 @@ export const useWebSocket = (
         setIsConnected(false);
       }
     };
-  }, [roomId, onMessageReceived]);
+    // Chỉ phụ thuộc vào roomId để tránh việc reconnect liên tục khi callback onMessageReceived (thường thay đổi mỗi lần render) được truyền vào.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
 
   const sendMessage = (content: string, type = "TEXT", metadata: string | null = null) => {
     if (clientRef.current && isConnected && roomId) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import LoggedInNavbar from "../../components/LoggedInNavbar/LoggedInNavbar";
@@ -45,10 +45,11 @@ const Messages: React.FC = () => {
       .catch(err => console.error("Failed to load rooms:", err));
   }, []);
 
-  const handleNewMessage = (newMsg: MessageDto) => {
+  // Dùng useCallback để giữ nguyên tham chiếu của callback, tránh làm useWebSocket bị kích hoạt kết nối lại (reconnect) liên tục.
+  const handleNewMessage = useCallback((newMsg: MessageDto) => {
     setConversations(prev => prev.map(c => {
       if (c.id === newMsg.roomId) {
-        // Chống trùng lặp tin nhắn nếu có áp dụng Optimistic UI sau này
+        // Chống trùng lặp tin nhắn
         const exists = c.messages.find(m => m.id === newMsg.id);
         if (exists) return c;
         return {
@@ -61,12 +62,10 @@ const Messages: React.FC = () => {
     }));
     
     // If we are looking at this room, scroll down
-    if (newMsg.roomId === selectedConvoId) {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    }
-  };
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }, []);
 
   const { sendMessage, isConnected } = useWebSocket(selectedConvoId, handleNewMessage);
 
@@ -212,7 +211,12 @@ const Messages: React.FC = () => {
                           <div className="convo-title-row">
                             <h4 className="convo-title">{convo.name}</h4>
                             <span className="convo-time">
-                              {convo.lastMessageAt ? new Date(convo.lastMessageAt).toLocaleTimeString() : ""}
+                              {convo.lastMessageAt
+                                ? new Date(convo.lastMessageAt).toLocaleTimeString("vi-VN", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : ""}
                             </span>
                           </div>
                           {convo.type === "GROUP" && (
@@ -306,7 +310,12 @@ const Messages: React.FC = () => {
                               <p className="mb-0">{msg.content}</p>
                             </div>
                             <div className="msg-meta-row">
-                              <span>{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                              <span>
+                                {new Date(msg.createdAt).toLocaleTimeString("vi-VN", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
                             </div>
                           </div>
                         </div>

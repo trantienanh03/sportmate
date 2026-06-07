@@ -7,6 +7,12 @@
     <title>SportMate</title>
   </head>
   <body>
+    <!-- Polyfill window.global để tương thích sockjs-client trong môi trường Vite/React -->
+    <script>
+      if (typeof global === 'undefined') {
+        window.global = window;
+      }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
