@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
+import ExploreFilterSidebar from '../../components/ExploreFilterSidebar/ExploreFilterSidebar';
 import Footer from '../../components/Footer/Footer';
 import { matchService, type MatchDetail, type ExploreParams } from '../../services/matchService';
 import './ExplorePage.css';
@@ -89,39 +90,45 @@ const ExplorePage: React.FC = () => {
 
       <main className="explore-main py-5">
         <div className="container">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h3 className="fw-bold m-0">Kết quả Khám phá</h3>
-            {hasLocation && (
-              <span className="badge bg-primary rounded-pill px-3 py-2 fw-medium">
-                <i className="fa-solid fa-location-dot me-2"></i>Đã lọc theo vị trí
-              </span>
-            )}
-          </div>
-
-          {error && <div className="alert alert-danger">{error}</div>}
-
-          {isLoading ? (
-            <div className="text-center py-5 my-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Đang tải...</span>
-              </div>
-              <p className="mt-3 text-muted">Đang quét các trận đấu gần bạn...</p>
+          <div className="row g-4">
+            <div className="col-lg-3">
+              <ExploreFilterSidebar />
             </div>
-          ) : matches.length === 0 ? (
-            <div className="empty-explore-state text-center py-5 my-5">
-              <div className="empty-icon-wrapper mb-4">
-                <i className="fa-solid fa-magnifying-glass-location fa-3x text-muted"></i>
+
+            <div className="col-lg-9">
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <h3 className="fw-bold m-0">Kết quả Khám phá</h3>
+                {hasLocation && (
+                  <span className="badge bg-primary rounded-pill px-3 py-2 fw-medium">
+                    <i className="fa-solid fa-location-dot me-2"></i>Đã lọc theo vị trí
+                  </span>
+                )}
               </div>
-              <h4 className="fw-bold">Không tìm thấy trận đấu phù hợp</h4>
-              <p className="text-muted mb-4">
-                Thử mở rộng bán kính tìm kiếm hoặc thay đổi bộ lọc để xem thêm các trận đấu khác.
-              </p>
-              <Link to="/home" className="btn btn-dark rounded-pill px-4">Quay lại Trang chủ</Link>
-            </div>
-          ) : (
-            <div className="row g-4">
-              {matches.map((match) => (
-                <div className="col-xl-3 col-lg-4 col-md-6" key={match.id}>
+
+              {error && <div className="alert alert-danger">{error}</div>}
+
+              {isLoading ? (
+                <div className="text-center py-5 my-5">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Đang tải...</span>
+                  </div>
+                  <p className="mt-3 text-muted">Đang quét các trận đấu gần bạn...</p>
+                </div>
+              ) : matches.length === 0 ? (
+                <div className="empty-explore-state text-center py-5 my-5">
+                  <div className="empty-icon-wrapper mb-4">
+                    <i className="fa-solid fa-magnifying-glass-location fa-3x text-muted"></i>
+                  </div>
+                  <h4 className="fw-bold">Không tìm thấy trận đấu phù hợp</h4>
+                  <p className="text-muted mb-4">
+                    Thử mở rộng bán kính tìm kiếm hoặc thay đổi bộ lọc để xem thêm các trận đấu khác.
+                  </p>
+                  <Link to="/home" className="btn btn-dark rounded-pill px-4">Quay lại Trang chủ</Link>
+                </div>
+              ) : (
+                <div className="row g-4">
+                  {matches.map((match) => (
+                    <div className="col-xl-4 col-md-6" key={match.id}>
                   <Link to={`/matches/${match.id}`} className="text-decoration-none text-dark">
                     <div className="explore-event-card h-100">
                       <div className="event-img-wrapper">
@@ -185,10 +192,12 @@ const ExplorePage: React.FC = () => {
                       </div>
                     </div>
                   </Link>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          </div>
         </div>
       </main>
 

@@ -14,11 +14,6 @@ public class DataInitializer {
     @Bean
     public CommandLineRunner initSports(SportRepository sportRepository) {
         return args -> {
-            if (sportRepository.count() > 0) {
-                sportRepository.deleteAll();
-                System.out.println("Cleared old sports data.");
-            }
-            
             if (sportRepository.count() == 0) {
                 System.out.println("No sports found in the database. Initializing default sports...");
                 Sport football = new Sport();
