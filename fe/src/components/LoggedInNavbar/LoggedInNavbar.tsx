@@ -63,9 +63,9 @@ const LoggedInNavbar: React.FC = () => {
               </a>
             </li>
             <li className="nav-item mx-2">
-              <a className="nav-link nav-icon-link" href="#">
+              <Link className="nav-link nav-icon-link" to="/messages">
                 <i className="fa-regular fa-message"></i>
-              </a>
+              </Link>
             </li>
             <li className="nav-item mx-2">
               <a className="nav-link nav-icon-link" href="#">
