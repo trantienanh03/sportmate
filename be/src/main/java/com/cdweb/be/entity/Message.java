@@ -36,7 +36,8 @@ public class Message {
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    // JSONB stored as String — parsed in service layer when needed
+    // Map field metadata (String) thành kiểu jsonb trong PostgreSQL
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     @Column(name = "metadata", columnDefinition = "jsonb")
     private String metadata;
 

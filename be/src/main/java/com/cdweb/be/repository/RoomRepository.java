@@ -22,4 +22,6 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
             ORDER BY r.lastMessageAt DESC NULLS LAST, r.createdAt DESC
             """)
     List<Room> findRoomsByUserId(@Param("userId") Integer userId);
+
+    java.util.Optional<Room> findByMatchId(Integer matchId);
 }
