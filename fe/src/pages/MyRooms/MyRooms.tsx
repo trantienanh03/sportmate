@@ -116,7 +116,7 @@ const MyRooms: React.FC = () => {
     const confirmCancel = window.confirm(`Bạn có chắc chắn muốn hủy trận đấu "${title}" không?`);
     if (confirmCancel) {
       try {
-        const updated = await matchService.updateMatchStatus(id, "cancelled");
+        const updated = await matchService.cancelMatch(id);
         setMatches((prev) =>
           prev.map((match) => (match.id === id ? updated : match))
         );
@@ -142,6 +142,22 @@ const MyRooms: React.FC = () => {
     }
   };
 
+  const handleResumeMatch = async (id: number, title: string) => {
+    const confirmResume = window.confirm(`Khôi phục trận đấu "${title}" để tiếp tục?`);
+    if (confirmResume) {
+      try {
+        const updated = await matchService.resumeMatch(id);
+        setMatches((prev) =>
+          prev.map((match) => (match.id === id ? updated : match))
+        );
+        alert(`Đã khôi phục trận đấu "${title}".`);
+      } catch (err: any) {
+        alert(err.message || "Không thể khôi phục trận đấu");
+      }
+    }
+  };
+
+  // Filter matches based on the selected tab
   const filteredMatches = matches.filter((match) => {
     const status = match.status.toUpperCase();
     if (activeTab === "Active") {
@@ -239,10 +255,10 @@ const MyRooms: React.FC = () => {
                               {match.status.toUpperCase() === "OPEN"
                                 ? "Đang tuyển"
                                 : match.status.toUpperCase() === "FULL"
-                                ? "Đã đầy"
-                                : match.status.toUpperCase() === "COMPLETED"
-                                ? "Hoàn thành"
-                                : "Đã hủy"}
+                                  ? "Đã đầy"
+                                  : match.status.toUpperCase() === "COMPLETED"
+                                    ? "Hoàn thành"
+                                    : "Đã hủy"}
                             </span>
                           </div>
 
@@ -265,12 +281,12 @@ const MyRooms: React.FC = () => {
                             </div>
                             <div className="progress roster-progress" style={{ height: "6px" }}>
                               <div
-                                  className={`progress-bar ${progressColorClass}`}
-                                  role="progressbar"
-                                  style={{ width: `${rosterPercent}%` }}
-                                  aria-valuenow={match.currentPlayers}
-                                  aria-valuemin={0}
-                                  aria-valuemax={match.maxPlayers}
+                                className={`progress-bar ${progressColorClass}`}
+                                role="progressbar"
+                                style={{ width: `${rosterPercent}%` }}
+                                aria-valuenow={match.currentPlayers}
+                                aria-valuemin={0}
+                                aria-valuemax={match.maxPlayers}
                               ></div>
                             </div>
                           </div>
@@ -304,10 +320,10 @@ const MyRooms: React.FC = () => {
                                 {match.status.toUpperCase() === "FULL"
                                   ? "Sẵn sàng thi đấu"
                                   : match.status.toUpperCase() === "COMPLETED"
-                                  ? "Trận đấu đã kết thúc"
-                                  : match.status.toUpperCase() === "CANCELLED"
-                                  ? "Trận đấu đã bị hủy"
-                                  : `Đang chờ thêm ${match.maxPlayers - match.currentPlayers} người`}
+                                    ? "Trận đấu đã kết thúc"
+                                    : match.status.toUpperCase() === "CANCELLED"
+                                      ? "Trận đấu đã bị hủy"
+                                      : `Đang chờ thêm ${match.maxPlayers - match.currentPlayers} người`}
                               </span>
                             </div>
                           </div>
@@ -382,9 +398,22 @@ const MyRooms: React.FC = () => {
                               <span className="text-muted small">
                                 Trạng thái: <strong>{match.status.toUpperCase() === "COMPLETED" ? "Đã kết thúc" : "Đã hủy"}</strong>
                               </span>
-                              <span className="btn btn-link btn-sm text-decoration-none p-0 text-secondary">
-                                Xem chi tiết
-                              </span>
+                              {match.status.toUpperCase() === "CANCELLED" ? (
+                                <button
+                                  className="btn btn-link btn-sm text-decoration-none p-0 text-success"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleResumeMatch(match.id, match.title);
+                                  }}
+                                >
+                                  Ngừng hủy
+                                </button>
+                              ) : (
+                                <span className="btn btn-link btn-sm text-decoration-none p-0 text-secondary">
+                                  Xem chi tiết
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>

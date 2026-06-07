@@ -27,4 +27,5 @@ public class MatchDetailDto {
     private VenueDto venue;
     private List<ParticipantDto> participants;
     private boolean joined;
+    private Double distance; // km from user, null when no coordinates
 }

@@ -1,6 +1,7 @@
 package com.cdweb.be.service.impl;
 
 import com.cdweb.be.dto.request.CreateMatchRequest;
+import com.cdweb.be.dto.request.ExploreMatchRequest;
 import com.cdweb.be.dto.response.HostDto;
 import com.cdweb.be.dto.response.MatchDetailDto;
 import com.cdweb.be.dto.response.ParticipantDto;
@@ -60,9 +61,10 @@ public class MatchServiceImpl implements MatchService {
     @Override
     @Transactional
     public MatchDetailDto joinMatch(Integer matchId, Integer userId) {
-        Match match = matchRepository.findById(matchId)
+        Match match = matchRepository.findByIdForUpdate(matchId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
 
+        refreshStatusByCapacity(match);
         if (match.getStatus() != MatchStatus.open) {
             throw new AppException(HttpStatus.BAD_REQUEST, "Match is not open for joining");
         }
@@ -80,6 +82,7 @@ public class MatchServiceImpl implements MatchService {
                 .match(match).user(user).role("member").status("joined").build());
 
         match.setCurrentPlayers((short) (match.getCurrentPlayers() + 1));
+        refreshStatusByCapacity(match);
         matchRepository.save(match);
 
         // Tự động tham gia phòng chat của match (nếu phòng tồn tại)
@@ -104,8 +107,12 @@ public class MatchServiceImpl implements MatchService {
     @Override
     @Transactional
     public MatchDetailDto leaveMatch(Integer matchId, Integer userId) {
-        Match match = matchRepository.findById(matchId)
+        Match match = matchRepository.findByIdForUpdate(matchId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
+
+        if (match.getStatus() == MatchStatus.cancelled || match.getStatus() == MatchStatus.completed) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Match is locked and cannot be modified");
+        }
 
         MatchParticipant participant = matchParticipantRepository
                 .findByMatch_IdAndUser_Id(matchId, userId)
@@ -120,7 +127,6 @@ public class MatchServiceImpl implements MatchService {
 
         if (match.getCurrentPlayers() > 0) {
             match.setCurrentPlayers((short) (match.getCurrentPlayers() - 1));
-            matchRepository.save(match);
         }
 
         // Tự động rời phòng chat (soft delete bằng cách ghi nhận thời gian rời)
@@ -131,8 +137,50 @@ public class MatchServiceImpl implements MatchService {
                         roomMemberRepository.save(member);
                     });
         });
+        refreshStatusByCapacity(match);
+        matchRepository.save(match);
 
         return buildDto(match, userId);
+    }
+
+    @Override
+    @Transactional
+    public MatchDetailDto cancelMatch(Integer matchId, Integer hostId) {
+        Match match = matchRepository.findByIdForUpdate(matchId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
+
+        if (!match.getHost().getId().equals(hostId)) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Only host can cancel this match");
+        }
+        if (match.getStatus() == MatchStatus.cancelled) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Match has already been cancelled");
+        }
+        if (match.getStatus() == MatchStatus.completed) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Completed match cannot be cancelled");
+        }
+
+        match.setStatus(MatchStatus.cancelled);
+        matchRepository.save(match);
+        return buildDto(match, hostId);
+    }
+
+    @Override
+    @Transactional
+    public MatchDetailDto resumeMatch(Integer matchId, Integer hostId) {
+        Match match = matchRepository.findByIdForUpdate(matchId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
+
+        if (!match.getHost().getId().equals(hostId)) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Only host can resume this match");
+        }
+        if (match.getStatus() != MatchStatus.cancelled) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Only cancelled match can be resumed");
+        }
+
+        match.setStatus(MatchStatus.open);
+        refreshStatusByCapacity(match);
+        matchRepository.save(match);
+        return buildDto(match, hostId);
     }
 
     // ── Create Match ─────────────────────────────────────────────────
@@ -213,6 +261,8 @@ public class MatchServiceImpl implements MatchService {
                 .endTime(end)
                 .build();
 
+            refreshStatusByCapacity(match);
+
         Match saved = matchRepository.save(match);
 
         // Host tự động là participant
@@ -241,10 +291,71 @@ public class MatchServiceImpl implements MatchService {
             throw new AppException(HttpStatus.FORBIDDEN, "Bạn không có quyền cập nhật trạng thái trận đấu này");
         }
 
+        if (match.getStatus() == MatchStatus.cancelled || match.getStatus() == MatchStatus.completed) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Trận đấu đã kết thúc hoặc đã hủy, không thể cập nhật");
+        }
+
+        if (status == MatchStatus.cancelled) {
+            return cancelMatch(matchId, hostId);
+        }
+
         match.setStatus(status);
         matchRepository.save(match);
 
         return buildDto(match, hostId);
+    }
+
+    // ── Explore Matches ──────────────────────────────────────────────
+    @Override
+    @Transactional(readOnly = true)
+    public List<MatchDetailDto> exploreMatches(ExploreMatchRequest request, Integer currentUserId) {
+        Double radiusKm = request.getRadiusKm();
+        if (radiusKm == null && request.getLat() != null && request.getLng() != null) {
+            radiusKm = 10.0; // default 10km when location is provided
+        }
+
+        List<Match> matches = matchRepository.exploreMatches(
+                request.getKeyword(),
+                request.getSport(),
+                request.getSkillLevel(),
+                request.getFeeType(),
+                request.getLat(),
+                request.getLng(),
+                radiusKm
+        );
+
+        List<MatchDetailDto> dtos = buildDtos(matches, currentUserId);
+
+        // Compute distance for each DTO if user coordinates are provided
+        if (request.getLat() != null && request.getLng() != null) {
+            for (MatchDetailDto dto : dtos) {
+                Double matchLat = null;
+                Double matchLng = null;
+                if (dto.getVenue() != null && dto.getVenue().getLat() != null) {
+                    matchLat = dto.getVenue().getLat();
+                    matchLng = dto.getVenue().getLng();
+                } else if (dto.getLat() != null && dto.getLng() != null) {
+                    matchLat = dto.getLat();
+                    matchLng = dto.getLng();
+                }
+                if (matchLat != null && matchLng != null) {
+                    dto.setDistance(haversineKm(request.getLat(), request.getLng(), matchLat, matchLng));
+                }
+            }
+        }
+
+        return dtos;
+    }
+
+    private double haversineKm(double lat1, double lng1, double lat2, double lng2) {
+        double R = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return Math.round(R * c * 10.0) / 10.0; // round to 1 decimal
     }
 
     // ── Internal DTO builder ─────────────────────────────────────────
@@ -335,5 +446,18 @@ public class MatchServiceImpl implements MatchService {
                     return buildDto(match, participants, joined);
                 })
                 .collect(Collectors.toList());
+    }
+
+    private void refreshStatusByCapacity(Match match) {
+        if (match.getStatus() == MatchStatus.cancelled || match.getStatus() == MatchStatus.completed) {
+            return;
+        }
+
+        if (match.getCurrentPlayers() >= match.getMaxPlayers()) {
+            match.setStatus(MatchStatus.full);
+            return;
+        }
+
+        match.setStatus(MatchStatus.open);
     }
 }
