@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import LoggedInNavbar from "../../components/LoggedInNavbar/LoggedInNavbar";
 import Footer from "../../components/Footer/Footer";
@@ -7,6 +7,7 @@ import { matchService, type MatchDetail } from "../../services/matchService";
 import "./MyRooms.css";
 
 const MyRooms: React.FC = () => {
+  const navigate = useNavigate();
   const [matches, setMatches] = useState<MatchDetail[]>(() => {
     return matchService.getCachedMyRooms() || [];
   });
@@ -17,7 +18,6 @@ const MyRooms: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"Active" | "Past" | "Cancelled">("Active");
   const cardsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch match rooms hosted by the current user
   useEffect(() => {
     const fetchMyRooms = async () => {
       try {
@@ -39,7 +39,6 @@ const MyRooms: React.FC = () => {
     fetchMyRooms();
   }, []);
 
-  // GSAP Animation for staggered room card entrance
   useEffect(() => {
     if (!isLoading && cardsContainerRef.current) {
       const cards = cardsContainerRef.current.querySelectorAll(".room-card-anim");
@@ -61,7 +60,6 @@ const MyRooms: React.FC = () => {
     }
   }, [activeTab, matches, isLoading]);
 
-  // Helper to map sport text to standard icon and styling class
   const getSportIconAndClass = (sport: string) => {
     if (!sport) return { icon: "fa-futbol", className: "sport-football" };
     const s = sport.toLowerCase();
@@ -80,7 +78,6 @@ const MyRooms: React.FC = () => {
     return { icon: "fa-futbol", className: "sport-football" };
   };
 
-  // Helper to translate sport to Vietnamese
   const translateSportName = (sport: string) => {
     if (!sport) return sport;
     const s = sport.toLowerCase();
@@ -99,7 +96,6 @@ const MyRooms: React.FC = () => {
     return sport;
   };
 
-  // Helper to format timestamps to readable Vietnamese time format
   const formatMatchTime = (timeStr: string) => {
     try {
       const date = new Date(timeStr);
@@ -116,7 +112,6 @@ const MyRooms: React.FC = () => {
     }
   };
 
-  // Handle Cancel Match
   const handleCancelMatch = async (id: number, title: string) => {
     const confirmCancel = window.confirm(`Bạn có chắc chắn muốn hủy trận đấu "${title}" không?`);
     if (confirmCancel) {
@@ -132,7 +127,6 @@ const MyRooms: React.FC = () => {
     }
   };
 
-  // Handle Start Match
   const handleStartMatch = async (id: number, title: string) => {
     const confirmStart = window.confirm(`Bắt đầu trận đấu "${title}" ngay bây giờ?`);
     if (confirmStart) {
@@ -184,12 +178,10 @@ const MyRooms: React.FC = () => {
 
       <main className="my-rooms-main py-5">
         <div className="container">
-          {/* Page Title */}
           <div className="d-flex align-items-center justify-content-between mb-4">
             <h1 className="my-rooms-title mb-0">Các trận đấu của tôi</h1>
           </div>
 
-          {/* Segmented Tab Bar */}
           <div className="tabs-container mb-4">
             <div className="segmented-control">
               <button
@@ -213,10 +205,8 @@ const MyRooms: React.FC = () => {
             </div>
           </div>
 
-          {/* Error Message */}
           {error && <div className="alert alert-danger mb-4">{error}</div>}
 
-          {/* Cards Grid */}
           {isLoading ? (
             <div className="text-center py-5">
               <div className="spinner-border text-primary" role="status">
@@ -251,7 +241,6 @@ const MyRooms: React.FC = () => {
                         className="room-card-link text-decoration-none text-dark d-block h-100"
                       >
                         <div className="room-card shadow-sm h-100 d-flex flex-column">
-                          {/* Top Badges */}
                           <div className="d-flex align-items-center justify-content-between mb-3">
                             <div className="d-flex gap-2">
                               <span className={`badge-custom ${sportInfo.className}`}>
@@ -266,14 +255,13 @@ const MyRooms: React.FC = () => {
                               {match.status.toUpperCase() === "OPEN"
                                 ? "Đang tuyển"
                                 : match.status.toUpperCase() === "FULL"
-                                ? "Đã đầy"
-                                : match.status.toUpperCase() === "COMPLETED"
-                                ? "Hoàn thành"
-                                : "Đã hủy"}
+                                  ? "Đã đầy"
+                                  : match.status.toUpperCase() === "COMPLETED"
+                                    ? "Hoàn thành"
+                                    : "Đã hủy"}
                             </span>
                           </div>
 
-                          {/* Title & Location */}
                           <h4 className="room-card-title fw-bold mb-2">
                             {match.title}
                           </h4>
@@ -282,10 +270,8 @@ const MyRooms: React.FC = () => {
                             {locationName}
                           </p>
 
-                          {/* Divider */}
                           <hr className="card-divider" />
 
-                          {/* Roster Status */}
                           <div className="roster-status-section mb-3">
                             <div className="d-flex justify-content-between align-items-center mb-2">
                               <span className="roster-label">Danh sách tham gia</span>
@@ -295,17 +281,16 @@ const MyRooms: React.FC = () => {
                             </div>
                             <div className="progress roster-progress" style={{ height: "6px" }}>
                               <div
-                                  className={`progress-bar ${progressColorClass}`}
-                                  role="progressbar"
-                                  style={{ width: `${rosterPercent}%` }}
-                                  aria-valuenow={match.currentPlayers}
-                                  aria-valuemin={0}
-                                  aria-valuemax={match.maxPlayers}
+                                className={`progress-bar ${progressColorClass}`}
+                                role="progressbar"
+                                style={{ width: `${rosterPercent}%` }}
+                                aria-valuenow={match.currentPlayers}
+                                aria-valuemin={0}
+                                aria-valuemax={match.maxPlayers}
                               ></div>
                             </div>
                           </div>
 
-                          {/* Participants/Avatars & helper text */}
                           <div className="d-flex align-items-center justify-content-between pt-1 mb-4">
                             <div className="d-flex align-items-center">
                               <div className="avatar-group d-flex align-items-center me-2">
@@ -335,15 +320,14 @@ const MyRooms: React.FC = () => {
                                 {match.status.toUpperCase() === "FULL"
                                   ? "Sẵn sàng thi đấu"
                                   : match.status.toUpperCase() === "COMPLETED"
-                                  ? "Trận đấu đã kết thúc"
-                                  : match.status.toUpperCase() === "CANCELLED"
-                                  ? "Trận đấu đã bị hủy"
-                                  : `Đang chờ thêm ${match.maxPlayers - match.currentPlayers} người`}
+                                    ? "Trận đấu đã kết thúc"
+                                    : match.status.toUpperCase() === "CANCELLED"
+                                      ? "Trận đấu đã bị hủy"
+                                      : `Đang chờ thêm ${match.maxPlayers - match.currentPlayers} người`}
                               </span>
                             </div>
                           </div>
 
-                          {/* Card Footer Actions */}
                           {match.status.toUpperCase() === "OPEN" && (
                             <div className="d-flex align-items-center gap-2 mt-auto">
                               <button
@@ -351,7 +335,7 @@ const MyRooms: React.FC = () => {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  alert("Mở cuộc hội thoại trò chuyện cho trận đấu này...");
+                                  navigate(`/messages?roomId=${match.id}`);
                                 }}
                               >
                                 <i className="fa-regular fa-message me-2"></i>
@@ -401,7 +385,7 @@ const MyRooms: React.FC = () => {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  alert("Mở cuộc hội thoại trò chuyện cho trận đấu này...");
+                                  navigate(`/messages?roomId=${match.id}`);
                                 }}
                               >
                                 <i className="fa-regular fa-message"></i>

@@ -89,14 +89,16 @@ const INITIAL_FORM: FormData = {
 const formatDate = (d: string) => {
   if (!d) return null;
   const date = new Date(d + 'T00:00:00');
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const days = ['CN', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  const dayName = days[date.getDay()];
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  return `${dayName}, ngày ${day} tháng ${month}`;
 };
 
 const formatTime = (t: string) => {
   if (!t) return null;
-  const [h, m] = t.split(':');
-  const hour = parseInt(h);
-  return `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+  return t; // Trả về định dạng 24h trực tiếp (ví dụ: "19:00")
 };
 
 const PreviewCard: React.FC<{ form: FormData; step: number }> = ({ form, step }) => {

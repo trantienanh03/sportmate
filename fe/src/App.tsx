@@ -7,6 +7,7 @@ import ProfilePage from './pages/Profile/ProfilePage';
 import MatchDetail from './pages/MatchDetail/MatchDetail';
 import CreateMatch from './pages/CreateMatch/CreateMatch';
 import MyRooms from './pages/MyRooms/MyRooms';
+import Messages from './pages/Messages/Messages';
 import ExplorePage from './pages/Explore/ExplorePage';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -15,57 +16,65 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route 
-          path="/home" 
-          element={
-            <ProtectedRoute>
-              <UserHome />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/matches/:id" 
-          element={
-            <ProtectedRoute>
-              <MatchDetail />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/create-match" 
-          element={
-            <ProtectedRoute>
-              <CreateMatch />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/my-rooms" 
-          element={
-            <ProtectedRoute>
-              <MyRooms />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/explore" 
-          element={
-            <ProtectedRoute>
-              <ExplorePage />
-            </ProtectedRoute>
-          } 
-        />
-      </Routes>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <UserHome />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/matches/:id"
+            element={
+              <ProtectedRoute>
+                <MatchDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-match"
+            element={
+              <ProtectedRoute>
+                <CreateMatch />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-rooms"
+            element={
+              <ProtectedRoute>
+                <MyRooms />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/explore"
+            element={
+              <ProtectedRoute>
+                <ExplorePage />
+              </ProtectedRoute>
+            }
+          />
+              </Routes>
     </BrowserRouter>
     </AuthProvider>
   );
