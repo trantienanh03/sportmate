@@ -17,6 +17,7 @@ import com.cdweb.be.repository.MatchRepository;
 import com.cdweb.be.repository.UserRepository;
 import com.cdweb.be.repository.VenueRepository;
 import com.cdweb.be.service.MatchService;
+import com.cdweb.be.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class MatchServiceImpl implements MatchService {
     private final UserRepository userRepository;
     private final VenueRepository venueRepository;
     private final MatchParticipantRepository matchParticipantRepository;
+    private final RoomService roomService;
 
     // ── Get All Matches ──────────────────────────────────────────────
     @Override
@@ -190,6 +192,9 @@ public class MatchServiceImpl implements MatchService {
         // Host tự động là participant
         matchParticipantRepository.save(MatchParticipant.builder()
                 .match(saved).user(host).role("host").status("joined").build());
+
+        // Tự động tạo room chat cho match vừa tạo
+        roomService.createRoomForMatch(saved.getId(), hostId, saved.getTitle());
 
         return saved;
     }
