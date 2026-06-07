@@ -1,0 +1,57 @@
+.explore-filter-sidebar {
+  position: relative;
+  z-index: 1;
+}
+
+.explore-filter-sidebar .sidebar-card {
+  background-color: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  top: 88px;
+  z-index: 1 !important;
+}
+
+.explore-filter-sidebar .sidebar-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filter-count-badge {
+  background-color: var(--primary);
+  color: var(--surface);
+  font-size: 0.7rem;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.explore-filter-sidebar label {
+  color: var(--text-secondary);
+}
+
+.explore-filter-sidebar .form-select,
+.explore-filter-sidebar .form-control {
+  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.explore-filter-sidebar .form-select:focus,
+.explore-filter-sidebar .form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+@media (max-width: 991.98px) {
+  .explore-filter-sidebar .sidebar-card {
+    position: static !important;
+    margin-bottom: 1.5rem;
+  }
+}

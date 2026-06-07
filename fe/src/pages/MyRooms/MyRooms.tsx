@@ -121,7 +121,7 @@ const MyRooms: React.FC = () => {
     const confirmCancel = window.confirm(`Bạn có chắc chắn muốn hủy trận đấu "${title}" không?`);
     if (confirmCancel) {
       try {
-        const updated = await matchService.updateMatchStatus(id, "cancelled");
+        const updated = await matchService.cancelMatch(id);
         setMatches((prev) =>
           prev.map((match) => (match.id === id ? updated : match))
         );
@@ -144,6 +144,21 @@ const MyRooms: React.FC = () => {
         alert(`Trận đấu "${title}" đã được bắt đầu.`);
       } catch (err: any) {
         alert(err.message || "Không thể bắt đầu trận đấu");
+      }
+    }
+  };
+
+  const handleResumeMatch = async (id: number, title: string) => {
+    const confirmResume = window.confirm(`Khôi phục trận đấu "${title}" để tiếp tục?`);
+    if (confirmResume) {
+      try {
+        const updated = await matchService.resumeMatch(id);
+        setMatches((prev) =>
+          prev.map((match) => (match.id === id ? updated : match))
+        );
+        alert(`Đã khôi phục trận đấu "${title}".`);
+      } catch (err: any) {
+        alert(err.message || "Không thể khôi phục trận đấu");
       }
     }
   };
@@ -399,9 +414,22 @@ const MyRooms: React.FC = () => {
                               <span className="text-muted small">
                                 Trạng thái: <strong>{match.status.toUpperCase() === "COMPLETED" ? "Đã kết thúc" : "Đã hủy"}</strong>
                               </span>
-                              <span className="btn btn-link btn-sm text-decoration-none p-0 text-secondary">
-                                Xem chi tiết
-                              </span>
+                              {match.status.toUpperCase() === "CANCELLED" ? (
+                                <button
+                                  className="btn btn-link btn-sm text-decoration-none p-0 text-success"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleResumeMatch(match.id, match.title);
+                                  }}
+                                >
+                                  Ngừng hủy
+                                </button>
+                              ) : (
+                                <span className="btn btn-link btn-sm text-decoration-none p-0 text-secondary">
+                                  Xem chi tiết
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
