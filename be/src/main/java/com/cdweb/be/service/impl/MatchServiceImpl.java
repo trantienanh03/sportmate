@@ -36,7 +36,9 @@ public class MatchServiceImpl implements MatchService {
     private final UserRepository userRepository;
     private final VenueRepository venueRepository;
     private final MatchParticipantRepository matchParticipantRepository;
-    private final RoomService roomService;
+    private final com.cdweb.be.service.RoomService roomService;
+    private final com.cdweb.be.repository.RoomRepository roomRepository;
+    private final com.cdweb.be.repository.RoomMemberRepository roomMemberRepository;
 
     // ── Get All Matches ──────────────────────────────────────────────
     @Override
@@ -80,6 +82,21 @@ public class MatchServiceImpl implements MatchService {
         match.setCurrentPlayers((short) (match.getCurrentPlayers() + 1));
         matchRepository.save(match);
 
+        // Tự động tham gia phòng chat của match (nếu phòng tồn tại)
+        // Lưu ý: Lưu trực tiếp qua Repository để tránh lỗi 'transaction rollback-only'
+        // khi dùng RoomService nếu có exception ném ra.
+        roomRepository.findByMatchId(matchId).ifPresent(room -> {
+            boolean alreadyInRoom = roomMemberRepository
+                    .findByRoomIdAndUserIdAndLeftAtIsNull(room.getId(), userId).isPresent();
+            if (!alreadyInRoom) {
+                roomMemberRepository.save(com.cdweb.be.entity.RoomMember.builder()
+                        .roomId(room.getId())
+                        .userId(userId)
+                        .role(com.cdweb.be.enums.MemberRole.MEMBER)
+                        .build());
+            }
+        });
+
         return buildDto(match, userId);
     }
 
@@ -105,6 +122,15 @@ public class MatchServiceImpl implements MatchService {
             match.setCurrentPlayers((short) (match.getCurrentPlayers() - 1));
             matchRepository.save(match);
         }
+
+        // Tự động rời phòng chat (soft delete bằng cách ghi nhận thời gian rời)
+        roomRepository.findByMatchId(matchId).ifPresent(room -> {
+            roomMemberRepository.findByRoomIdAndUserIdAndLeftAtIsNull(room.getId(), userId)
+                    .ifPresent(member -> {
+                        member.setLeftAt(LocalDateTime.now());
+                        roomMemberRepository.save(member);
+                    });
+        });
 
         return buildDto(match, userId);
     }
