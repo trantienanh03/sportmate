@@ -56,10 +56,11 @@ public class MessageServiceImpl implements MessageService {
 
                 Message savedMessage = messageRepository.save(message);
 
-                // Update room lastMessageAt
+                // Cập nhật lastMessageAt để đẩy phòng chat lên đầu danh sách
                 room.setLastMessageAt(LocalDateTime.now());
                 roomRepository.save(room);
 
+                // Trả về DTO chứa thông tin để broadcast cho client
                 return MessageDto.builder()
                                 .id(savedMessage.getId())
                                 .roomId(savedMessage.getRoomId())

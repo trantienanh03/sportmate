@@ -13,8 +13,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
+        // Định tuyến tin nhắn từ Server -> Client
         config.enableSimpleBroker("/topic", "/queue");
+        
+        // Định tuyến tin nhắn từ Client -> Server (vào các @MessageMapping)
         config.setApplicationDestinationPrefixes("/app");
+        
+        // Kênh đặc biệt dùng để báo lỗi riêng cho từng user
         config.setUserDestinationPrefix("/user");
     }
 

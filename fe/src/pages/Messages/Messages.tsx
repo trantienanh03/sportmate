@@ -48,6 +48,7 @@ const Messages: React.FC = () => {
   const handleNewMessage = (newMsg: MessageDto) => {
     setConversations(prev => prev.map(c => {
       if (c.id === newMsg.roomId) {
+        // Chống trùng lặp tin nhắn nếu có áp dụng Optimistic UI sau này
         const exists = c.messages.find(m => m.id === newMsg.id);
         if (exists) return c;
         return {

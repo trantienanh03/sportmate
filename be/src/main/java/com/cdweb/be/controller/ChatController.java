@@ -28,7 +28,7 @@ public class ChatController {
                               SimpMessageHeaderAccessor headerAccessor) {
         
         try {
-            // Retrieve session attributes from websocket
+            // Lấy userId từ Session Attributes (được map tự động qua HttpSessionHandshakeInterceptor)
             Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
             Integer senderId = null;
             
@@ -44,7 +44,7 @@ public class ChatController {
             request.setRoomId(roomId);
             MessageDto savedMessage = messageService.saveAndBroadcastMessage(request, senderId);
             
-            // Broadcast to the room
+            // Broadcast tin nhắn cho các client đang subscribe phòng này
             messagingTemplate.convertAndSend("/topic/room/" + roomId, savedMessage);
             
         } catch (Exception e) {

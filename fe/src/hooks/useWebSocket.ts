@@ -29,10 +29,11 @@ export const useWebSocket = (
     client.onConnect = () => {
       setIsConnected(true);
 
-      // Subscribe to the room topic
+      // Đăng ký nhận tin nhắn từ server cho phòng hiện tại
       client.subscribe(`/topic/room/${roomId}`, (message) => {
         if (message.body) {
           const parsedMsg: MessageDto = JSON.parse(message.body);
+          // Truyền tin nhắn mới lên component cha
           onMessageReceived(parsedMsg);
         }
       });
