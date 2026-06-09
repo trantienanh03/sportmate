@@ -342,9 +342,7 @@ const MatchDetail: React.FC = () => {
                 </span>
               </div>
 
-              <button className="btn btn-light rounded-circle me-2 action-icon-btn">
-                <i className="fa-regular fa-heart" />
-              </button>
+
               <button className="btn btn-light rounded-circle me-3 action-icon-btn d-none d-sm-inline-block">
                 <i className="fa-solid fa-arrow-up-from-bracket" />
               </button>
