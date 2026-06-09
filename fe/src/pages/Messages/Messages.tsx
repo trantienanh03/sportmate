@@ -60,8 +60,7 @@ const Messages: React.FC = () => {
       }
       return c;
     }));
-    
-    // If we are looking at this room, scroll down
+
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -81,14 +80,19 @@ const Messages: React.FC = () => {
       }
     }
   }, [searchParams, conversations]);
-
+  // load message from DB
   useEffect(() => {
     if (selectedConvoId) {
       chatService.getMessages(selectedConvoId)
-        .then(messages => {
-          setConversations(prev => prev.map(c => 
-            c.id === selectedConvoId ? { ...c, messages: messages.reverse() } : c
-          ));
+        .then(fetchedMessages => {
+          const sorted = [...fetchedMessages].reverse();
+          setConversations(prev => prev.map(c => {
+            if (c.id !== selectedConvoId) return c;
+            const existingIds = new Set(sorted.map(m => m.id));
+            const newFromWs = c.messages.filter(m => !existingIds.has(m.id));
+            const merged = [...sorted, ...newFromWs].sort((a, b) => a.id - b.id);
+            return { ...c, messages: merged };
+          }));
           setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
           }, 100);
@@ -128,6 +132,32 @@ const Messages: React.FC = () => {
     setInputText("");
   };
 
+  const formatDateLabel = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const isSameDay = (a: Date, b: Date) =>
+      a.getDate() === b.getDate() &&
+      a.getMonth() === b.getMonth() &&
+      a.getFullYear() === b.getFullYear();
+
+    if (isSameDay(date, today)) return "Hôm nay";
+    if (isSameDay(date, yesterday)) return "Hôm qua";
+    return date.toLocaleDateString("vi-VN", {
+      weekday: "long",
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const getDateKey = (dateStr: string): string => {
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  };
+
   const getSportIcon = (sport?: string) => {
     if (!sport) return "fa-comment";
     switch (sport.toLowerCase()) {
@@ -152,9 +182,8 @@ const Messages: React.FC = () => {
       <main className="messages-main-content py-4 py-md-5">
         <div className="container">
           <div
-            className={`messages-card-container ${
-              isMobileChatActive ? "mobile-chat-active" : ""
-            }`}
+            className={`messages-card-container ${isMobileChatActive ? "mobile-chat-active" : ""
+              }`}
           >
             <section className="conversation-list-pane">
               <header className="pane-header">
@@ -213,9 +242,9 @@ const Messages: React.FC = () => {
                             <span className="convo-time">
                               {convo.lastMessageAt
                                 ? new Date(convo.lastMessageAt).toLocaleTimeString("vi-VN", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
                                 : ""}
                             </span>
                           </div>
@@ -277,48 +306,73 @@ const Messages: React.FC = () => {
                   </header>
 
                   <div className="chat-messages-feed">
-                    {activeConvo.messages.map((msg) => {
+                    {activeConvo.messages.map((msg, index) => {
+                      const prevMsg = activeConvo.messages[index - 1];
+                      const showDateSeparator =
+                        !prevMsg ||
+                        getDateKey(msg.createdAt) !== getDateKey(prevMsg.createdAt);
+
                       if (msg.type === "SYSTEM") {
                         return (
-                          <div key={msg.id} className="system-msg-wrap">
-                            <span className="system-msg-text">{msg.content}</span>
-                          </div>
+                          <React.Fragment key={msg.id}>
+                            {showDateSeparator && (
+                              <div className="date-divider-wrap">
+                                <div className="date-divider-line" />
+                                <span className="date-divider-text">
+                                  {formatDateLabel(msg.createdAt)}
+                                </span>
+                              </div>
+                            )}
+                            <div className="system-msg-wrap">
+                              <span className="system-msg-text">{msg.content}</span>
+                            </div>
+                          </React.Fragment>
                         );
                       }
 
                       const isMe = userId !== null && msg.senderId === userId;
-
                       const bubbleClass = isMe ? "sent" : "received";
+
                       return (
-                        <div key={msg.id} className={`message-bubble-row ${bubbleClass}`}>
-                          {!isMe && (
-                            <div className="msg-sender-avatar">
-                              {msg.senderAvatar ? (
-                                <img src={msg.senderAvatar} alt={msg.senderName} />
-                              ) : (
-                                <span>{msg.senderName?.charAt(0)}</span>
-                              )}
+                        <React.Fragment key={msg.id}>
+                          {showDateSeparator && (
+                            <div className="date-divider-wrap">
+                              <div className="date-divider-line" />
+                              <span className="date-divider-text">
+                                {formatDateLabel(msg.createdAt)}
+                              </span>
                             </div>
                           )}
-                          <div className="msg-bubble-content-col">
+                          <div className={`message-bubble-row ${bubbleClass}`}>
                             {!isMe && (
-                              <span className="msg-sender-name">
-                                {msg.senderName}
-                              </span>
+                              <div className="msg-sender-avatar">
+                                {msg.senderAvatar ? (
+                                  <img src={msg.senderAvatar} alt={msg.senderName} />
+                                ) : (
+                                  <span>{msg.senderName?.charAt(0)}</span>
+                                )}
+                              </div>
                             )}
-                            <div className="msg-text-bubble">
-                              <p className="mb-0">{msg.content}</p>
-                            </div>
-                            <div className="msg-meta-row">
-                              <span>
-                                {new Date(msg.createdAt).toLocaleTimeString("vi-VN", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </span>
+                            <div className="msg-bubble-content-col">
+                              {!isMe && (
+                                <span className="msg-sender-name">
+                                  {msg.senderName}
+                                </span>
+                              )}
+                              <div className="msg-text-bubble">
+                                <p className="mb-0">{msg.content}</p>
+                              </div>
+                              <div className="msg-meta-row">
+                                <span>
+                                  {new Date(msg.createdAt).toLocaleTimeString("vi-VN", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </React.Fragment>
                       );
                     })}
                     <div ref={messagesEndRef} />

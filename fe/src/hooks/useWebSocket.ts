@@ -11,6 +11,12 @@ export const useWebSocket = (
 ) => {
   const [isConnected, setIsConnected] = useState(false);
   const clientRef = useRef<Client | null>(null);
+  // Dùng ref để giữ callback luôn mới nhất mà không cần reconnect WebSocket.
+  // Đây là pattern chuẩn để tránh stale closure trong hooks.
+  const onMessageReceivedRef = useRef(onMessageReceived);
+  useEffect(() => {
+    onMessageReceivedRef.current = onMessageReceived;
+  }, [onMessageReceived]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -30,7 +36,8 @@ export const useWebSocket = (
       client.subscribe(`/topic/room/${roomId}`, (message) => {
         if (message.body) {
           const parsedMsg: MessageDto = JSON.parse(message.body);
-          onMessageReceived(parsedMsg);
+          // Dùng ref để luôn gọi callback mới nhất, tránh stale closure
+          onMessageReceivedRef.current(parsedMsg);
         }
       });
     };
@@ -52,8 +59,8 @@ export const useWebSocket = (
         setIsConnected(false);
       }
     };
-    // Chỉ phụ thuộc vào roomId để tránh việc reconnect liên tục khi callback onMessageReceived (thường thay đổi mỗi lần render) được truyền vào.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Chỉ phụ thuộc vào roomId: khi đổi phòng mới reconnect.
+    // onMessageReceived được giữ qua ref nên không cần trong dep array.
   }, [roomId]);
 
   const sendMessage = (content: string, type = "TEXT", metadata: string | null = null) => {

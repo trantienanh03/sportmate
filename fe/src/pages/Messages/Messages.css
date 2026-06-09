@@ -17,7 +17,7 @@
   padding: 24px 0;
 }
 
-.messages-main-content > .container {
+.messages-main-content>.container {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -577,7 +577,7 @@
 
 .chat-input-bar {
   height: 80px;
-  padding: 0 24px;
+  padding: 5px 24px;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -696,20 +696,20 @@
     box-shadow: none;
     margin: 0;
   }
-  
+
   .conversation-list-pane {
     width: 100%;
     min-width: 100%;
   }
-  
+
   .chat-window-pane {
     display: none;
   }
-  
+
   .mobile-chat-active .conversation-list-pane {
     display: none;
   }
-  
+
   .mobile-chat-active .chat-window-pane {
     display: flex;
     width: 100%;

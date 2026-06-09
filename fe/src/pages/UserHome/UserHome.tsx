@@ -186,7 +186,6 @@ const UserHome: React.FC = () => {
                         <div className="event-card">
                           <div className="event-img-wrapper">
                             <img src={match.imageUrl || getSportImage(match.sport)} alt={match.title} className="event-img" />
-                            <button className="like-btn" onClick={(e) => e.preventDefault()}><i className="fa-regular fa-heart"></i></button>
                           </div>
                           <div className="event-details mt-3">
                             <h5 className="event-title fw-bold" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '2.8rem' }} title={match.title}>
