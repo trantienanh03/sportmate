@@ -1,0 +1,9 @@
+package com.cdweb.be.enums;
+
+public enum NotificationType {
+    MATCH_JOINED,
+    MATCH_LEFT,
+    MATCH_CANCELLED,
+    MATCH_RESUMED,
+    SYSTEM
+}
