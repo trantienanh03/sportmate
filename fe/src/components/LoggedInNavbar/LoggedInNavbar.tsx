@@ -5,10 +5,92 @@ import { sportService, type SportItem } from "../../services/sportService";
 import { matchService, type MatchDetail } from "../../services/matchService";
 import "./LoggedInNavbar.css";
 
+interface NotificationItem {
+  id: number;
+  title: string;
+  content: string;
+  type: string;
+  relatedEntityId?: number;
+  isRead: boolean;
+  createdAt: string;
+  senderName?: string;
+  senderAvatar?: string;
+}
+
 const LoggedInNavbar: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>([
+    {
+      id: 1,
+      title: "yêu cầu tham gia mới",
+      content: "muốn tham gia trận đấu Bóng đá sân Thống Nhất của bạn.",
+      type: "MATCH_JOINED",
+      relatedEntityId: 1,
+      isRead: false,
+      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      senderName: "Nguyễn Văn Nam",
+      senderAvatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=Nam",
+    },
+    {
+      id: 2,
+      title: "đã hủy trận đấu",
+      content: "Trận đấu Cầu lông quận 10 tối nay đã bị hủy.",
+      type: "MATCH_CANCELLED",
+      relatedEntityId: 2,
+      isRead: false,
+      createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+      senderName: "Trần Anh Tuấn",
+      senderAvatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=Tuan",
+    },
+    {
+      id: 3,
+      title: "đã cập nhật thông tin trận đấu",
+      content: "Sân chơi trận đấu Tennis quận 3 được chuyển sang Sân Lan Anh.",
+      type: "MATCH_RESUMED",
+      relatedEntityId: 3,
+      isRead: true,
+      createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+      senderName: "Lê Minh",
+      senderAvatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=Minh",
+    }
+  ]);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const handleMarkAllAsRead = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+  };
+
+  const handleNotificationClick = (notif: NotificationItem) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
+    );
+    if (notif.relatedEntityId) {
+      navigate(`/matches/${notif.relatedEntityId}`);
+    }
+  };
+
+  const formatTime = (isoString: string) => {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+
+    if (diffMins < 1) return "Vừa xong";
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    return date.toLocaleDateString("vi-VN", {
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+    });
+  };
 
   const [keyword, setKeyword] = useState("");
   const [showFilter, setShowFilter] = useState(false);
@@ -418,11 +500,89 @@ const LoggedInNavbar: React.FC = () => {
                 Tạo trận đấu
               </Link>
             </li>
-            <li className="nav-item mx-2">
-              <a className="nav-link nav-icon-link" href="#">
+            <li className="nav-item mx-2 dropdown notification-dropdown-container">
+              <a
+                className="nav-link nav-icon-link position-relative dropdown-toggle no-caret"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                aria-expanded="false"
+              >
                 <i className="fa-regular fa-bell"></i>
-                <span className="notification-dot"></span>
+                {unreadCount > 0 && (
+                  <span className="notification-badge">{unreadCount}</span>
+                )}
               </a>
+              <div className="dropdown-menu dropdown-menu-end notification-dropdown shadow-lg border-0">
+                <div className="notification-header d-flex justify-content-between align-items-center">
+                  <h6 className="fw-bold mb-0">Thông báo</h6>
+                  {unreadCount > 0 && (
+                    <button
+                      className="btn btn-link btn-sm text-decoration-none p-0 read-all-btn"
+                      onClick={handleMarkAllAsRead}
+                    >
+                      Đọc tất cả
+                    </button>
+                  )}
+                </div>
+                <div className="notification-body">
+                  {notifications.length === 0 ? (
+                    <div className="notification-empty py-4 text-center text-muted">
+                      <i className="fa-regular fa-bell-slash fs-3 mb-2 d-block text-muted"></i>
+                      Không có thông báo mới
+                    </div>
+                  ) : (
+                    <div className="notification-list">
+                      {notifications.map((notif) => (
+                        <button
+                          key={notif.id}
+                          className={`notification-item d-flex gap-3 text-start border-0 w-100 ${
+                            !notif.isRead ? "unread" : ""
+                          }`}
+                          onClick={() => handleNotificationClick(notif)}
+                        >
+                          <div className="notification-icon-wrapper flex-shrink-0">
+                            {notif.senderAvatar ? (
+                              <img
+                                src={notif.senderAvatar}
+                                alt={notif.senderName}
+                                className="notification-sender-avatar"
+                              />
+                            ) : (
+                              <div className="notification-sender-placeholder">
+                                {notif.senderName?.charAt(0).toUpperCase() || "S"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="notification-content-wrapper flex-grow-1">
+                            <p className="notification-title mb-1 text-wrap">
+                              <strong>{notif.senderName}</strong> {notif.title}
+                            </p>
+                            <p className="notification-desc mb-1 text-wrap">
+                              {notif.content}
+                            </p>
+                            <span className="notification-time">
+                              {formatTime(notif.createdAt)}
+                            </span>
+                          </div>
+                          {!notif.isRead && (
+                            <span className="unread-indicator flex-shrink-0"></span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="notification-footer text-center border-top">
+                  <Link
+                    to="/notifications"
+                    className="btn btn-link btn-sm text-decoration-none w-100 text-dark fw-semibold py-2"
+                  >
+                    Xem tất cả thông báo
+                  </Link>
+                </div>
+              </div>
             </li>
             <li className="nav-item mx-2">
               <Link className="nav-link nav-icon-link" to="/messages">
