@@ -64,14 +64,14 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional(readOnly = true)
     public Page<NotificationDto> getNotifications(Integer recipientId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Notification> notifications = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(recipientId, pageable);
+        Page<Notification> notifications = notificationRepository.findByRecipient_IdOrderByCreatedAtDesc(recipientId, pageable);
         return notifications.map(this::buildDto);
     }
 
     @Override
     @Transactional(readOnly = true)
     public long getUnreadCount(Integer recipientId) {
-        return notificationRepository.countByRecipientIdAndIsReadFalse(recipientId);
+        return notificationRepository.countByRecipient_IdAndIsReadFalse(recipientId);
     }
 
     @Override

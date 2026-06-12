@@ -12,9 +12,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Integer> {
 
-    Page<Notification> findByRecipientIdOrderByCreatedAtDesc(Integer recipientId, Pageable pageable);
+    Page<Notification> findByRecipient_IdOrderByCreatedAtDesc(Integer recipientId, Pageable pageable);
 
-    long countByRecipientIdAndIsReadFalse(Integer recipientId);
+    long countByRecipient_IdAndIsReadFalse(Integer recipientId);
 
     @Modifying
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.recipient.id = :recipientId AND n.isRead = false")

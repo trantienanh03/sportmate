@@ -19,7 +19,10 @@ import com.cdweb.be.repository.UserRepository;
 import com.cdweb.be.repository.VenueRepository;
 import com.cdweb.be.service.MatchService;
 import com.cdweb.be.service.RoomService;
+import com.cdweb.be.service.NotificationService;
+import com.cdweb.be.enums.NotificationType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
@@ -40,6 +44,7 @@ public class MatchServiceImpl implements MatchService {
     private final com.cdweb.be.service.RoomService roomService;
     private final com.cdweb.be.repository.RoomRepository roomRepository;
     private final com.cdweb.be.repository.RoomMemberRepository roomMemberRepository;
+    private final NotificationService notificationService;
 
     // ── Get All Matches ──────────────────────────────────────────────
     @Override
@@ -100,6 +105,22 @@ public class MatchServiceImpl implements MatchService {
             }
         });
 
+        // Gửi thông báo tới Host của trận đấu
+        try {
+            if (match.getHost() != null && !match.getHost().getId().equals(userId)) {
+                notificationService.sendNotification(
+                        match.getHost().getId(),
+                        userId,
+                        "yêu cầu tham gia mới",
+                        user.getFullName() + " muốn tham gia trận đấu " + match.getTitle() + " của bạn.",
+                        NotificationType.MATCH_JOINED,
+                        matchId
+                );
+            }
+        } catch (Exception e) {
+            log.error("Error sending join match notification for match: {}", matchId, e);
+        }
+
         return buildDto(match, userId);
     }
 
@@ -122,6 +143,8 @@ public class MatchServiceImpl implements MatchService {
             throw new AppException(HttpStatus.BAD_REQUEST, "Host cannot leave the match");
         }
 
+        User user = participant.getUser();
+
         matchParticipantRepository.delete(participant);
         matchParticipantRepository.flush();
 
@@ -139,6 +162,22 @@ public class MatchServiceImpl implements MatchService {
         });
         refreshStatusByCapacity(match);
         matchRepository.save(match);
+
+        // Gửi thông báo tới Host của trận đấu
+        try {
+            if (match.getHost() != null && !match.getHost().getId().equals(userId)) {
+                notificationService.sendNotification(
+                        match.getHost().getId(),
+                        userId,
+                        "đã rời trận đấu",
+                        user.getFullName() + " đã rời khỏi trận đấu " + match.getTitle() + " của bạn.",
+                        NotificationType.MATCH_LEFT,
+                        matchId
+                );
+            }
+        } catch (Exception e) {
+            log.error("Error sending leave match notification for match: {}", matchId, e);
+        }
 
         return buildDto(match, userId);
     }
@@ -161,6 +200,26 @@ public class MatchServiceImpl implements MatchService {
 
         match.setStatus(MatchStatus.cancelled);
         matchRepository.save(match);
+
+        // Gửi thông báo tới tất cả thành viên khác tham gia trận đấu
+        try {
+            List<MatchParticipant> participants = matchParticipantRepository.findByMatch_Id(matchId);
+            for (MatchParticipant p : participants) {
+                if (!p.getUser().getId().equals(hostId)) {
+                    notificationService.sendNotification(
+                            p.getUser().getId(),
+                            hostId,
+                            "đã hủy trận đấu",
+                            "Trận đấu " + match.getTitle() + " bạn đã tham gia đã bị hủy bởi Host.",
+                            NotificationType.MATCH_CANCELLED,
+                            matchId
+                    );
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error sending match cancellation notifications for match: {}", matchId, e);
+        }
+
         return buildDto(match, hostId);
     }
 
@@ -180,6 +239,26 @@ public class MatchServiceImpl implements MatchService {
         match.setStatus(MatchStatus.open);
         refreshStatusByCapacity(match);
         matchRepository.save(match);
+
+        // Gửi thông báo tới tất cả thành viên khác tham gia trận đấu
+        try {
+            List<MatchParticipant> participants = matchParticipantRepository.findByMatch_Id(matchId);
+            for (MatchParticipant p : participants) {
+                if (!p.getUser().getId().equals(hostId)) {
+                    notificationService.sendNotification(
+                            p.getUser().getId(),
+                            hostId,
+                            "đã cập nhật thông tin trận đấu",
+                            "Trận đấu bị hủy " + match.getTitle() + " đã được mở lại bởi Host.",
+                            NotificationType.MATCH_RESUMED,
+                            matchId
+                    );
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error sending match resumption notifications for match: {}", matchId, e);
+        }
+
         return buildDto(match, hostId);
     }
 
