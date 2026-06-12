@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, type SportCard, type AvailabilitySlot } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
 import './ProfilePage.css';
 
@@ -22,15 +22,6 @@ type ReviewItem = {
   rating: number;
 };
 
-type AvailabilityStatus = 'Rảnh' | 'Bận';
-
-type DayAvailability = {
-  label: string;
-  morning: AvailabilityStatus;
-  afternoon: AvailabilityStatus;
-  evening: AvailabilityStatus;
-};
-
 const formatMonthYear = (value?: string | null) => {
   if (!value) return 'Chưa cập nhật';
   const date = new Date(value);
@@ -46,7 +37,7 @@ const toInputValue = (value?: string | number | null) => {
   return String(value);
 };
 
-const SPORT_CARDS = [
+const SPORT_CARDS: SportCard[] = [
   {
     name: 'Cầu lông',
     tag: 'Yêu thích',
@@ -67,11 +58,9 @@ const SPORT_CARDS = [
   },
 ];
 
-type SportCardState = (typeof SPORT_CARDS)[number];
-
 const SPORT_TAG_OPTIONS = ['Yêu thích', 'Main sport', 'Tập thêm', 'Khác'] as const;
 
-const DEFAULT_WEEK_SLOTS: DayAvailability[] = [
+const DEFAULT_WEEK_SLOTS: AvailabilitySlot[] = [
   { label: 'T2', morning: 'Rảnh', afternoon: 'Bận', evening: 'Rảnh' },
   { label: 'T3', morning: 'Rảnh', afternoon: 'Rảnh', evening: 'Rảnh' },
   { label: 'T4', morning: 'Bận', afternoon: 'Rảnh', evening: 'Rảnh' },
@@ -114,8 +103,8 @@ const ProfilePage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showEditBanner, setShowEditBanner] = useState(false);
   const [avatarMode, setAvatarMode] = useState<'url' | 'upload'>('upload');
-  const [availabilitySlots, setAvailabilitySlots] = useState<DayAvailability[]>(DEFAULT_WEEK_SLOTS);
-  const [sportCards, setSportCards] = useState<SportCardState[]>(SPORT_CARDS);
+  const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>(DEFAULT_WEEK_SLOTS);
+  const [sportCards, setSportCards] = useState<SportCard[]>(SPORT_CARDS);
   const [formData, setFormData] = useState<ProfileFormState>({
     fullName: '',
     avatarUrl: '',
@@ -136,6 +125,13 @@ const ProfilePage: React.FC = () => {
       lat: toInputValue(user.lat),
       lng: toInputValue(user.lng),
     });
+
+    if (user.sports && user.sports.length > 0) {
+      setSportCards(user.sports);
+    }
+    if (user.availability && user.availability.length > 0) {
+      setAvailabilitySlots(user.availability);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -223,7 +219,7 @@ const ProfilePage: React.FC = () => {
 
   const sportEditorTips = ['Tag: Yêu thích / Main sport / Tập thêm', 'Mức độ: Mới / Trung bình / Tốt', 'Bấm + để thêm môn mới'];
 
-  const updateSportCard = (index: number, field: keyof SportCardState, value: string) => {
+  const updateSportCard = (index: number, field: keyof SportCard, value: string) => {
     setSportCards((current) =>
       current.map((sport, sportIndex) => (sportIndex === index ? { ...sport, [field]: value } : sport)),
     );
@@ -257,6 +253,8 @@ const ProfilePage: React.FC = () => {
         district: formData.district.trim() || null,
         lat: formData.lat.trim() ? Number(formData.lat) : null,
         lng: formData.lng.trim() ? Number(formData.lng) : null,
+        sports: sportCards,
+        availability: availabilitySlots,
       };
 
       const updatedProfile = await authService.updateProfile(payload);

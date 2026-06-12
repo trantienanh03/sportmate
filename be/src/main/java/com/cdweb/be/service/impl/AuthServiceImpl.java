@@ -78,6 +78,8 @@ public class AuthServiceImpl implements AuthService {
                 ? null : request.getDistrict().trim());
         user.setLat(request.getLat());
         user.setLng(request.getLng());
+        user.setSports(request.getSports());
+        user.setAvailability(request.getAvailability());
 
         return toDto(userRepository.save(user));
     }
@@ -99,6 +101,8 @@ public class AuthServiceImpl implements AuthService {
                 .district(user.getDistrict())
                 .lat(user.getLat())
                 .lng(user.getLng())
+                .sports(user.getSports())
+                .availability(user.getAvailability())
                 .isActive(user.getIsActive())
                 .isBanned(user.getIsBanned())
                 .createdAt(user.getCreatedAt())
