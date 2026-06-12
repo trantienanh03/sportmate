@@ -3,73 +3,24 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { sportService, type SportItem } from "../../services/sportService";
 import { matchService, type MatchDetail } from "../../services/matchService";
+import { useNotifications } from "../../context/NotificationContext";
 import "./LoggedInNavbar.css";
-
-interface NotificationItem {
-  id: number;
-  title: string;
-  content: string;
-  type: string;
-  relatedEntityId?: number;
-  isRead: boolean;
-  createdAt: string;
-  senderName?: string;
-  senderAvatar?: string;
-}
 
 const LoggedInNavbar: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: 1,
-      title: "yêu cầu tham gia mới",
-      content: "muốn tham gia trận đấu Bóng đá sân Thống Nhất của bạn.",
-      type: "MATCH_JOINED",
-      relatedEntityId: 1,
-      isRead: false,
-      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-      senderName: "Nguyễn Văn Nam",
-      senderAvatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=Nam",
-    },
-    {
-      id: 2,
-      title: "đã hủy trận đấu",
-      content: "Trận đấu Cầu lông quận 10 tối nay đã bị hủy.",
-      type: "MATCH_CANCELLED",
-      relatedEntityId: 2,
-      isRead: false,
-      createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-      senderName: "Trần Anh Tuấn",
-      senderAvatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=Tuan",
-    },
-    {
-      id: 3,
-      title: "đã cập nhật thông tin trận đấu",
-      content: "Sân chơi trận đấu Tennis quận 3 được chuyển sang Sân Lan Anh.",
-      type: "MATCH_RESUMED",
-      relatedEntityId: 3,
-      isRead: true,
-      createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-      senderName: "Lê Minh",
-      senderAvatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=Minh",
-    }
-  ]);
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   const handleMarkAllAsRead = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    markAllAsRead();
   };
 
-  const handleNotificationClick = (notif: NotificationItem) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
-    );
+  const handleNotificationClick = (notif: any) => {
+    markAsRead(notif.id);
     if (notif.relatedEntityId) {
       navigate(`/matches/${notif.relatedEntityId}`);
     }
