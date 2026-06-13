@@ -11,4 +11,6 @@ public interface AuthService {
     AuthResponseDto getProfile(Integer userId);
     AuthResponseDto updateProfile(Integer userId, UpdateProfileRequestDto request);
     boolean existsByEmail(String email);
+    void saveRememberToken(Integer userId, String token, java.time.LocalDateTime expiry, String userAgent, String ipAddress);
+    void clearRememberToken(String token);
 }
