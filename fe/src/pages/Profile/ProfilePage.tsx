@@ -97,12 +97,20 @@ const REVIEWS: ReviewItem[] = [
 const ProfilePage: React.FC = () => {
   const { user, login } = useAuth();
   const editorRef = useRef<HTMLElement | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  
+  // Independent Edit States
+  const [isEditingBasic, setIsEditingBasic] = useState(false);
+  const [isEditingSports, setIsEditingSports] = useState(false);
+  const [isEditingAvailability, setIsEditingAvailability] = useState(false);
+  
+  // Custom Confirmation Modal State
+  const [confirmAction, setConfirmAction] = useState<{ type: 'cancel' | 'save'; section: 'basic' | 'sports' | 'availability' } | null>(null);
+  
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [showEditBanner, setShowEditBanner] = useState(false);
   const [avatarMode, setAvatarMode] = useState<'url' | 'upload'>('upload');
+  
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>(DEFAULT_WEEK_SLOTS);
   const [sportCards, setSportCards] = useState<SportCard[]>(SPORT_CARDS);
   const [formData, setFormData] = useState<ProfileFormState>({
@@ -114,6 +122,7 @@ const ProfilePage: React.FC = () => {
     lng: '',
   });
 
+  // Sync data from user
   useEffect(() => {
     if (!user) return;
 
@@ -134,6 +143,7 @@ const ProfilePage: React.FC = () => {
     }
   }, [user]);
 
+  // Messages timeout
   useEffect(() => {
     if (!successMessage) return;
     const timer = window.setTimeout(() => setSuccessMessage(''), 3500);
@@ -141,23 +151,25 @@ const ProfilePage: React.FC = () => {
   }, [successMessage]);
 
   useEffect(() => {
-    if (!showEditBanner) return;
-    const timer = window.setTimeout(() => setShowEditBanner(false), 4500);
+    if (!errorMessage) return;
+    const timer = window.setTimeout(() => setErrorMessage(''), 5000);
     return () => window.clearTimeout(timer);
-  }, [showEditBanner]);
+  }, [errorMessage]);
 
+  // Lock scrolling when basic modal is open
   useEffect(() => {
-    document.body.style.overflow = isEditing ? 'hidden' : '';
+    document.body.style.overflow = isEditingBasic ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isEditing]);
+  }, [isEditingBasic]);
 
   const profileInitial = user?.fullName?.trim()?.charAt(0).toUpperCase() || 'U';
   const communityRating = '4.9 / 5';
   const communityRatingText = 'Đánh giá chung';
   const memberSince = user?.createdAt ? formatMonthYear(user.createdAt) : '—';
 
+  // Basic info handlers
   const handleChange =
     (field: keyof ProfileFormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -188,11 +200,48 @@ const ProfilePage: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  // Cancellations
+  const handleCancelBasic = () => setConfirmAction({ type: 'cancel', section: 'basic' });
+  const handleCancelSports = () => setConfirmAction({ type: 'cancel', section: 'sports' });
+  const handleCancelAvailability = () => setConfirmAction({ type: 'cancel', section: 'availability' });
+
+  // Execute Confirmation Action
+  const executeConfirmAction = () => {
+    if (!confirmAction) return;
+    const { type, section } = confirmAction;
+    
+    if (type === 'cancel') {
+      if (section === 'basic') {
+        setIsEditingBasic(false);
+        if (user) {
+          setFormData({
+            fullName: user.fullName ?? '',
+            avatarUrl: user.avatarUrl ?? '',
+            bio: user.bio ?? '',
+            district: user.district ?? '',
+            lat: toInputValue(user.lat),
+            lng: toInputValue(user.lng),
+          });
+        }
+      } else if (section === 'sports') {
+        setIsEditingSports(false);
+        setSportCards(user?.sports && user.sports.length > 0 ? user.sports : SPORT_CARDS);
+      } else if (section === 'availability') {
+        setIsEditingAvailability(false);
+        setAvailabilitySlots(user?.availability && user.availability.length > 0 ? user.availability : DEFAULT_WEEK_SLOTS);
+      }
+      setConfirmAction(null);
+    } else if (type === 'save') {
+      setConfirmAction(null);
+      handlePartialSave(section);
+    }
+  };
+
+  // Availability handlers
   const toggleAvailability = (dayLabel: string, period: 'morning' | 'afternoon' | 'evening') => {
     setAvailabilitySlots((current) =>
       current.map((slot) => {
         if (slot.label !== dayLabel) return slot;
-
         return {
           ...slot,
           [period]: slot[period] === 'Rảnh' ? 'Bận' : 'Rảnh',
@@ -201,6 +250,7 @@ const ProfilePage: React.FC = () => {
     );
   };
 
+  // Sports handlers
   const addSportCard = () => {
     setSportCards((current) => [
       ...current,
@@ -208,7 +258,7 @@ const ProfilePage: React.FC = () => {
         name: 'Môn mới',
         tag: 'Tập thêm',
         level: 'Mới',
-        note: 'Mô tả ngắn về môn thể thao này.',
+        note: '',
       },
     ]);
   };
@@ -217,53 +267,47 @@ const ProfilePage: React.FC = () => {
     setSportCards((current) => current.filter((_, sportIndex) => sportIndex !== index));
   };
 
-  const sportEditorTips = ['Tag: Yêu thích / Main sport / Tập thêm', 'Mức độ: Mới / Trung bình / Tốt', 'Bấm + để thêm môn mới'];
-
   const updateSportCard = (index: number, field: keyof SportCard, value: string) => {
     setSportCards((current) =>
       current.map((sport, sportIndex) => (sportIndex === index ? { ...sport, [field]: value } : sport)),
     );
   };
 
-  const openEditor = () => {
-    setErrorMessage('');
-    setSuccessMessage('');
-    setIsEditing(true);
-    setShowEditBanner(true);
-  };
+  const sportEditorTips = ['Tag: Yêu thích / Main sport / Tập thêm', 'Mức độ: Mới / Trung bình / Tốt', 'Bấm + để thêm môn mới'];
 
-  const closeEditor = () => {
-    setIsEditing(false);
-    setShowEditBanner(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Global Partial Submit Handler
+  const handlePartialSave = async (section: 'basic' | 'sports' | 'availability') => {
     if (isSaving) return;
-
     setIsSaving(true);
     setErrorMessage('');
     setSuccessMessage('');
 
     try {
       const payload = {
-        fullName: formData.fullName.trim(),
-        avatarUrl: formData.avatarUrl.trim() || null,
-        bio: formData.bio.trim() || null,
-        district: formData.district.trim() || null,
-        lat: formData.lat.trim() ? Number(formData.lat) : null,
-        lng: formData.lng.trim() ? Number(formData.lng) : null,
-        sports: sportCards,
-        availability: availabilitySlots,
+        fullName: (section === 'basic' ? formData.fullName : (user?.fullName || '')).trim(),
+        avatarUrl: (section === 'basic' ? formData.avatarUrl : (user?.avatarUrl || '')).trim() || null,
+        bio: (section === 'basic' ? formData.bio : (user?.bio || '')).trim() || null,
+        district: (section === 'basic' ? formData.district : (user?.district || '')).trim() || null,
+        lat: section === 'basic' 
+          ? (formData.lat.trim() ? Number(formData.lat) : null) 
+          : (user?.lat ?? null),
+        lng: section === 'basic' 
+          ? (formData.lng.trim() ? Number(formData.lng) : null) 
+          : (user?.lng ?? null),
+        sports: section === 'sports' ? sportCards : (user?.sports || []),
+        availability: section === 'availability' ? availabilitySlots : (user?.availability || DEFAULT_WEEK_SLOTS),
       };
 
       const updatedProfile = await authService.updateProfile(payload);
       login(updatedProfile);
-      setIsEditing(false);
-      setShowEditBanner(false);
-      setSuccessMessage('Cập nhật profile thành công.');
+      
+      if (section === 'basic') setIsEditingBasic(false);
+      if (section === 'sports') setIsEditingSports(false);
+      if (section === 'availability') setIsEditingAvailability(false);
+      
+      setSuccessMessage('Lưu thành công!');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Không thể cập nhật profile.';
+      const message = error instanceof Error ? error.message : 'Lưu thất bại. Vui lòng thử lại.';
       setErrorMessage(message);
     } finally {
       setIsSaving(false);
@@ -277,6 +321,8 @@ const ProfilePage: React.FC = () => {
       <main className="profile-main-area">
         <div className="container profile-container">
           <div className="profile-grid-layout">
+            
+            {/* LEFT SIDEBAR */}
             <div className="profile-sidebar-stack">
               <aside className="profile-sidecard profile-sidecard-sticky card-shell">
                 <div className="profile-side-cover" />
@@ -288,7 +334,7 @@ const ProfilePage: React.FC = () => {
                   <div className="profile-side-name">{user?.fullName || 'Unknown user'}</div>
                   <div className="profile-side-sub">
                     <i className="fa-solid fa-location-dot me-2" />
-                    {user?.district || 'Ho Chi Minh City, Vietnam'}
+                    {user?.district || 'Chưa cập nhật'}
                   </div>
 
                   <div className="profile-side-bio">
@@ -299,10 +345,10 @@ const ProfilePage: React.FC = () => {
                     <button
                       type="button"
                       className="btn btn-primary profile-main-btn w-100"
-                      onClick={openEditor}
+                      onClick={() => setIsEditingBasic(true)}
                     >
                       <i className="fa-regular fa-pen-to-square me-2" />
-                      Chỉnh sửa hồ sơ
+                      Chỉnh sửa thông tin cơ bản
                     </button>
                     <button type="button" className="btn btn-outline-secondary profile-secondary-btn w-100">
                       <i className="fa-regular fa-paper-plane me-2" />
@@ -322,7 +368,6 @@ const ProfilePage: React.FC = () => {
                     {communityRating}
                   </div>
                 </div>
-
                 <div className="community-metrics-grid">
                   <div className="community-metric-card community-metric-accent">
                     <span>{communityRatingText}</span>
@@ -336,62 +381,203 @@ const ProfilePage: React.FC = () => {
               </aside>
             </div>
 
+            {/* MAIN CONTENT COLUMN */}
             <section className="profile-main-column">
               <div className="profile-dual-grid">
+                
+                {/* SPORT CARDS SECTION */}
                 <div className="profile-card card-shell">
                   <div className="profile-card-header compact">
                     <div>
                       <h2 className="profile-card-title">Phong cách chơi</h2>
                     </div>
+                    {!isEditingSports && (
+                      <button className="btn btn-sm btn-light text-primary border-0 fw-semibold" onClick={() => setIsEditingSports(true)}>
+                        <i className="fa-regular fa-pen-to-square me-1" /> Sửa
+                      </button>
+                    )}
                   </div>
-                  <div className="sports-grid">
-                    {sportCards.map((sport) => (
-                      <article className="sport-card" key={sport.name}>
-                        <div className="sport-card-top">
-                          <span className="sport-tag">{sport.tag}</span>
-                          <span className="sport-level">{sport.level}</span>
-                        </div>
-                        <h3>{sport.name}</h3>
-                        <p>{sport.note}</p>
-                      </article>
-                    ))}
-                  </div>
+                  
+                  {isEditingSports ? (
+                    <div className="profile-editor-section-body mt-3">
+                      <div className="profile-sport-tip-row mb-3">
+                        {sportEditorTips.map((tip) => (
+                          <span className="profile-sport-tip" key={tip}>{tip}</span>
+                        ))}
+                      </div>
+                      <div className="sports-grid profile-sport-editor-grid">
+                        {sportCards.map((sport, index) => (
+                          <div className="sport-card profile-sport-editor-card" key={index}>
+                            <div className="profile-sport-card-head">
+                              <span className="profile-sport-card-index">#{index + 1}</span>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger profile-sport-remove-btn"
+                                onClick={() => removeSportCard(index)}
+                                disabled={sportCards.length === 1}
+                              >
+                                Xóa
+                              </button>
+                            </div>
+                            <div className="profile-editor-field">
+                              <label className="form-label fw-semibold">Tên môn</label>
+                              <input
+                                className="form-control profile-input profile-mini-input"
+                                value={sport.name}
+                                onChange={(event) => updateSportCard(index, 'name', event.target.value)}
+                                placeholder="Tên môn"
+                              />
+                            </div>
+                            <div className="profile-editor-field">
+                              <label className="form-label fw-semibold">Thẻ</label>
+                              <div className="profile-sport-tag-group">
+                                {SPORT_TAG_OPTIONS.map((tagOption) => (
+                                  <button
+                                    key={tagOption}
+                                    type="button"
+                                    className={`profile-sport-tag-chip ${sport.tag === tagOption ? 'active' : ''}`}
+                                    onClick={() => updateSportCard(index, 'tag', tagOption)}
+                                  >
+                                    {tagOption}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="profile-editor-field">
+                              <label className="form-label fw-semibold">Mức độ</label>
+                              <input
+                                className="form-control profile-input profile-mini-input"
+                                value={sport.level}
+                                onChange={(event) => updateSportCard(index, 'level', event.target.value)}
+                                placeholder="Mới / Trung bình / Tốt"
+                              />
+                            </div>
+                            <div className="profile-editor-field profile-editor-field-wide">
+                              <label className="form-label fw-semibold">Mô tả ngắn</label>
+                              <textarea
+                                className="form-control profile-input profile-textarea profile-sport-note"
+                                rows={2}
+                                value={sport.note}
+                                onChange={(event) => updateSportCard(index, 'note', event.target.value)}
+                                placeholder="Mô tả ngắn về phong cách chơi"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 d-flex justify-content-start">
+                        <button type="button" className="btn btn-sm btn-outline-primary profile-add-sport-btn" onClick={addSportCard}>
+                          <i className="fa-solid fa-plus me-1" /> Thêm môn thể thao
+                        </button>
+                      </div>
+                      <div className="d-flex justify-content-end mt-4 gap-2 border-top pt-3">
+                         <button className="btn btn-outline-secondary px-4" type="button" onClick={handleCancelSports}>Hủy</button>
+                         <button className="btn btn-primary px-4" type="button" onClick={() => setConfirmAction({ type: 'save', section: 'sports' })} disabled={isSaving}>
+                           {isSaving ? 'Đang lưu...' : 'Lưu'}
+                         </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="sports-grid mt-2">
+                      {sportCards.map((sport, index) => (
+                        <article className="sport-card" key={index}>
+                          <div className="sport-card-top">
+                            <span className="sport-tag">{sport.tag}</span>
+                            <span className="sport-level">{sport.level}</span>
+                          </div>
+                          <h3>{sport.name}</h3>
+                          <p>{sport.note}</p>
+                        </article>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
+                {/* AVAILABILITY SECTION */}
                 <div className="profile-card card-shell">
                   <div className="profile-card-header compact">
                     <div>
-                      <h2 className="profile-card-title">Thời gian có thể ghép trận</h2>
+                      <h2 className="profile-card-title">Thời gian ghép trận</h2>
                     </div>
+                    {!isEditingAvailability && (
+                      <button className="btn btn-sm btn-light text-primary border-0 fw-semibold" onClick={() => setIsEditingAvailability(true)}>
+                        <i className="fa-regular fa-pen-to-square me-1" /> Sửa
+                      </button>
+                    )}
                   </div>
-                  <div className="schedule-table-wrap">
-                    <div className="schedule-grid schedule-head">
-                      <span>Buổi</span>
-                      <span>T2</span>
-                      <span>T3</span>
-                      <span>T4</span>
-                      <span>T5</span>
-                      <span>T6</span>
-                      <span>T7</span>
-                      <span>CN</span>
-                    </div>
-                    {(['Sáng', 'Chiều', 'Tối'] as const).map((slot) => (
-                      <div className="schedule-grid" key={slot}>
-                        <span className="schedule-row-label">{slot}</span>
-                        {availabilitySlots.map((day) => {
-                          const status = day[slot === 'Sáng' ? 'morning' : slot === 'Chiều' ? 'afternoon' : 'evening'];
-                          return (
-                            <span key={`${slot}-${day.label}`} className={`schedule-cell ${status === 'Rảnh' ? 'free' : 'busy'}`}>
-                              {status}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
+                  
+                  {isEditingAvailability ? (
+                     <div className="profile-editor-section-body mt-3">
+                       <p className="text-muted mb-3" style={{ fontSize: '0.85rem' }}>Bấm vào ô để đổi Rảnh / Bận.</p>
+                       <div className="schedule-table-wrap profile-schedule-editor-wrap">
+                          <div className="schedule-grid schedule-head">
+                            <span>Buổi</span>
+                            <span>T2</span>
+                            <span>T3</span>
+                            <span>T4</span>
+                            <span>T5</span>
+                            <span>T6</span>
+                            <span>T7</span>
+                            <span>CN</span>
+                          </div>
+                          {(['Sáng', 'Chiều', 'Tối'] as const).map((slot) => (
+                            <div className="schedule-grid" key={slot}>
+                              <span className="schedule-row-label">{slot}</span>
+                              {availabilitySlots.map((day) => {
+                                const period = slot === 'Sáng' ? 'morning' : slot === 'Chiều' ? 'afternoon' : 'evening';
+                                const status = day[period];
+                                return (
+                                  <button
+                                    key={`${slot}-${day.label}`}
+                                    type="button"
+                                    className={`schedule-cell schedule-toggle ${status === 'Rảnh' ? 'free' : 'busy'}`}
+                                    onClick={() => toggleAvailability(day.label, period)}
+                                  >
+                                    {status}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ))}
+                       </div>
+                       <div className="d-flex justify-content-end mt-4 gap-2 border-top pt-3">
+                         <button className="btn btn-outline-secondary px-4" type="button" onClick={handleCancelAvailability}>Hủy</button>
+                         <button className="btn btn-primary px-4" type="button" onClick={() => setConfirmAction({ type: 'save', section: 'availability' })} disabled={isSaving}>
+                           {isSaving ? 'Đang lưu...' : 'Lưu'}
+                         </button>
+                       </div>
+                     </div>
+                  ) : (
+                     <div className="schedule-table-wrap mt-2">
+                        <div className="schedule-grid schedule-head">
+                          <span>Buổi</span>
+                          <span>T2</span>
+                          <span>T3</span>
+                          <span>T4</span>
+                          <span>T5</span>
+                          <span>T6</span>
+                          <span>T7</span>
+                          <span>CN</span>
+                        </div>
+                        {(['Sáng', 'Chiều', 'Tối'] as const).map((slot) => (
+                          <div className="schedule-grid" key={slot}>
+                            <span className="schedule-row-label">{slot}</span>
+                            {availabilitySlots.map((day, idx) => {
+                              const status = day[slot === 'Sáng' ? 'morning' : slot === 'Chiều' ? 'afternoon' : 'evening'];
+                              return (
+                                <span key={idx} className={`schedule-cell ${status === 'Rảnh' ? 'free' : 'busy'}`}>
+                                  {status}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ))}
+                     </div>
+                  )}
                 </div>
               </div>
 
+              {/* REVIEWS SECTION */}
               <div className="profile-card card-shell mt-4">
                 <div className="profile-card-header compact">
                   <div>
@@ -426,28 +612,38 @@ const ProfilePage: React.FC = () => {
         </div>
       </main>
 
-      {isEditing && (
-        <div className="profile-editor-backdrop" role="presentation" onClick={closeEditor}>
+      {/* BASIC INFO EDITOR MODAL */}
+      {isEditingBasic && (
+        <div className="profile-editor-backdrop" role="presentation" onClick={handleCancelBasic}>
           <main className="profile-editor-page" aria-label="Chỉnh sửa hồ sơ" ref={editorRef} onClick={(event) => event.stopPropagation()}>
             <div className="profile-editor-shell card-shell">
               <div className="profile-editor-topbar">
                 <button
                   type="button"
                   className="profile-editor-close"
-                  onClick={closeEditor}
+                  onClick={handleCancelBasic}
                   aria-label="Đóng"
                 >
                   ×
                 </button>
                 <h2 className="profile-editor-title profile-editor-title-center">Thiết lập hồ sơ của bạn</h2>
-                <button
-                  className="btn btn-primary profile-editor-save"
-                  type="submit"
-                  form="profile-editor-form"
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Đang lưu...' : 'Lưu'}
-                </button>
+                <div className="d-flex gap-2 justify-content-end">
+                  <button
+                    className="btn btn-outline-secondary profile-editor-save"
+                    type="button"
+                    onClick={handleCancelBasic}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    className="btn btn-primary profile-editor-save"
+                    type="button"
+                    disabled={isSaving}
+                    onClick={() => setConfirmAction({ type: 'save', section: 'basic' })}
+                  >
+                    {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                  </button>
+                </div>
               </div>
 
               <div className="profile-editor-summary-row">
@@ -465,15 +661,12 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
 
-              {showEditBanner && (
-                <div className="profile-edit-banner profile-edit-banner-compact" role="status">
-                  <i className="fa-solid fa-pen-to-square me-2" />
-                  Bạn đang ở chế độ chỉnh sửa. Hãy cập nhật thông tin rồi bấm lưu.
-                </div>
-              )}
+              <div className="profile-edit-banner profile-edit-banner-compact" role="status">
+                <i className="fa-solid fa-pen-to-square me-2" />
+                Bạn đang ở chế độ chỉnh sửa Thông tin cơ bản. Hãy cập nhật rồi bấm lưu.
+              </div>
 
-              <form id="profile-editor-form" className="profile-editor-form" onSubmit={handleSubmit}>
-              <section className="profile-editor-section card-shell">
+              <section className="profile-editor-section card-shell" style={{ maxWidth: '900px', margin: '0 auto' }}>
                 <div className="profile-editor-section-header">
                   <div>
                     <h3 className="profile-editor-section-title">Thông tin cơ bản</h3>
@@ -506,10 +699,10 @@ const ProfilePage: React.FC = () => {
 
                   <div className="profile-editor-field">
                     <label className="form-label fw-semibold">Avatar</label>
-                    <div className="profile-avatar-switcher">
+                    <div className="profile-avatar-switcher mb-2">
                       <button
                         type="button"
-                        className={`btn btn-sm ${avatarMode === 'upload' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                        className={`btn btn-sm ${avatarMode === 'upload' ? 'btn-primary' : 'btn-outline-secondary'} me-2`}
                         onClick={() => setAvatarMode('upload')}
                       >
                         Tải ảnh từ máy
@@ -527,11 +720,11 @@ const ProfilePage: React.FC = () => {
                       <div className="profile-upload-box">
                         <input type="file" accept="image/*" onChange={handleFileChange} />
                         {formData.avatarUrl && (
-                          <div className="profile-upload-preview">
-                            <img src={formData.avatarUrl} alt="Avatar preview" />
+                          <div className="profile-upload-preview mt-2">
+                            <img src={formData.avatarUrl} alt="Avatar preview" style={{ maxWidth: '100px', borderRadius: '50%' }} />
                             <button
                               type="button"
-                              className="btn btn-sm btn-outline-secondary"
+                              className="btn btn-sm btn-outline-danger mt-2 ms-3"
                               onClick={() =>
                                 setFormData((current) => ({
                                   ...current,
@@ -565,161 +758,37 @@ const ProfilePage: React.FC = () => {
                       placeholder="Đam mê bóng đá và cầu lông. Tìm team để ghép trận hữu ích vào cuối tuần."
                     />
                   </div>
-
                 </div>
               </section>
-
-              <section className="profile-editor-section card-shell">
-                <div className="profile-editor-section-header">
-                  <div>
-                    <h3 className="profile-editor-section-title">Môn thể thao</h3>
-                    <p className="profile-editor-section-subtitle">Chọn tag, mức độ và ghi chú để người khác hiểu rõ phong cách của bạn.</p>
-                  </div>
-                </div>
-
-                <div className="profile-editor-section-body">
-                  <div className="profile-sport-tip-row">
-                    {sportEditorTips.map((tip) => (
-                      <span className="profile-sport-tip" key={tip}>
-                        {tip}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="sports-grid profile-sport-editor-grid">
-                    {sportCards.map((sport, index) => (
-                      <div className="sport-card profile-sport-editor-card" key={`${sport.name}-${index}`}>
-                        <div className="profile-sport-card-head">
-                          <span className="profile-sport-card-index">#{index + 1}</span>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-danger profile-sport-remove-btn"
-                            onClick={() => removeSportCard(index)}
-                            disabled={sportCards.length === 1}
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                        <div className="profile-editor-field">
-                          <label className="form-label fw-semibold">Tên môn</label>
-                          <input
-                            className="form-control profile-input profile-mini-input"
-                            value={sport.name}
-                            onChange={(event) => updateSportCard(index, 'name', event.target.value)}
-                            placeholder="Tên môn"
-                          />
-                        </div>
-                        <div className="profile-editor-field">
-                          <label className="form-label fw-semibold">Thẻ</label>
-                          <div className="profile-sport-tag-group">
-                            {SPORT_TAG_OPTIONS.map((tagOption) => (
-                              <button
-                                key={tagOption}
-                                type="button"
-                                className={`profile-sport-tag-chip ${sport.tag === tagOption ? 'active' : ''}`}
-                                onClick={() => updateSportCard(index, 'tag', tagOption)}
-                              >
-                                {tagOption}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="profile-editor-field">
-                          <label className="form-label fw-semibold">Mức độ</label>
-                          <input
-                            className="form-control profile-input profile-mini-input"
-                            value={sport.level}
-                            onChange={(event) => updateSportCard(index, 'level', event.target.value)}
-                            placeholder="Mới / Trung bình / Tốt"
-                          />
-                        </div>
-                        <div className="profile-editor-field profile-editor-field-wide">
-                          <label className="form-label fw-semibold">Mô tả ngắn</label>
-                          <textarea
-                            className="form-control profile-input profile-textarea profile-sport-note"
-                            rows={3}
-                            value={sport.note}
-                            onChange={(event) => updateSportCard(index, 'note', event.target.value)}
-                            placeholder="Mô tả ngắn về phong cách chơi"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-3 d-flex justify-content-end">
-                    <button type="button" className="btn btn-outline-primary profile-add-sport-btn" onClick={addSportCard}>
-                      <i className="fa-solid fa-plus me-2" />
-                      Thêm môn thể thao
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-              <section className="profile-editor-section card-shell">
-                <div className="profile-editor-section-header">
-                  <div>
-                    <h3 className="profile-editor-section-title">Thời gian có thể ghép trận</h3>
-                    <p className="profile-editor-section-subtitle">Bấm vào ô để đổi Rảnh / Bận, hiển thị rõ trên hồ sơ của bạn.</p>
-                  </div>
-                </div>
-
-                <div className="profile-editor-section-body">
-                  <div className="schedule-table-wrap profile-schedule-editor-wrap">
-                    <div className="schedule-grid schedule-head">
-                      <span>Buổi</span>
-                      <span>T2</span>
-                      <span>T3</span>
-                      <span>T4</span>
-                      <span>T5</span>
-                      <span>T6</span>
-                      <span>T7</span>
-                      <span>CN</span>
-                    </div>
-
-                    {(['Sáng', 'Chiều', 'Tối'] as const).map((slot) => (
-                      <div className="schedule-grid" key={slot}>
-                        <span className="schedule-row-label">{slot}</span>
-                        {availabilitySlots.map((day) => {
-                          const period = slot === 'Sáng' ? 'morning' : slot === 'Chiều' ? 'afternoon' : 'evening';
-                          const status = day[period];
-
-                          return (
-                            <button
-                              key={`${slot}-${day.label}`}
-                              type="button"
-                              className={`schedule-cell schedule-toggle ${status === 'Rảnh' ? 'free' : 'busy'}`}
-                              onClick={() => toggleAvailability(day.label, period)}
-                            >
-                              {status}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
+              
               {errorMessage && (
-                <div className="alert alert-danger mb-0 profile-alert">{errorMessage}</div>
+                <div className="alert alert-danger mx-4 mb-3 profile-alert">{errorMessage}</div>
               )}
-
-              {successMessage && (
-                <div className="alert alert-success mb-0 profile-alert">{successMessage}</div>
-              )}
-
-              <div className="profile-editor-actions">
-                <button className="btn btn-outline-secondary profile-secondary-btn" type="button" onClick={closeEditor}>
-                  Hủy
-                </button>
-                <button className="btn btn-primary profile-main-btn" type="submit" disabled={isSaving}>
-                  {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
-                </button>
-              </div>
-            </form>
             </div>
           </main>
+        </div>
+      )}
+
+      {/* CONFIRMATION MODAL */}
+      {confirmAction && (
+        <div className="profile-modal-backdrop" style={{ zIndex: 9999 }}>
+          <div className="card-shell p-4" style={{ width: '100%', maxWidth: '400px', background: '#fff' }}>
+             <h4 className="mb-3">Xác nhận</h4>
+             <p className="text-muted mb-4">
+               {confirmAction.type === 'cancel' 
+                 ? 'Bạn có chắc chắn muốn hủy? Mọi thay đổi chưa lưu sẽ bị mất.' 
+                 : 'Bạn có chắc chắn muốn lưu các thay đổi này không?'}
+             </p>
+             <div className="d-flex justify-content-end gap-2">
+                <button className="btn btn-outline-secondary" onClick={() => setConfirmAction(null)}>Quay lại</button>
+                <button 
+                  className={`btn ${confirmAction.type === 'cancel' ? 'btn-danger' : 'btn-primary'}`} 
+                  onClick={executeConfirmAction}
+                >
+                   {confirmAction.type === 'cancel' ? 'Đồng ý hủy' : 'Đồng ý lưu'}
+                </button>
+             </div>
+          </div>
         </div>
       )}
 
