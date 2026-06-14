@@ -5,8 +5,10 @@ import com.cdweb.be.dto.request.RegisterRequestDto;
 import com.cdweb.be.dto.request.UpdateProfileRequestDto;
 import com.cdweb.be.dto.response.AuthResponseDto;
 import com.cdweb.be.entity.User;
+import com.cdweb.be.entity.UserRememberToken;
 import com.cdweb.be.exception.AppException;
 import com.cdweb.be.repository.UserRepository;
+import com.cdweb.be.repository.UserRememberTokenRepository;
 import com.cdweb.be.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,11 +16,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final UserRememberTokenRepository tokenRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
@@ -88,6 +93,28 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(readOnly = true)
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    @Override
+    @Transactional
+    public void saveRememberToken(Integer userId, String token, LocalDateTime expiry, String userAgent, String ipAddress) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
+
+        UserRememberToken rememberToken = UserRememberToken.builder()
+                .user(user)
+                .token(token)
+                .expiry(expiry)
+                .userAgent(userAgent)
+                .ipAddress(ipAddress)
+                .build();
+        tokenRepository.save(rememberToken);
+    }
+
+    @Override
+    @Transactional
+    public void clearRememberToken(String token) {
+        tokenRepository.deleteByToken(token);
     }
 
     private AuthResponseDto toDto(User user) {

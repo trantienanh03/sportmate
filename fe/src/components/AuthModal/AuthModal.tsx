@@ -102,7 +102,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     setIsLoading(true);
     setError(null);
     try {
-      const userData = await authService.login({ email, password });
+      const userData = await authService.login({ email, password, keepLoggedIn });
       login(userData);
       onClose();
       navigate('/home');
