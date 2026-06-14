@@ -1,4 +1,4 @@
-package com.cdweb.be.dto.profile;
+package com.cdweb.be.dto.common;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

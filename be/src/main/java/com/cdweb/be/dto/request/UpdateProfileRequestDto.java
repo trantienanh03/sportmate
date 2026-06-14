@@ -3,8 +3,8 @@ package com.cdweb.be.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import com.cdweb.be.dto.profile.SportCardDto;
-import com.cdweb.be.dto.profile.AvailabilitySlotDto;
+import com.cdweb.be.dto.common.SportCardDto;
+import com.cdweb.be.dto.common.AvailabilitySlotDto;
 import java.util.List;
 
 @Data

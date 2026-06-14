@@ -5,8 +5,8 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import com.cdweb.be.dto.profile.SportCardDto;
-import com.cdweb.be.dto.profile.AvailabilitySlotDto;
+import com.cdweb.be.dto.common.SportCardDto;
+import com.cdweb.be.dto.common.AvailabilitySlotDto;
 
 @Data
 @Builder
