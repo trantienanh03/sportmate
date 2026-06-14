@@ -3,6 +3,9 @@ package com.cdweb.be.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import com.cdweb.be.dto.common.SportCardDto;
+import com.cdweb.be.dto.common.AvailabilitySlotDto;
+import java.util.List;
 
 @Data
 public class UpdateProfileRequestDto {
@@ -20,4 +23,7 @@ public class UpdateProfileRequestDto {
     private Double lat;
 
     private Double lng;
+
+    private List<SportCardDto> sports;
+    private List<AvailabilitySlotDto> availability;
 }

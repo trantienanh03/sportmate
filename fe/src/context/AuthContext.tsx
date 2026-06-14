@@ -1,6 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { authService } from '../services/authService';
 
+export interface SportCard {
+  name: string;
+  tag: string;
+  level: string;
+  note: string;
+}
+
+export interface AvailabilitySlot {
+  label: string;
+  morning: 'Rảnh' | 'Bận';
+  afternoon: 'Rảnh' | 'Bận';
+  evening: 'Rảnh' | 'Bận';
+}
+
 export interface User {
   id: number;
   fullName: string;
@@ -15,6 +29,8 @@ export interface User {
   isBanned?: boolean | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  sports?: SportCard[] | null;
+  availability?: AvailabilitySlot[] | null;
 }
 
 interface AuthContextType {

@@ -10,8 +10,11 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
+import com.cdweb.be.dto.common.SportCardDto;
+import com.cdweb.be.dto.common.AvailabilitySlotDto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Builder
@@ -61,6 +64,14 @@ public class User {
     @Column(name = "is_banned", nullable = false)
     @Builder.Default
     private Boolean isBanned = false;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "sports_json", columnDefinition = "jsonb")
+    private List<SportCardDto> sports;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "availability_json", columnDefinition = "jsonb")
+    private List<AvailabilitySlotDto> availability;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
