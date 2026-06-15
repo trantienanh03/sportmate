@@ -2,6 +2,8 @@ package com.cdweb.be.controller;
 
 import com.cdweb.be.dto.request.LoginRequestDto;
 import com.cdweb.be.dto.request.RegisterRequestDto;
+import com.cdweb.be.dto.request.ForgotPasswordRequest;
+import com.cdweb.be.dto.request.ResetPasswordRequest;
 import com.cdweb.be.dto.request.UpdateProfileRequestDto;
 import com.cdweb.be.dto.response.AuthResponseDto;
 import com.cdweb.be.service.AuthService;
@@ -117,5 +119,17 @@ public class AuthController {
 
         Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(authService.updateProfile(userId, request));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.requestForgotPassword(request);
+        return ResponseEntity.ok("Yêu cầu thành công, liên kết đặt lại mật khẩu đã được gửi đến email của bạn");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok("Đặt lại mật khẩu thành công");
     }
 }
