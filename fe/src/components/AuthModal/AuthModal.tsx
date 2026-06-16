@@ -27,7 +27,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [emailError, setEmailError] = useState<string | null>(null);
   const [isEmailChecking, setIsEmailChecking] = useState(false);
 
-  // Forgot password states
+  // Trạng thái quên mật khẩu
   const [forgotEmail, setForgotEmail] = useState('');
   const [isForgotSuccess, setIsForgotSuccess] = useState(false);
 

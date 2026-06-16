@@ -18,7 +18,7 @@ const ResetPassword: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [countdown, setCountdown] = useState(3);
 
-  // Criteria checks (matching the signup password policy)
+  // Kiểm tra điều kiện mật khẩu mới
   const isLengthValid = password.length >= 8;
   const isUppercaseValid = /[A-Z]/.test(password);
   const isSpecialCharValid = /[\W_]/.test(password);
@@ -140,7 +140,7 @@ const ResetPassword: React.FC = () => {
                 </div>
               </div>
 
-              {/* Password Criteria Checklist */}
+              {/* Điều kiện mật khẩu */}
               <div className="reset-criteria-box mb-4">
                 <ul className="reset-password-criteria">
                   <li className={password ? (isLengthValid ? 'valid' : 'invalid') : ''}>
