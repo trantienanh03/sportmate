@@ -96,19 +96,13 @@ export const authService = {
     });
 
     if (!response.ok) {
-      // Build a more descriptive error message for debugging
-      let message = `Update profile failed (HTTP ${response.status})`;
+      let message = "Cập nhật hồ sơ thất bại";
       try {
         const errorData = await response.json();
-        if (errorData && (errorData.message || errorData.error)) {
-          message += `: ${errorData.message || errorData.error}`;
-        } else {
-          // include serialized body when useful
-          message += `: ${JSON.stringify(errorData)}`;
-        }
+        message = errorData.message || message;
       } catch (e) {
         const textData = await response.text();
-        if (textData) message += `: ${textData}`;
+        if (textData) message = textData;
       }
       throw new Error(message);
     }
@@ -145,10 +139,11 @@ export const authService = {
     if (!response.ok) {
       let message = "Gửi yêu cầu khôi phục thất bại";
       try {
+        const errorData = await response.json();
+        message = errorData.message || message;
+      } catch (e) {
         const errorText = await response.text();
         if (errorText) message = errorText;
-      } catch (e) {
-        // use default
       }
       throw new Error(message);
     }
@@ -169,10 +164,11 @@ export const authService = {
     if (!response.ok) {
       let message = "Đặt lại mật khẩu thất bại";
       try {
+        const errorData = await response.json();
+        message = errorData.message || message;
+      } catch (e) {
         const errorText = await response.text();
         if (errorText) message = errorText;
-      } catch (e) {
-        // use default
       }
       throw new Error(message);
     }
