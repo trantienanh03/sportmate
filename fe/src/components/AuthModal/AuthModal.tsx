@@ -14,7 +14,7 @@ interface AuthModalProps {
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login', onRegisterSuccess }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>(initialMode);
   const [signupStep, setSignupStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +27,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [emailError, setEmailError] = useState<string | null>(null);
   const [isEmailChecking, setIsEmailChecking] = useState(false);
 
+  // Forgot password states
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [isForgotSuccess, setIsForgotSuccess] = useState(false);
+
   useEffect(() => {
     setMode(initialMode);
     setSignupStep(1);
@@ -38,6 +42,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     setError(null);
     setEmailError(null);
     setIsEmailChecking(false);
+    setForgotEmail('');
+    setIsForgotSuccess(false);
   }, [initialMode, isOpen]);
 
   useEffect(() => {
@@ -76,7 +82,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
   useEffect(() => {
     setError(null);
-  }, [email, password, name, district]);
+  }, [email, password, name, district, forgotEmail]);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isForgotFormValid = forgotEmail.trim() !== '' && emailRegex.test(forgotEmail);
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isForgotFormValid) return;
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      await authService.forgotPassword(forgotEmail);
+      setIsForgotSuccess(true);
+    } catch (err: any) {
+      setError(err.message || 'Gửi yêu cầu khôi phục thất bại');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -152,7 +177,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         </button>
 
         <h2 className="auth-modal-title">
-          {mode === 'login' ? 'Đăng nhập' : (signupStep === 1 ? 'Đăng ký' : 'Hoàn tất đăng ký')}
+          {mode === 'login' ? 'Đăng nhập' : (mode === 'forgot' ? 'Quên mật khẩu' : (signupStep === 1 ? 'Đăng ký' : 'Hoàn tất đăng ký'))}
         </h2>
 
         {mode === 'login' ? (
@@ -221,7 +246,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               </button>
 
               <div className="auth-footer-links">
-                <p><a href="#forgot">Quên mật khẩu?</a></p>
+                <p>
+                  <a href="#forgot" onClick={(e) => { e.preventDefault(); setMode('forgot'); }}>
+                    Quên mật khẩu?
+                  </a>
+                </p>
                 <p className="mt-3">
                   Chưa có tài khoản?{' '}
                   <a href="#signup" onClick={(e) => { e.preventDefault(); setMode('signup'); setSignupStep(1); }}>
@@ -230,6 +259,66 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 </p>
               </div>
             </form>
+          </>
+        ) : mode === 'forgot' ? (
+          <>
+            {error && <div className="alert alert-danger p-2 mb-3" style={{ fontSize: '14px' }}>{error}</div>}
+            
+            {!isForgotSuccess ? (
+              <form onSubmit={handleForgotSubmit}>
+                <p className="text-muted text-center mb-4" style={{ fontSize: '14px', lineHeight: '1.5' }}>
+                  Nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn một liên kết để đặt lại mật khẩu mới.
+                </p>
+                <div className="auth-form-group mb-4">
+                  <label className="auth-form-label">Email của bạn</label>
+                  <input
+                    type="email"
+                    className="auth-form-input"
+                    placeholder="example@email.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className={`auth-submit-btn ${isForgotFormValid && !isLoading ? 'active' : ''}`}
+                  disabled={!isForgotFormValid || isLoading}
+                >
+                  {isLoading ? 'Đang gửi yêu cầu...' : 'Gửi liên kết đặt lại'}
+                </button>
+
+                <div className="auth-footer-links mt-4">
+                  <p>
+                    <a href="#login" onClick={(e) => { e.preventDefault(); setMode('login'); }}>
+                      Quay lại Đăng nhập
+                    </a>
+                  </p>
+                </div>
+              </form>
+            ) : (
+              <div className="text-center py-3">
+                <div className="text-success mb-3" style={{ fontSize: '48px' }}>
+                  <i className="far fa-check-circle"></i>
+                </div>
+                <h4 className="fw-bold mb-3">Yêu cầu đã được gửi!</h4>
+                <p className="text-muted mb-4" style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                  Một email khôi phục mật khẩu đã được gửi đến địa chỉ <strong>{forgotEmail}</strong>. 
+                  Vui lòng kiểm tra hộp thư đến (và hộp thư rác/spam nếu không tìm thấy) để tiếp tục.
+                </p>
+                <button
+                  type="button"
+                  className="auth-submit-btn active"
+                  onClick={() => {
+                    setMode('login');
+                    setIsForgotSuccess(false);
+                    setForgotEmail('');
+                  }}
+                >
+                  Quay lại Đăng nhập
+                </button>
+              </div>
+            )}
           </>
         ) : (
           signupStep === 1 ? (
