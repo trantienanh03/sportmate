@@ -140,7 +140,7 @@ const MatchDetail: React.FC = () => {
     const feeLabel = match.feePerPerson === 0 ? 'Miễn phí' : `${match.feePerPerson.toLocaleString('vi-VN')} VND`;
     const heroImage = getSportImage(match.sport);
     const attendees = [
-      { id: match.host.id, name: match.host.fullName, role: 'Người tổ chức', avatar: match.host.avatarUrl },
+      { id: match.host.id, name: match.host.fullName, role: 'Người tổ chức', avatar: match.host.avatarUrl, badges: match.host.badges || [] },
       ...match.participants
         .filter((participant) => participant.userId !== match.host.id)
         .map((participant) => ({
@@ -148,6 +148,7 @@ const MatchDetail: React.FC = () => {
           name: participant.fullName,
           role: participant.role === 'host' ? 'Người tổ chức' : 'Thành viên',
           avatar: participant.avatarUrl,
+          badges: participant.badges || [],
         })),
     ];
 
@@ -280,7 +281,15 @@ const MatchDetail: React.FC = () => {
               />
               <div>
                 <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
-                <h6 className="fw-bold mb-0">{match.host.fullName}</h6>
+                <h6 className="fw-bold mb-0 d-flex align-items-center flex-wrap gap-1">
+                  {match.host.fullName}
+                  {match.host.badges && match.host.badges.map(badge => (
+                    <span key={badge} className={`badge rounded-pill fw-normal ms-1 ${badge === 'Tân binh' ? 'bg-secondary' : badge === 'Tích cực' ? 'bg-info' : badge === 'Thân thiện' ? 'bg-success' : badge === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '10px' }}>
+                      {badge === 'Cảnh báo uy tín' && <i className="fa-solid fa-triangle-exclamation me-1"></i>}
+                      {badge}
+                    </span>
+                  ))}
+                </h6>
               </div>
             </div>
             {user && match.host.id !== user.id && (
@@ -346,14 +355,22 @@ const MatchDetail: React.FC = () => {
 
             <div className="d-flex flex-wrap gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm">
               {derived.attendees.map((attendee) => (
-                <div key={attendee.id} className="text-center attendee-item">
+                <div key={attendee.id} className="text-center attendee-item position-relative">
                   <img
                     src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
                     alt={attendee.name}
                     className="rounded-circle mb-2 border"
                     style={{ width: '64px', height: '64px', objectFit: 'cover' }}
                   />
-                  <p className="fw-bold mb-0 small text-truncate" style={{ maxWidth: '80px' }}>{attendee.name.split(' ')[0]}</p>
+                  {attendee.badges && attendee.badges.length > 0 && (
+                    <div className="position-absolute top-0 start-100 translate-middle" style={{ zIndex: 5, marginTop: '10px', marginLeft: '-15px' }}>
+                       <span className={`badge rounded-pill border border-white ${attendee.badges[0] === 'Tân binh' ? 'bg-secondary' : attendee.badges[0] === 'Tích cực' ? 'bg-info' : attendee.badges[0] === 'Thân thiện' ? 'bg-success' : attendee.badges[0] === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '9px', padding: '0.25em 0.4em' }}>
+                         {attendee.badges[0] === 'Cảnh báo uy tín' && <i className="fa-solid fa-triangle-exclamation me-1"></i>}
+                         {attendee.badges[0]}
+                       </span>
+                    </div>
+                  )}
+                  <p className="fw-bold mb-0 small text-truncate mx-auto" style={{ maxWidth: '80px' }}>{attendee.name.split(' ')[0]}</p>
                   <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>{attendee.role}</p>
                 </div>
               ))}

@@ -45,6 +45,8 @@ public class MatchServiceImpl implements MatchService {
     private final com.cdweb.be.repository.RoomRepository roomRepository;
     private final com.cdweb.be.repository.RoomMemberRepository roomMemberRepository;
     private final NotificationService notificationService;
+    private final com.cdweb.be.repository.UserStatRepository userStatRepository;
+    private final com.cdweb.be.repository.ReportRepository reportRepository;
 
     // ── Get All Matches ──────────────────────────────────────────────
     @Override
@@ -448,13 +450,71 @@ public class MatchServiceImpl implements MatchService {
         return buildDto(match, participants, joined);
     }
 
+    private List<String> calculateBadges(com.cdweb.be.entity.UserStat stat, long reportCount) {
+        List<String> badges = new java.util.ArrayList<>();
+        
+        // Cảnh báo uy tín: reports > 3 hoặc avgAttitudeScore < 3.0
+        boolean hasWarning = false;
+        if (reportCount >= 3) {
+            hasWarning = true;
+        }
+        if (stat != null && stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() > 0 && stat.getAvgAttitudeScore() < 3.0) {
+            hasWarning = true;
+        }
+        
+        if (hasWarning) {
+            badges.add("Cảnh báo uy tín");
+        }
+
+        if (stat == null) {
+            if (!hasWarning) badges.add("Tân binh");
+            return badges;
+        }
+        
+        if (stat.getCompletedMatches() != null && stat.getCompletedMatches() < 5) {
+            badges.add("Tân binh");
+        } else if (stat.getCompletedMatches() != null && stat.getCompletedMatches() >= 5) {
+            badges.add("Tích cực");
+        }
+        
+        if (stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() >= 4.5) {
+            badges.add("Thân thiện");
+        }
+        
+        if (stat.getAvgSkillScore() != null && stat.getAvgSkillScore() >= 4.5) {
+            badges.add("Chuyên nghiệp");
+        }
+        
+        return badges;
+    }
+
     private MatchDetailDto buildDto(Match match, List<MatchParticipant> participants, boolean joined) {
+        List<Integer> userIdsToFetch = new java.util.ArrayList<>();
+        if (match.getHost() != null) userIdsToFetch.add(match.getHost().getId());
+        participants.forEach(p -> userIdsToFetch.add(p.getUser().getId()));
+        
+        java.util.Map<Integer, com.cdweb.be.entity.UserStat> userStatMap = userStatRepository.findByUserIdIn(userIdsToFetch).stream()
+                .collect(Collectors.toMap(stat -> stat.getUser().getId(), stat -> stat));
+
+        List<Object[]> reportCounts = reportRepository.countReportsByUserIds(userIdsToFetch);
+        java.util.Map<Integer, Long> userReportCountMap = reportCounts.stream()
+                .collect(Collectors.toMap(
+                        row -> (Integer) row[0],
+                        row -> ((Number) row[1]).longValue(),
+                        (existing, replacement) -> existing
+                ));
+
+        return buildDtoWithStats(match, participants, joined, userStatMap, userReportCountMap);
+    }
+
+    private MatchDetailDto buildDtoWithStats(Match match, List<MatchParticipant> participants, boolean joined, java.util.Map<Integer, com.cdweb.be.entity.UserStat> userStatMap, java.util.Map<Integer, Long> userReportCountMap) {
         HostDto hostDto = null;
         if (match.getHost() != null) {
             hostDto = HostDto.builder()
                     .id(match.getHost().getId())
                     .fullName(match.getHost().getFullName())
                     .avatarUrl(match.getHost().getAvatarUrl())
+                    .badges(calculateBadges(userStatMap.get(match.getHost().getId()), userReportCountMap.getOrDefault(match.getHost().getId(), 0L)))
                     .build();
         }
 
@@ -478,6 +538,7 @@ public class MatchServiceImpl implements MatchService {
                         .avatarUrl(p.getUser().getAvatarUrl())
                         .role(p.getRole())
                         .status(p.getStatus())
+                        .badges(calculateBadges(userStatMap.get(p.getUser().getId()), userReportCountMap.getOrDefault(p.getUser().getId(), 0L)))
                         .build())
                 .collect(Collectors.toList());
 
@@ -518,11 +579,27 @@ public class MatchServiceImpl implements MatchService {
             joinedMatchIds.addAll(matchParticipantRepository.findJoinedMatchIds(currentUserId, matchIds));
         }
 
+        List<Integer> allUserIds = new java.util.ArrayList<>();
+        matches.forEach(m -> {
+            if (m.getHost() != null) allUserIds.add(m.getHost().getId());
+        });
+        allParticipants.forEach(p -> allUserIds.add(p.getUser().getId()));
+        java.util.Map<Integer, com.cdweb.be.entity.UserStat> globalUserStatMap = userStatRepository.findByUserIdIn(allUserIds).stream()
+                .collect(Collectors.toMap(stat -> stat.getUser().getId(), stat -> stat, (existing, replacement) -> existing));
+
+        List<Object[]> reportCounts = reportRepository.countReportsByUserIds(allUserIds);
+        java.util.Map<Integer, Long> globalReportCountMap = reportCounts.stream()
+                .collect(Collectors.toMap(
+                        row -> (Integer) row[0],
+                        row -> ((Number) row[1]).longValue(),
+                        (existing, replacement) -> existing
+                ));
+
         return matches.stream()
                 .map(match -> {
                     List<MatchParticipant> participants = participantsMap.getOrDefault(match.getId(), java.util.Collections.emptyList());
                     boolean joined = joinedMatchIds.contains(match.getId());
-                    return buildDto(match, participants, joined);
+                    return buildDtoWithStats(match, participants, joined, globalUserStatMap, globalReportCountMap);
                 })
                 .collect(Collectors.toList());
     }

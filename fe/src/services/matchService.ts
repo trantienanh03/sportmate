@@ -7,6 +7,7 @@ export interface MatchHost {
   id: number;
   fullName: string;
   avatarUrl?: string;
+  badges?: string[];
 }
 
 export interface MatchVenue {
@@ -25,6 +26,7 @@ export interface MatchParticipant {
   avatarUrl?: string;
   role: string;
   status: string;
+  badges?: string[];
 }
 
 export interface MatchComment {
