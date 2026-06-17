@@ -5,7 +5,9 @@ import { useAuth } from '../../context/AuthContext';
 import { matchService, type MatchDetail as MatchDetailType } from '../../services/matchService';
 import MatchComments from '../../components/MatchComments/MatchComments';
 import ReportModal from '../../components/ReportModal/ReportModal';
+import RatingModal from '../../components/RatingModal/RatingModal';
 import { reportService } from '../../services/reportService';
+import { ratingService } from '../../services/ratingService';
 import './MatchDetail.css';
 
 const SPORT_IMAGES: Record<string, string> = {
@@ -66,6 +68,9 @@ const MatchDetail: React.FC = () => {
   const [reportPopup, setReportPopup] = useState<{ show: boolean; reportId: number | null }>({ show: false, reportId: null });
   const [myReportId, setMyReportId] = useState<number | null>(null);
 
+  const [unratedParticipants, setUnratedParticipants] = useState<any[]>([]);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+
   useEffect(() => {
     if (!id) return;
 
@@ -77,6 +82,55 @@ const MatchDetail: React.FC = () => {
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    const checkReportStatus = async () => {
+      if (!user || !match) return;
+      try {
+        const res = await reportService.checkReport(match.id);
+        if (res.hasReported && res.reportId) {
+          setMyReportId(res.reportId);
+        } else {
+          setMyReportId(null);
+        }
+      } catch (e) {
+        console.error("Failed to check report status", e);
+      }
+    };
+
+    const checkRatingStatus = async () => {
+      if (!user || !match || match.status !== 'completed') return;
+      try {
+        const unratedIds = await ratingService.getUnratedParticipantIds(match.id);
+        if (unratedIds && unratedIds.length > 0) {
+          const attendeesMap = new Map();
+          attendeesMap.set(match.host.id, { id: match.host.id, name: match.host.fullName, avatar: match.host.avatarUrl, isHost: true });
+          if (match.participants) {
+            match.participants.forEach((p: any) => {
+              attendeesMap.set(p.userId, { id: p.userId, name: p.fullName, avatar: p.avatarUrl, isHost: p.role === 'host' });
+            });
+          }
+          
+          const ratees: any[] = [];
+          for (const uId of unratedIds) {
+            if (attendeesMap.has(uId)) {
+              ratees.push(attendeesMap.get(uId));
+            }
+          }
+          
+          if (ratees.length > 0) {
+            setUnratedParticipants(ratees);
+            setShowRatingModal(true);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to check rating status", e);
+      }
+    };
+
+    checkReportStatus();
+    checkRatingStatus();
+  }, [match, user]);
 
   const derived = useMemo(() => {
     if (!match) return null;
@@ -101,7 +155,7 @@ const MatchDetail: React.FC = () => {
       feeLabel,
       heroImage,
       attendees,
-      recurrence: match.status === 'open' ? 'Đang mở cho đăng ký' : 'Đã đóng',
+      recurrence: match.status === 'open' ? 'Đang mở cho đăng ký' : match.status === 'completed' ? 'Đã kết thúc' : 'Đã đóng',
     };
   }, [match]);
 
@@ -228,7 +282,7 @@ const MatchDetail: React.FC = () => {
                 <h6 className="fw-bold mb-0">{match.host.fullName}</h6>
               </div>
             </div>
-            {user && match.host.userId !== user.id && (
+            {user && match.host.id !== user.id && (
               myReportId ? (
                 <button 
                   className="btn btn-outline-secondary d-flex align-items-center gap-2 rounded-pill px-3"
@@ -259,6 +313,8 @@ const MatchDetail: React.FC = () => {
               <div className="md-cover-overlay">
                 <div className="md-cover-emoji">{getSportEmoji(match.sport)}</div>
                 {match.status === 'open' && <span className="md-cover-badge">Đang mở</span>}
+                {match.status === 'completed' && <span className="md-cover-badge bg-success">Đã kết thúc</span>}
+                {match.status === 'cancelled' && <span className="md-cover-badge bg-danger">Đã hủy</span>}
               </div>
             </div>
 
@@ -344,8 +400,11 @@ const MatchDetail: React.FC = () => {
             <div className="d-flex align-items-center ms-auto">
               <div className="text-end me-3 d-none d-md-block">
                 <span className="fw-bold fs-6 me-3">{derived.feeLabel}</span>
-                <span className="badge bg-warning bg-opacity-25 text-dark border border-warning rounded-pill px-3 py-2 fw-bold">
+                <span className="badge bg-warning bg-opacity-25 text-dark border border-warning rounded-pill px-3 py-2 fw-bold me-2">
                   Còn {derived.spotsLeft} chỗ trống
+                </span>
+                <span className={`badge ${match.status === 'open' ? 'bg-white text-dark border' : match.status === 'completed' ? 'bg-success' : 'bg-secondary'} rounded-pill px-3 py-2 fw-bold shadow-sm`}>
+                  {match.status === 'open' ? 'Đang mở' : match.status === 'full' ? 'Đã đầy' : match.status === 'completed' ? 'Đã kết thúc' : 'Đã hủy'}
                 </span>
               </div>
 
@@ -446,6 +505,18 @@ const MatchDetail: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showRatingModal && match && (
+        <RatingModal 
+          matchId={match.id}
+          ratees={unratedParticipants}
+          onClose={() => setShowRatingModal(false)}
+          onSuccess={() => {
+            setShowRatingModal(false);
+            setPopup({ type: 'success', message: 'Cảm ơn bạn đã đánh giá sau trận đấu!' });
+          }}
+        />
       )}
     </div>
   );

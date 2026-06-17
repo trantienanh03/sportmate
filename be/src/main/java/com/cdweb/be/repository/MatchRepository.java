@@ -9,6 +9,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.time.LocalDateTime;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import com.cdweb.be.enums.MatchStatus;
 
 public interface MatchRepository extends JpaRepository<Match, Integer> {
     List<Match> findByHostIdOrderByStartTimeDesc(Integer hostId);
@@ -16,6 +22,11 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select m from Match m where m.id = :id")
     Optional<Match> findByIdForUpdate(@Param("id") Integer id);
+
+    @Query("SELECT m FROM Match m JOIN m.host h WHERE h.id = :userId")
+    Page<Match> findAllByHostUserId(@Param("userId") Integer userId, Pageable pageable);
+
+    List<Match> findByStatusNotAndEndTimeBefore(MatchStatus status, LocalDateTime endTime);
 
     @Query(value = """
         SELECT m.* FROM matches m
