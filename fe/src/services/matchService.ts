@@ -27,6 +27,16 @@ export interface MatchParticipant {
   status: string;
 }
 
+export interface MatchComment {
+  id: number;
+  matchId: number;
+  userId: number;
+  userName: string;
+  userAvatarUrl?: string;
+  content: string;
+  createdAt: string;
+}
+
 export interface MatchDetail {
   id: number;
   title: string;
@@ -206,6 +216,42 @@ export const matchService = {
     }
     
     return updated;
+  },
+
+  getComments: async (matchId: number): Promise<MatchComment[]> => {
+    const response = await fetch(`${API_URL}/matches/${matchId}/comments`, {
+      method: "GET",
+      credentials: "include",
+    });
+    return handleResponse<MatchComment[]>(response);
+  },
+
+  addComment: async (matchId: number, content: string): Promise<MatchComment> => {
+    const response = await fetch(`${API_URL}/matches/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ matchId, content }),
+    });
+    return handleResponse<MatchComment>(response);
+  },
+
+  updateComment: async (commentId: number, matchId: number, content: string): Promise<MatchComment> => {
+    const response = await fetch(`${API_URL}/matches/comments/${commentId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ matchId, content }),
+    });
+    return handleResponse<MatchComment>(response);
+  },
+
+  deleteComment: async (commentId: number): Promise<{ message: string }> => {
+    const response = await fetch(`${API_URL}/matches/comments/${commentId}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    return handleResponse<{ message: string }>(response);
   },
 
   getCachedMatches: (): MatchDetail[] | null => cachedMatches,

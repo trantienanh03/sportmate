@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import { useAuth } from '../../context/AuthContext';
 import { matchService, type MatchDetail as MatchDetailType } from '../../services/matchService';
+import MatchComments from '../../components/MatchComments/MatchComments';
 import './MatchDetail.css';
 
 const SPORT_IMAGES: Record<string, string> = {
@@ -57,7 +58,6 @@ const MatchDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [comment, setComment] = useState('');
   const [confirmAction, setConfirmAction] = useState<'cancel' | 'resume' | null>(null);
   const [popup, setPopup] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
@@ -153,12 +153,6 @@ const MatchDetail: React.FC = () => {
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const handlePostComment = () => {
-    if (!comment.trim()) return;
-    setPopup({ type: 'info', message: 'Thảo luận hiện chưa kết nối backend. Nội dung bạn nhập: ' + comment.trim() });
-    setComment('');
   };
 
   if (loading) {
@@ -261,31 +255,7 @@ const MatchDetail: React.FC = () => {
               ))}
             </div>
 
-            <h4 className="fw-bold mb-3">Thảo luận</h4>
-            <div className="card border-0 bg-white shadow-sm rounded-4 p-4 mb-5">
-              <div className="d-flex align-items-start mb-3">
-                <img
-                  src={user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName ?? 'User')}&background=3b82f6&color=fff`}
-                  className="rounded-circle me-3 mt-1"
-                  style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-                  alt="User"
-                />
-                <div className="flex-grow-1">
-                  <textarea
-                    className="form-control bg-light border-0 rounded-3"
-                    rows={2}
-                    placeholder="Thêm bình luận..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                  />
-                  <div className="text-end mt-2">
-                    <button className="btn btn-secondary fw-bold px-4 rounded-pill" onClick={handlePostComment} disabled={!comment.trim()}>
-                      Đăng
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <MatchComments matchId={match.id} />
           </div>
 
           <div className="col-lg-4 d-none d-lg-block">
