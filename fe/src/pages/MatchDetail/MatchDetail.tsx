@@ -4,6 +4,8 @@ import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import { useAuth } from '../../context/AuthContext';
 import { matchService, type MatchDetail as MatchDetailType } from '../../services/matchService';
 import MatchComments from '../../components/MatchComments/MatchComments';
+import ReportModal from '../../components/ReportModal/ReportModal';
+import { reportService } from '../../services/reportService';
 import './MatchDetail.css';
 
 const SPORT_IMAGES: Record<string, string> = {
@@ -60,6 +62,9 @@ const MatchDetail: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'cancel' | 'resume' | null>(null);
   const [popup, setPopup] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportPopup, setReportPopup] = useState<{ show: boolean; reportId: number | null }>({ show: false, reportId: null });
+  const [myReportId, setMyReportId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -151,7 +156,18 @@ const MatchDetail: React.FC = () => {
         message: e instanceof Error ? e.message : isCancel ? 'Không thể hủy trận đấu' : 'Không thể khôi phục trận đấu',
       });
     } finally {
-      setActionLoading(false);
+      setConfirmAction(null);
+    }
+  };
+
+  const handleUndoReport = async (reportId: number) => {
+    try {
+      await reportService.deleteReport(reportId);
+      setMyReportId(null);
+      setReportPopup({ show: false, reportId: null });
+      setPopup({ type: 'success', message: 'Đã hoàn tác báo cáo thành công.' });
+    } catch (e: any) {
+      setPopup({ type: 'error', message: 'Không thể hoàn tác báo cáo: ' + (e.message || 'Lỗi không xác định') });
     }
   };
 
@@ -199,17 +215,38 @@ const MatchDetail: React.FC = () => {
       <div className="bg-white pt-4 pb-4 border-bottom">
         <div className="container">
           <h1 className="fw-bolder mb-4 match-title">{title}</h1>
-          <div className="d-flex align-items-center">
-            <img
-              src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
-              alt={match.host.fullName}
-              className="rounded-circle me-3 border"
-              style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-            />
-            <div>
-              <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
-              <h6 className="fw-bold mb-0">{match.host.fullName}</h6>
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center">
+              <img
+                src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
+                alt={match.host.fullName}
+                className="rounded-circle me-3 border"
+                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+              />
+              <div>
+                <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
+                <h6 className="fw-bold mb-0">{match.host.fullName}</h6>
+              </div>
             </div>
+            {user && match.host.userId !== user.id && (
+              myReportId ? (
+                <button 
+                  className="btn btn-outline-secondary d-flex align-items-center gap-2 rounded-pill px-3"
+                  onClick={() => handleUndoReport(myReportId)}
+                  title="Hoàn tác báo cáo"
+                >
+                  <span>↩️</span> <span className="d-none d-md-inline">Đã báo cáo (Hoàn tác)</span>
+                </button>
+              ) : (
+                <button 
+                  className="btn btn-outline-danger d-flex align-items-center gap-2 rounded-pill px-3"
+                  onClick={() => setShowReportModal(true)}
+                  title="Báo cáo trận đấu này"
+                >
+                  <span>🚩</span> <span className="d-none d-md-inline">Báo cáo</span>
+                </button>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -376,6 +413,35 @@ const MatchDetail: React.FC = () => {
             <div className="md-popup-actions md-popup-actions--single">
               <button className="btn btn-dark rounded-pill px-4" onClick={() => setPopup(null)}>
                 OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReportModal && match && (
+        <ReportModal 
+          reportedMatchId={match.id}
+          onClose={() => setShowReportModal(false)}
+          onSuccess={(reportId) => {
+            setShowReportModal(false);
+            setMyReportId(reportId);
+            setReportPopup({ show: true, reportId });
+          }}
+        />
+      )}
+
+      {reportPopup.show && reportPopup.reportId && (
+        <div className="md-popup-overlay" onClick={() => setReportPopup({ show: false, reportId: null })}>
+          <div className="md-popup-card" onClick={(event) => event.stopPropagation()}>
+            <h5 className="md-popup-title text-success">Gửi thành công</h5>
+            <p className="md-popup-message">Báo cáo của bạn đã được gửi. Chúng tôi sẽ xem xét sớm nhất!</p>
+            <div className="md-popup-actions">
+              <button className="btn btn-outline-secondary rounded-pill px-4" onClick={() => handleUndoReport(reportPopup.reportId!)}>
+                Hoàn tác
+              </button>
+              <button className="btn btn-dark rounded-pill px-4" onClick={() => setReportPopup({ show: false, reportId: null })}>
+                Đóng
               </button>
             </div>
           </div>
