@@ -48,6 +48,14 @@ export const ratingService = {
     return handleResponse<{ message: string }>(response);
   },
 
+  getMyRatings: async (matchId: number): Promise<RatingItemRequest[]> => {
+    const response = await fetch(`${API_URL}/ratings/my-ratings?matchId=${matchId}`, {
+      method: "GET",
+      credentials: "include",
+    });
+    return handleResponse<RatingItemRequest[]>(response);
+  },
+
   getUnratedParticipantIds: async (matchId: number): Promise<number[]> => {
     const response = await fetch(`${API_URL}/ratings/pending?matchId=${matchId}`, {
       method: "GET",

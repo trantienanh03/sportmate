@@ -68,7 +68,7 @@ const MatchDetail: React.FC = () => {
   const [reportPopup, setReportPopup] = useState<{ show: boolean; reportId: number | null }>({ show: false, reportId: null });
   const [myReportId, setMyReportId] = useState<number | null>(null);
 
-  const [unratedParticipants, setUnratedParticipants] = useState<any[]>([]);
+  const [rateableParticipants, setRateableParticipants] = useState<any[]>([]);
   const [showRatingModal, setShowRatingModal] = useState(false);
 
   useEffect(() => {
@@ -102,24 +102,25 @@ const MatchDetail: React.FC = () => {
       if (!user || !match || match.status !== 'completed') return;
       try {
         const unratedIds = await ratingService.getUnratedParticipantIds(match.id);
-        if (unratedIds && unratedIds.length > 0) {
-          const attendeesMap = new Map();
-          attendeesMap.set(match.host.id, { id: match.host.id, name: match.host.fullName, avatar: match.host.avatarUrl, isHost: true });
-          if (match.participants) {
-            match.participants.forEach((p: any) => {
-              attendeesMap.set(p.userId, { id: p.userId, name: p.fullName, avatar: p.avatarUrl, isHost: p.role === 'host' });
-            });
+        
+        const attendeesMap = new Map();
+        attendeesMap.set(match.host.id, { id: match.host.id, name: match.host.fullName, avatar: match.host.avatarUrl, isHost: true });
+        if (match.participants) {
+          match.participants.forEach((p: any) => {
+            attendeesMap.set(p.userId, { id: p.userId, name: p.fullName, avatar: p.avatarUrl, isHost: p.role === 'host' });
+          });
+        }
+        
+        const allRatees: any[] = [];
+        attendeesMap.forEach((ratee, uId) => {
+          if (uId !== user.id) {
+            allRatees.push(ratee);
           }
-          
-          const ratees: any[] = [];
-          for (const uId of unratedIds) {
-            if (attendeesMap.has(uId)) {
-              ratees.push(attendeesMap.get(uId));
-            }
-          }
-          
-          if (ratees.length > 0) {
-            setUnratedParticipants(ratees);
+        });
+        
+        if (allRatees.length > 0) {
+          setRateableParticipants(allRatees);
+          if (unratedIds && unratedIds.length > 0) {
             setShowRatingModal(true);
           }
         }
@@ -330,7 +331,17 @@ const MatchDetail: React.FC = () => {
                   {derived.attendees.length}
                 </span>
               </h4>
-              <a href="#" className="text-primary fw-medium text-decoration-none">Xem tất cả</a>
+              <div className="d-flex align-items-center gap-3">
+                {rateableParticipants.length > 0 && (
+                  <button 
+                    className="btn btn-sm btn-outline-warning fw-bold rounded-pill px-3"
+                    onClick={() => setShowRatingModal(true)}
+                  >
+                    <i className="fa-solid fa-star me-1 text-warning"></i> Đánh giá
+                  </button>
+                )}
+                <a href="#" className="text-primary fw-medium text-decoration-none">Xem tất cả</a>
+              </div>
             </div>
 
             <div className="d-flex flex-wrap gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm">
@@ -510,11 +521,11 @@ const MatchDetail: React.FC = () => {
       {showRatingModal && match && (
         <RatingModal 
           matchId={match.id}
-          ratees={unratedParticipants}
+          ratees={rateableParticipants}
           onClose={() => setShowRatingModal(false)}
           onSuccess={() => {
             setShowRatingModal(false);
-            setPopup({ type: 'success', message: 'Cảm ơn bạn đã đánh giá sau trận đấu!' });
+            setPopup({ type: 'success', message: 'Cảm ơn bạn đã gửi đánh giá!' });
           }}
         />
       )}

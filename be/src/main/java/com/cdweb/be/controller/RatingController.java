@@ -42,4 +42,13 @@ public class RatingController {
         Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(ratingService.getUnratedParticipantIds(userId, matchId));
     }
+    @GetMapping("/my-ratings")
+    public ResponseEntity<?> getMyRatings(@RequestParam Integer matchId, HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.ok(List.of());
+        }
+        Integer userId = (Integer) session.getAttribute("userId");
+        return ResponseEntity.ok(ratingService.getMyRatings(userId, matchId));
+    }
 }

@@ -8,7 +8,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1050;
+  z-index: 9999;
 }
 
 .rating-modal-content {
@@ -28,11 +28,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .rating-modal-body {
   padding: 24px;
   overflow-y: auto;
+  flex: 1;
+}
+
+.rating-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background-color: #fff;
 }
 
 .star-rating {

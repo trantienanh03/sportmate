@@ -7,4 +7,5 @@ import java.util.List;
 public interface RatingService {
     void submitBatchRatings(Integer raterId, RatingRequestDto request);
     List<Integer> getUnratedParticipantIds(Integer userId, Integer matchId);
+    List<com.cdweb.be.dto.request.RatingItemDto> getMyRatings(Integer userId, Integer matchId);
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { type RatingItemRequest, ratingService } from '../../services/ratingService';
 import './RatingModal.css';
 
@@ -26,6 +26,33 @@ const RatingModal: React.FC<RatingModalProps> = ({ matchId, ratees, onClose, onS
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchExistingRatings = async () => {
+      try {
+        const existing = await ratingService.getMyRatings(matchId);
+        if (existing && existing.length > 0) {
+          setRatings(prev => {
+            const next = { ...prev };
+            existing.forEach(r => {
+              if (next[r.rateeId]) {
+                next[r.rateeId] = {
+                  rateeId: r.rateeId,
+                  skillScore: r.skillScore,
+                  attitudeScore: r.attitudeScore,
+                  comment: r.comment || ''
+                };
+              }
+            });
+            return next;
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load existing ratings", err);
+      }
+    };
+    fetchExistingRatings();
+  }, [matchId]);
 
   const handleScoreChange = (rateeId: number, field: 'skillScore' | 'attitudeScore', score: number) => {
     setRatings(prev => ({
@@ -135,15 +162,14 @@ const RatingModal: React.FC<RatingModalProps> = ({ matchId, ratees, onClose, onS
               </div>
             ))}
           </div>
-
-          <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-            <button type="button" className="btn btn-outline-secondary px-4 rounded-pill" onClick={onClose} disabled={isSubmitting}>
-              Bỏ qua
-            </button>
-            <button type="button" className="btn btn-primary px-4 rounded-pill" onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
-            </button>
-          </div>
+        </div>
+        <div className="rating-modal-footer">
+          <button type="button" className="btn btn-outline-secondary px-4 rounded-pill" onClick={onClose} disabled={isSubmitting}>
+            Bỏ qua
+          </button>
+          <button type="button" className="btn btn-primary px-4 rounded-pill" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
+          </button>
         </div>
       </div>
     </div>

@@ -49,12 +49,21 @@ public class RatingServiceImpl implements RatingService {
                 throw new AppException(HttpStatus.BAD_REQUEST, "Không thể tự đánh giá bản thân");
             }
 
-            if (alreadyRatedIds.contains(item.getRateeId())) {
-                continue; // Skip if already rated
-            }
-
             User ratee = userRepository.findById(item.getRateeId())
                     .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Ratee not found"));
+
+            if (alreadyRatedIds.contains(item.getRateeId())) {
+                MatchRating existing = existingRatings.stream()
+                        .filter(r -> r.getRatee().getId().equals(item.getRateeId()))
+                        .findFirst()
+                        .orElseThrow();
+                existing.setSkillScore(item.getSkillScore());
+                existing.setAttitudeScore(item.getAttitudeScore());
+                existing.setComment(item.getComment());
+                matchRatingRepository.save(existing);
+                updateUserStats(ratee);
+                continue; // Skip creating a new one
+            }
 
             MatchRating newRating = MatchRating.builder()
                     .match(match)
@@ -126,5 +135,20 @@ public class RatingServiceImpl implements RatingService {
         participantIds.removeAll(ratedIds);
 
         return participantIds;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RatingItemDto> getMyRatings(Integer userId, Integer matchId) {
+        return matchRatingRepository.findByMatchIdAndRaterId(matchId, userId).stream()
+                .map(r -> {
+                    RatingItemDto dto = new RatingItemDto();
+                    dto.setRateeId(r.getRatee().getId());
+                    dto.setSkillScore(r.getSkillScore());
+                    dto.setAttitudeScore(r.getAttitudeScore());
+                    dto.setComment(r.getComment());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 }
