@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -113,10 +115,11 @@ public class SplitBillServiceImpl implements SplitBillService {
         savedBill.setMessageId(savedMsg.getId());
         splitBillRepository.save(savedBill);
 
-        // Broadcast tin nhắn realtime tới các thành viên qua WebSocket
+        // Gửi WebSocket SAU KHI transaction commit để tránh race condition:
+        // Nếu gửi trong transaction, FE có thể gọi GET /split-bills/{id} khi DB chưa commit -> 404
         User sender = userRepository.findById(hostId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy thông tin người gửi"));
-        MessageDto msgDto = MessageDto.builder()
+        final MessageDto finalMsgDto = MessageDto.builder()
                 .id(savedMsg.getId())
                 .roomId(savedMsg.getRoomId())
                 .senderId(hostId)
@@ -127,7 +130,13 @@ public class SplitBillServiceImpl implements SplitBillService {
                 .metadata(savedMsg.getMetadata())
                 .createdAt(savedMsg.getCreatedAt())
                 .build();
-        messagingTemplate.convertAndSend("/topic/room/" + room.getId(), msgDto);
+        final Integer roomId = room.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                messagingTemplate.convertAndSend("/topic/room/" + roomId, finalMsgDto);
+            }
+        });
 
         return mapToSplitBillDto(savedBill, savedPayments);
     }
