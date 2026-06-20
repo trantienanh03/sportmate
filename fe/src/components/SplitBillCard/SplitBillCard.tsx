@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./SplitBillCard.css";
-import { splitBillService, SplitBillDto } from "../../services/splitBillService";
+import { splitBillService } from "../../services/splitBillService";
+import type { SplitBillDto } from "../../services/splitBillService";
 
 interface SplitBillCardProps {
   billId: number;

@@ -208,6 +208,10 @@ public class SplitBillServiceImpl implements SplitBillService {
         if (payment.getStatus() == PaymentStatus.PAID) {
             throw new AppException(HttpStatus.BAD_REQUEST, "Lượt thanh toán này đã được xác nhận trước đó");
         }
+        // Đảm bảo luồng 2 bước: thành viên phải báo chuyển khoản trước (SCANNED), host mới được xác nhận
+        if (payment.getStatus() == PaymentStatus.PENDING) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Thành viên chưa báo đã chuyển khoản, không thể xác nhận");
+        }
 
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaidAt(LocalDateTime.now());

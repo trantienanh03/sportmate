@@ -6,6 +6,7 @@ export interface RoomSummaryDto {
   type: string;
   matchId: number | null;
   participantCount: number;
+  createdBy: number | null;
   lastMessageAt: string | null;
   createdAt: string;
 }

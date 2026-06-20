@@ -12,7 +12,7 @@ import { useWebSocket } from "../../hooks/useWebSocket";
 import SplitBillModal from "../../components/SplitBillModal/SplitBillModal";
 import SplitBillCard from "../../components/SplitBillCard/SplitBillCard";
 import BillDetailPanel from "../../components/BillDetailPanel/BillDetailPanel";
-import { SplitBillDto } from "../../services/splitBillService";
+import type { SplitBillDto } from "../../services/splitBillService";
 
 interface ExtendedRoom extends RoomSummaryDto {
   messages: MessageDto[];
@@ -40,7 +40,7 @@ const Messages: React.FC = () => {
   useEffect(() => {
     authService.getProfile()
       .then(user => setUserId(user.id))
-      .catch(err => console.error("Not authenticated:", err));
+      .catch(err => console.error("Không thể lấy thông tin người dùng:", err));
 
     chatService.getRooms()
       .then(rooms => {
@@ -51,7 +51,7 @@ const Messages: React.FC = () => {
         }));
         setConversations(extendedRooms);
       })
-      .catch(err => console.error("Failed to load rooms:", err));
+      .catch(err => console.error("Không thể tải danh sách phòng chat:", err));
   }, []);
 
   // Dùng useCallback để giữ nguyên tham chiếu của callback, tránh làm useWebSocket bị kích hoạt kết nối lại (reconnect) liên tục.
@@ -106,7 +106,7 @@ const Messages: React.FC = () => {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
           }, 100);
         })
-        .catch(err => console.error("Failed to load messages:", err));
+        .catch(err => console.error("Không thể tải tin nhắn:", err));
     }
   }, [selectedConvoId]);
 
@@ -507,9 +507,7 @@ const Messages: React.FC = () => {
         onClose={() => setShowSplitBillModal(false)}
         roomId={selectedConvoId || 0}
         memberCount={activeConvo ? activeConvo.participantCount : 0}
-        onCreated={(billId) => {
-          console.log("Hóa đơn chia tiền đã được tạo:", billId);
-        }}
+        onCreated={() => {}}
       />
 
       {selectedBillId !== null && (
