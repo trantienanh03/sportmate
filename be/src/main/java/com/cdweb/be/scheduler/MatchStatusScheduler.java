@@ -24,13 +24,12 @@ public class MatchStatusScheduler {
     @Transactional
     public void autoCompleteMatches() {
         LocalDateTime now = LocalDateTime.now();
-        List<Match> matchesToComplete = matchRepository.findByStatusNotAndEndTimeBefore(MatchStatus.completed, now);
+        List<MatchStatus> statuses = java.util.Arrays.asList(MatchStatus.open, MatchStatus.full);
+        List<Match> matchesToComplete = matchRepository.findByStatusInAndEndTimeBefore(statuses, now);
         
         if (!matchesToComplete.isEmpty()) {
             for (Match match : matchesToComplete) {
-                if (match.getStatus() != MatchStatus.cancelled) {
-                    match.setStatus(MatchStatus.completed);
-                }
+                match.setStatus(MatchStatus.completed);
             }
             matchRepository.saveAll(matchesToComplete);
             log.info("Auto-completed {} matches", matchesToComplete.size());

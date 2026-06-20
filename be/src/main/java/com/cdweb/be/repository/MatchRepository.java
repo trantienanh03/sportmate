@@ -26,7 +26,7 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
     @Query("SELECT m FROM Match m JOIN m.host h WHERE h.id = :userId")
     Page<Match> findAllByHostUserId(@Param("userId") Integer userId, Pageable pageable);
 
-    List<Match> findByStatusNotAndEndTimeBefore(MatchStatus status, LocalDateTime endTime);
+    List<Match> findByStatusInAndEndTimeBefore(List<MatchStatus> statuses, LocalDateTime endTime);
 
     @Query(value = """
         SELECT m.* FROM matches m
