@@ -9,6 +9,10 @@ import { chatService } from "../../services/chatService";
 import type { RoomSummaryDto, MessageDto } from "../../services/chatService";
 import { authService } from "../../services/authService";
 import { useWebSocket } from "../../hooks/useWebSocket";
+import SplitBillModal from "../../components/SplitBillModal/SplitBillModal";
+import SplitBillCard from "../../components/SplitBillCard/SplitBillCard";
+import BillDetailPanel from "../../components/BillDetailPanel/BillDetailPanel";
+import { SplitBillDto } from "../../services/splitBillService";
 
 interface ExtendedRoom extends RoomSummaryDto {
   messages: MessageDto[];
@@ -25,6 +29,11 @@ const Messages: React.FC = () => {
   const [inputText, setInputText] = useState<string>("");
   const [isMobileChatActive, setIsMobileChatActive] = useState<boolean>(false);
   const [userId, setUserId] = useState<number | null>(null);
+
+  const [showSplitBillModal, setShowSplitBillModal] = useState<boolean>(false);
+  const [showBillDetail, setShowBillDetail] = useState<boolean>(false);
+  const [selectedBillId, setSelectedBillId] = useState<number | null>(null);
+  const activeCardUpdateRef = useRef<((bill: SplitBillDto) => void) | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +111,7 @@ const Messages: React.FC = () => {
   }, [selectedConvoId]);
 
   const activeConvo = conversations.find((c) => c.id === selectedConvoId);
+  const isHost = activeConvo && userId !== null && activeConvo.createdBy === userId;
 
   const filteredConversations = conversations.filter((convo) => {
     const matchesTab = convo.type === activeTab;
@@ -330,6 +340,74 @@ const Messages: React.FC = () => {
                         );
                       }
 
+                      if (msg.type === "FEE_SPLIT") {
+                        let billId = null;
+                        try {
+                          const metadata = JSON.parse(msg.metadata || "{}");
+                          billId = metadata.billId;
+                        } catch (err) {
+                          console.error("Lỗi parse metadata hóa đơn:", err);
+                        }
+
+                        const isMe = userId !== null && msg.senderId === userId;
+                        const bubbleClass = isMe ? "sent" : "received";
+
+                        return (
+                          <React.Fragment key={msg.id}>
+                            {showDateSeparator && (
+                              <div className="date-divider-wrap">
+                                <div className="date-divider-line" />
+                                <span className="date-divider-text">
+                                  {formatDateLabel(msg.createdAt)}
+                                </span>
+                              </div>
+                            )}
+                            <div className={`message-bubble-row ${bubbleClass}`}>
+                              {!isMe && (
+                                <div className="msg-sender-avatar">
+                                  {msg.senderAvatar ? (
+                                    <img src={msg.senderAvatar} alt={msg.senderName} />
+                                  ) : (
+                                    <span>{msg.senderName?.charAt(0)}</span>
+                                  )}
+                                </div>
+                              )}
+                              <div className="msg-bubble-content-col">
+                                {!isMe && (
+                                  <span className="msg-sender-name">
+                                    {msg.senderName}
+                                  </span>
+                                )}
+                                {billId ? (
+                                  <SplitBillCard
+                                    billId={billId}
+                                    currentUserId={userId || 0}
+                                    isHost={isHost || false}
+                                    onViewDetail={(id, onUpdate) => {
+                                      setSelectedBillId(id);
+                                      activeCardUpdateRef.current = onUpdate;
+                                      setShowBillDetail(true);
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="msg-text-bubble">
+                                    <p className="mb-0">Hóa đơn chia tiền bị lỗi dữ liệu.</p>
+                                  </div>
+                                )}
+                                <div className="msg-meta-row">
+                                  <span>
+                                    {new Date(msg.createdAt).toLocaleTimeString("vi-VN", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      }
+
                       const isMe = userId !== null && msg.senderId === userId;
                       const bubbleClass = isMe ? "sent" : "received";
 
@@ -386,6 +464,15 @@ const Messages: React.FC = () => {
                       <button className="input-action-btn" title="Đính kèm ảnh hoặc tệp">
                         <i className="fa-regular fa-image"></i>
                       </button>
+                      {activeConvo.type === "GROUP" && isHost && (
+                        <button
+                          className="input-action-btn split-bill-btn"
+                          onClick={() => setShowSplitBillModal(true)}
+                          title="Chia tiền sân & chi phí"
+                        >
+                          <i className="fa-solid fa-file-invoice-dollar text-primary"></i>
+                        </button>
+                      )}
                     </div>
 
                     <div className="chat-input-divider"></div>
@@ -414,6 +501,35 @@ const Messages: React.FC = () => {
           </div>
         </div>
       </main>
+
+      <SplitBillModal
+        isOpen={showSplitBillModal}
+        onClose={() => setShowSplitBillModal(false)}
+        roomId={selectedConvoId || 0}
+        memberCount={activeConvo ? activeConvo.participantCount : 0}
+        onCreated={(billId) => {
+          console.log("Hóa đơn chia tiền đã được tạo:", billId);
+        }}
+      />
+
+      {selectedBillId !== null && (
+        <BillDetailPanel
+          isOpen={showBillDetail}
+          onClose={() => {
+            setShowBillDetail(false);
+            setSelectedBillId(null);
+            activeCardUpdateRef.current = null;
+          }}
+          billId={selectedBillId}
+          currentUserId={userId || 0}
+          isHost={isHost || false}
+          onBillUpdated={(updatedBill) => {
+            if (activeCardUpdateRef.current) {
+              activeCardUpdateRef.current(updatedBill);
+            }
+          }}
+        />
+      )}
 
       <Footer />
     </div>
