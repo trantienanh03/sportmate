@@ -96,19 +96,13 @@ export const authService = {
     });
 
     if (!response.ok) {
-      // Build a more descriptive error message for debugging
-      let message = `Update profile failed (HTTP ${response.status})`;
+      let message = "Cập nhật hồ sơ thất bại";
       try {
         const errorData = await response.json();
-        if (errorData && (errorData.message || errorData.error)) {
-          message += `: ${errorData.message || errorData.error}`;
-        } else {
-          // include serialized body when useful
-          message += `: ${JSON.stringify(errorData)}`;
-        }
+        message = errorData.message || message;
       } catch (e) {
         const textData = await response.text();
-        if (textData) message += `: ${textData}`;
+        if (textData) message = textData;
       }
       throw new Error(message);
     }
@@ -127,6 +121,56 @@ export const authService = {
 
     if (!response.ok) {
       throw new Error("Logout failed");
+    }
+
+    return response.text();
+  },
+
+  forgotPassword: async (email: string) => {
+    const response = await fetch(`${API_URL}/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      let message = "Gửi yêu cầu khôi phục thất bại";
+      try {
+        const errorData = await response.json();
+        message = errorData.message || message;
+      } catch (e) {
+        const errorText = await response.text();
+        if (errorText) message = errorText;
+      }
+      throw new Error(message);
+    }
+
+    return response.text();
+  },
+
+  resetPassword: async (token: string, newPassword: string) => {
+    const response = await fetch(`${API_URL}/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ token, newPassword }),
+    });
+
+    if (!response.ok) {
+      let message = "Đặt lại mật khẩu thất bại";
+      try {
+        const errorData = await response.json();
+        message = errorData.message || message;
+      } catch (e) {
+        const errorText = await response.text();
+        if (errorText) message = errorText;
+      }
+      throw new Error(message);
     }
 
     return response.text();
