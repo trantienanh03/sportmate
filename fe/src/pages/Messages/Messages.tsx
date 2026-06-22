@@ -34,6 +34,8 @@ const Messages: React.FC = () => {
   const [showBillDetail, setShowBillDetail] = useState<boolean>(false);
   const [selectedBillId, setSelectedBillId] = useState<number | null>(null);
   const activeCardUpdateRef = useRef<((bill: SplitBillDto) => void) | null>(null);
+  // Lưu trạng thái các hóa đơn đã hoàn tất qua thông báo websocket
+  const [completedBills, setCompletedBills] = useState<Record<number, boolean>>({});
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -56,6 +58,18 @@ const Messages: React.FC = () => {
 
   // Dùng useCallback để giữ nguyên tham chiếu của callback, tránh làm useWebSocket bị kích hoạt kết nối lại (reconnect) liên tục.
   const handleNewMessage = useCallback((newMsg: MessageDto) => {
+    // Nếu là tin nhắn chia tiền FEE_SPLIT và có metadata báo hoàn thành (COMPLETED)
+    if (newMsg.type === "FEE_SPLIT" && newMsg.metadata) {
+      try {
+        const meta = JSON.parse(newMsg.metadata);
+        if (meta.status === "COMPLETED" && meta.billId) {
+          setCompletedBills(prev => ({ ...prev, [meta.billId]: true }));
+        }
+      } catch (e) {
+        // bỏ qua
+      }
+    }
+
     setConversations(prev => prev.map(c => {
       if (c.id === newMsg.roomId) {
         // Chống trùng lặp tin nhắn
@@ -383,6 +397,7 @@ const Messages: React.FC = () => {
                                     billId={billId}
                                     currentUserId={userId || 0}
                                     isHost={isHost || false}
+                                    isForceCompleted={!!completedBills[billId]}
                                     onViewDetail={(id, onUpdate) => {
                                       setSelectedBillId(id);
                                       activeCardUpdateRef.current = onUpdate;

@@ -7,6 +7,7 @@ interface SplitBillCardProps {
   billId: number;
   currentUserId: number;
   isHost: boolean;
+  isForceCompleted?: boolean;
   onViewDetail: (billId: number, onUpdate: (bill: SplitBillDto) => void) => void;
 }
 
@@ -14,6 +15,7 @@ const SplitBillCard: React.FC<SplitBillCardProps> = ({
   billId,
   currentUserId,
   isHost,
+  isForceCompleted,
   onViewDetail,
 }) => {
   const [bill, setBill] = useState<SplitBillDto | null>(null);
@@ -42,6 +44,18 @@ const SplitBillCard: React.FC<SplitBillCardProps> = ({
       isMounted = false;
     };
   }, [billId]);
+
+  // Lắng nghe tín hiệu hoàn thành hóa đơn từ WebSocket để cập nhật UI tức thời
+  useEffect(() => {
+    if (isForceCompleted && bill && bill.status !== "COMPLETED") {
+      setBill(prev => prev ? {
+        ...prev,
+        status: "COMPLETED",
+        paidCount: prev.participantCount,
+        scannedCount: 0 // Khi hoàn tất thì không còn ai chờ duyệt nữa
+      } : null);
+    }
+  }, [isForceCompleted, bill]);
 
   const handleUpdate = (updatedBill: SplitBillDto) => {
     setBill(updatedBill);
