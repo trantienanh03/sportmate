@@ -61,6 +61,7 @@ public class RoomServiceImpl implements RoomService {
                     .type(room.getType().name())
                     .matchId(room.getMatchId())
                     .participantCount(memberCount)
+                    .createdBy(room.getCreatedBy())
                     .lastMessageAt(room.getLastMessageAt())
                     .createdAt(room.getCreatedAt())
                     .build();

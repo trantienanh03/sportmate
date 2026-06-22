@@ -715,3 +715,11 @@
     width: 100%;
   }
 }
+
+.split-bill-btn i {
+  color: var(--primary) !important;
+}
+
+.message-bubble-row .split-bill-card {
+  align-self: stretch;
+}
