@@ -84,21 +84,18 @@ public class RatingServiceImpl implements RatingService {
         UserStat stat = userStatRepository.findByUserId(user.getId())
                 .orElseGet(() -> UserStat.builder().user(user).build());
 
-        List<MatchRating> allRatings = matchRatingRepository.findByRateeId(user.getId());
+        List<Object[]> stats = matchRatingRepository.getRatingStatsByRateeId(user.getId());
         
-        if (allRatings.isEmpty()) return;
+        if (stats.isEmpty() || stats.get(0)[0] == null || ((Number) stats.get(0)[0]).longValue() == 0) return;
 
-        double totalSkill = 0;
-        double totalAttitude = 0;
+        Object[] row = stats.get(0);
+        long count = ((Number) row[0]).longValue();
+        double avgSkill = ((Number) row[1]).doubleValue();
+        double avgAttitude = ((Number) row[2]).doubleValue();
 
-        for (MatchRating r : allRatings) {
-            totalSkill += r.getSkillScore();
-            totalAttitude += r.getAttitudeScore();
-        }
-
-        stat.setTotalRatings(allRatings.size());
-        stat.setAvgSkillScore(totalSkill / allRatings.size());
-        stat.setAvgAttitudeScore(totalAttitude / allRatings.size());
+        stat.setTotalRatings((int) count);
+        stat.setAvgSkillScore(avgSkill);
+        stat.setAvgAttitudeScore(avgAttitude);
         // For completed matches count, we can derive it or keep it simple
         
         userStatRepository.save(stat);

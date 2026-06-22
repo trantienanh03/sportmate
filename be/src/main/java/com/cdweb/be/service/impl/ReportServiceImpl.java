@@ -53,6 +53,9 @@ public class ReportServiceImpl implements ReportService {
         }
 
         if (request.getReportedUserId() != null) {
+            if (reportRepository.findByReporterIdAndReportedUserId(reporterId, request.getReportedUserId()).isPresent()) {
+                throw new AppException(HttpStatus.BAD_REQUEST, "Bạn đã báo cáo người dùng này rồi");
+            }
             User reportedUser = userRepository.findById(request.getReportedUserId())
                     .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Reported user not found"));
             reportBuilder.reportedUser(reportedUser);

@@ -119,9 +119,12 @@ const MatchDetail: React.FC = () => {
         });
         
         if (allRatees.length > 0) {
-          setRateableParticipants(allRatees);
           if (unratedIds && unratedIds.length > 0) {
+            const unratedRatees = allRatees.filter(r => unratedIds.includes(r.id));
+            setRateableParticipants(unratedRatees);
             setShowRatingModal(true);
+          } else {
+            setRateableParticipants([]);
           }
         }
       } catch (e) {

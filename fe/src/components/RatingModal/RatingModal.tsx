@@ -27,32 +27,7 @@ const RatingModal: React.FC<RatingModalProps> = ({ matchId, ratees, onClose, onS
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchExistingRatings = async () => {
-      try {
-        const existing = await ratingService.getMyRatings(matchId);
-        if (existing && existing.length > 0) {
-          setRatings(prev => {
-            const next = { ...prev };
-            existing.forEach(r => {
-              if (next[r.rateeId]) {
-                next[r.rateeId] = {
-                  rateeId: r.rateeId,
-                  skillScore: r.skillScore,
-                  attitudeScore: r.attitudeScore,
-                  comment: r.comment || ''
-                };
-              }
-            });
-            return next;
-          });
-        }
-      } catch (err) {
-        console.error("Failed to load existing ratings", err);
-      }
-    };
-    fetchExistingRatings();
-  }, [matchId]);
+
 
   const handleScoreChange = (rateeId: number, field: 'skillScore' | 'attitudeScore', score: number) => {
     setRatings(prev => ({
