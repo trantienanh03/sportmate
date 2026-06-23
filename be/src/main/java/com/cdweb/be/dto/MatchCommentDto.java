@@ -18,5 +18,7 @@ public class MatchCommentDto {
     private String userName;
     private String userAvatarUrl;
     private String content;
+    private Long parentId;
+    private java.util.List<MatchCommentDto> replies;
     private LocalDateTime createdAt;
 }

@@ -138,3 +138,28 @@
   padding: 20px 0;
   font-style: italic;
 }
+
+.replies-list {
+  margin-left: 20px;
+  padding-left: 10px;
+  border-left: 2px solid #eaeaea;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reply-item {
+  background-color: transparent;
+  padding: 8px 0;
+}
+
+.reply-item .comment-avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.reply-item .comment-avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  font-size: 0.9rem;
+}

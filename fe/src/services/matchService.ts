@@ -36,6 +36,8 @@ export interface MatchComment {
   userName: string;
   userAvatarUrl?: string;
   content: string;
+  parentId?: number;
+  replies?: MatchComment[];
   createdAt: string;
 }
 
@@ -228,12 +230,12 @@ export const matchService = {
     return handleResponse<MatchComment[]>(response);
   },
 
-  addComment: async (matchId: number, content: string): Promise<MatchComment> => {
+  addComment: async (matchId: number, content: string, parentId?: number): Promise<MatchComment> => {
     const response = await fetch(`${API_URL}/matches/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ matchId, content }),
+      body: JSON.stringify({ matchId, content, parentId }),
     });
     return handleResponse<MatchComment>(response);
   },

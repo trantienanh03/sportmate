@@ -11,4 +11,6 @@ public class MatchCommentRequestDto {
 
     @NotBlank(message = "Content is required")
     private String content;
+
+    private Long parentId;
 }

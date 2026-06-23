@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface MatchCommentRepository extends JpaRepository<MatchComment, Long> {
     List<MatchComment> findByMatchIdOrderByCreatedAtDesc(Integer matchId);
+    List<MatchComment> findByMatchIdAndParentCommentIsNullOrderByCreatedAtDesc(Integer matchId);
 }
