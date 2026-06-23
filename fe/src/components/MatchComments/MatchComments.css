@@ -80,7 +80,7 @@
   font-size: 0.8rem;
   cursor: pointer;
   padding: 0;
-  text-decoration: underline;
+  text-decoration: none !important;
 }
 
 .comment-action-btn:hover {

@@ -247,12 +247,18 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId }) => {
             <>
               <div className="comment-text">{comment.content}</div>
               <div className="d-flex gap-3 mt-1 align-items-center">
-                {!isReply && user && (
+                {user && (
                   <button 
                     className="comment-action-btn font-weight-bold"
                     onClick={() => {
-                      setReplyingToId(replyingToId === comment.id ? null : comment.id);
+                      const targetId = comment.parentId || comment.id;
+                      setReplyingToId(replyingToId === targetId ? null : targetId);
                       setEditingCommentId(null);
+                      if (comment.parentId) {
+                        setReplyContent(`@${comment.userName} `);
+                      } else {
+                        setReplyContent('');
+                      }
                     }}
                   >
                     Trả lời
@@ -288,6 +294,14 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId }) => {
                   placeholder={`Trả lời ${comment.userName}...`}
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (replyContent.trim() && !isSubmitting) {
+                        handleReplySubmit(comment.id);
+                      }
+                    }
+                  }}
                   disabled={isSubmitting}
                 />
                 <button 
@@ -330,6 +344,16 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId }) => {
             placeholder="Viết bình luận mới..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (newComment.trim() && !isSubmitting) {
+                  // Gọi mock event submit
+                  const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+                  handleSubmit(fakeEvent);
+                }
+              }
+            }}
             disabled={isSubmitting}
           />
           <button 
