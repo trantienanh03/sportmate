@@ -25,6 +25,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.cdweb.be.repository.UserStatRepository;
+import com.cdweb.be.repository.ReportRepository;
+import com.cdweb.be.entity.UserStat;
+import java.util.List;
+import java.util.ArrayList;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -34,6 +40,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final UserStatRepository userStatRepository;
+    private final ReportRepository reportRepository;
 
     @Value("${FRONTEND_URL:http://localhost:5173}")
     private String frontendUrl;
@@ -129,6 +137,46 @@ public class AuthServiceImpl implements AuthService {
         tokenRepository.deleteByToken(token);
     }
 
+    private List<String> calculateBadges(UserStat stat, long reportCount) {
+        List<String> badges = new ArrayList<>();
+        
+        boolean hasWarning = false;
+        if (reportCount >= 3) {
+            hasWarning = true;
+        }
+        if (stat != null && stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() > 0 && stat.getAvgAttitudeScore() < 3.0) {
+            hasWarning = true;
+        }
+        
+        if (hasWarning) {
+            badges.add("Cảnh báo uy tín");
+        }
+
+        if (stat == null) {
+            if (!hasWarning) badges.add("Tân binh");
+            return badges;
+        }
+        
+        if (stat.getCompletedMatches() != null && stat.getCompletedMatches() < 5) {
+            badges.add("Tân binh");
+        } else if (stat.getCompletedMatches() != null && stat.getCompletedMatches() >= 5) {
+            badges.add("Tích cực");
+        }
+        
+        if (stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() >= 4.5) {
+            badges.add("Thân thiện");
+        }
+        if (stat.getAvgSkillScore() != null && stat.getAvgSkillScore() >= 4.0) {
+            badges.add("Chuyên nghiệp");
+        }
+        
+        if (badges.isEmpty() && !hasWarning) {
+            badges.add("Tân binh");
+        }
+        
+        return badges;
+    }
+
     @Override
     @Transactional
     public void requestForgotPassword(ForgotPasswordRequest request) {
@@ -172,6 +220,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private AuthResponseDto toDto(User user) {
+        UserStat stat = userStatRepository.findByUserId(user.getId()).orElse(null);
+        long reportCount = reportRepository.countByReportedUserId(user.getId());
+        List<String> badges = calculateBadges(stat, reportCount);
+
         return AuthResponseDto.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
@@ -184,6 +236,10 @@ public class AuthServiceImpl implements AuthService {
                 .lng(user.getLng())
                 .sports(user.getSports())
                 .availability(user.getAvailability())
+                .avgAttitudeScore(stat != null ? stat.getAvgAttitudeScore() : null)
+                .avgSkillScore(stat != null ? stat.getAvgSkillScore() : null)
+                .completedMatches(stat != null ? stat.getCompletedMatches() : 0)
+                .badges(badges)
                 .isActive(user.getIsActive())
                 .isBanned(user.getIsBanned())
                 .createdAt(user.getCreatedAt())

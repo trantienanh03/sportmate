@@ -3,6 +3,11 @@ import { useParams } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import { useAuth } from '../../context/AuthContext';
 import { matchService, type MatchDetail as MatchDetailType } from '../../services/matchService';
+import MatchComments from '../../components/MatchComments/MatchComments';
+import ReportModal from '../../components/ReportModal/ReportModal';
+import RatingModal from '../../components/RatingModal/RatingModal';
+import { reportService } from '../../services/reportService';
+import { ratingService } from '../../services/ratingService';
 import './MatchDetail.css';
 
 const SPORT_IMAGES: Record<string, string> = {
@@ -57,9 +62,14 @@ const MatchDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [comment, setComment] = useState('');
   const [confirmAction, setConfirmAction] = useState<'cancel' | 'resume' | null>(null);
   const [popup, setPopup] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportPopup, setReportPopup] = useState<{ show: boolean; reportId: number | null }>({ show: false, reportId: null });
+  const [myReportId, setMyReportId] = useState<number | null>(null);
+
+  const [rateableParticipants, setRateableParticipants] = useState<any[]>([]);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -73,6 +83,56 @@ const MatchDetail: React.FC = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    const checkReportStatus = async () => {
+      if (!user || !match) return;
+      try {
+        const res = await reportService.checkReport(match.id);
+        if (res.hasReported && res.reportId) {
+          setMyReportId(res.reportId);
+        } else {
+          setMyReportId(null);
+        }
+      } catch (e) {
+        console.error("Failed to check report status", e);
+      }
+    };
+
+    const checkRatingStatus = async () => {
+      if (!user || !match || match.status !== 'completed') return;
+      try {
+        const unratedIds = await ratingService.getUnratedParticipantIds(match.id);
+        
+        const attendeesMap = new Map();
+        attendeesMap.set(match.host.id, { id: match.host.id, name: match.host.fullName, avatar: match.host.avatarUrl, isHost: true });
+        if (match.participants) {
+          match.participants.forEach((p: any) => {
+            attendeesMap.set(p.userId, { id: p.userId, name: p.fullName, avatar: p.avatarUrl, isHost: p.role === 'host' });
+          });
+        }
+        
+        const allRatees: any[] = [];
+        attendeesMap.forEach((ratee, uId) => {
+          if (uId !== user.id) {
+            allRatees.push(ratee);
+          }
+        });
+        
+        if (allRatees.length > 0) {
+          setRateableParticipants(allRatees);
+          if (unratedIds && unratedIds.length > 0) {
+            setShowRatingModal(true);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to check rating status", e);
+      }
+    };
+
+    checkReportStatus();
+    checkRatingStatus();
+  }, [match, user]);
+
   const derived = useMemo(() => {
     if (!match) return null;
 
@@ -80,7 +140,7 @@ const MatchDetail: React.FC = () => {
     const feeLabel = match.feePerPerson === 0 ? 'Miễn phí' : `${match.feePerPerson.toLocaleString('vi-VN')} VND`;
     const heroImage = getSportImage(match.sport);
     const attendees = [
-      { id: match.host.id, name: match.host.fullName, role: 'Người tổ chức', avatar: match.host.avatarUrl },
+      { id: match.host.id, name: match.host.fullName, role: 'Người tổ chức', avatar: match.host.avatarUrl, badges: match.host.badges || [] },
       ...match.participants
         .filter((participant) => participant.userId !== match.host.id)
         .map((participant) => ({
@@ -88,6 +148,7 @@ const MatchDetail: React.FC = () => {
           name: participant.fullName,
           role: participant.role === 'host' ? 'Người tổ chức' : 'Thành viên',
           avatar: participant.avatarUrl,
+          badges: participant.badges || [],
         })),
     ];
 
@@ -96,7 +157,7 @@ const MatchDetail: React.FC = () => {
       feeLabel,
       heroImage,
       attendees,
-      recurrence: match.status === 'open' ? 'Đang mở cho đăng ký' : 'Đã đóng',
+      recurrence: match.status === 'open' ? 'Đang mở cho đăng ký' : match.status === 'completed' ? 'Đã kết thúc' : 'Đã đóng',
     };
   }, [match]);
 
@@ -151,14 +212,19 @@ const MatchDetail: React.FC = () => {
         message: e instanceof Error ? e.message : isCancel ? 'Không thể hủy trận đấu' : 'Không thể khôi phục trận đấu',
       });
     } finally {
-      setActionLoading(false);
+      setConfirmAction(null);
     }
   };
 
-  const handlePostComment = () => {
-    if (!comment.trim()) return;
-    setPopup({ type: 'info', message: 'Thảo luận hiện chưa kết nối backend. Nội dung bạn nhập: ' + comment.trim() });
-    setComment('');
+  const handleUndoReport = async (reportId: number) => {
+    try {
+      await reportService.deleteReport(reportId);
+      setMyReportId(null);
+      setReportPopup({ show: false, reportId: null });
+      setPopup({ type: 'success', message: 'Đã hoàn tác báo cáo thành công.' });
+    } catch (e: any) {
+      setPopup({ type: 'error', message: 'Không thể hoàn tác báo cáo: ' + (e.message || 'Lỗi không xác định') });
+    }
   };
 
   if (loading) {
@@ -205,17 +271,46 @@ const MatchDetail: React.FC = () => {
       <div className="bg-white pt-4 pb-4 border-bottom">
         <div className="container">
           <h1 className="fw-bolder mb-4 match-title">{title}</h1>
-          <div className="d-flex align-items-center">
-            <img
-              src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
-              alt={match.host.fullName}
-              className="rounded-circle me-3 border"
-              style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-            />
-            <div>
-              <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
-              <h6 className="fw-bold mb-0">{match.host.fullName}</h6>
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center">
+              <img
+                src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
+                alt={match.host.fullName}
+                className="rounded-circle me-3 border"
+                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+              />
+              <div>
+                <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
+                <h6 className="fw-bold mb-0 d-flex align-items-center flex-wrap gap-1">
+                  {match.host.fullName}
+                  {match.host.badges && match.host.badges.map(badge => (
+                    <span key={badge} className={`badge rounded-pill fw-normal ms-1 ${badge === 'Tân binh' ? 'bg-secondary' : badge === 'Tích cực' ? 'bg-info' : badge === 'Thân thiện' ? 'bg-success' : badge === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '10px' }}>
+                      {badge === 'Cảnh báo uy tín' && <i className="fa-solid fa-triangle-exclamation me-1"></i>}
+                      {badge}
+                    </span>
+                  ))}
+                </h6>
+              </div>
             </div>
+            {user && match.host.id !== user.id && (
+              myReportId ? (
+                <button 
+                  className="btn btn-outline-secondary d-flex align-items-center gap-2 rounded-pill px-3"
+                  onClick={() => handleUndoReport(myReportId)}
+                  title="Hoàn tác báo cáo"
+                >
+                  <span>↩️</span> <span className="d-none d-md-inline">Đã báo cáo (Hoàn tác)</span>
+                </button>
+              ) : (
+                <button 
+                  className="btn btn-outline-danger d-flex align-items-center gap-2 rounded-pill px-3"
+                  onClick={() => setShowReportModal(true)}
+                  title="Báo cáo trận đấu này"
+                >
+                  <span>🚩</span> <span className="d-none d-md-inline">Báo cáo</span>
+                </button>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -228,6 +323,8 @@ const MatchDetail: React.FC = () => {
               <div className="md-cover-overlay">
                 <div className="md-cover-emoji">{getSportEmoji(match.sport)}</div>
                 {match.status === 'open' && <span className="md-cover-badge">Đang mở</span>}
+                {match.status === 'completed' && <span className="md-cover-badge bg-success">Đã kết thúc</span>}
+                {match.status === 'cancelled' && <span className="md-cover-badge bg-danger">Đã hủy</span>}
               </div>
             </div>
 
@@ -243,49 +340,43 @@ const MatchDetail: React.FC = () => {
                   {derived.attendees.length}
                 </span>
               </h4>
-              <a href="#" className="text-primary fw-medium text-decoration-none">Xem tất cả</a>
+              <div className="d-flex align-items-center gap-3">
+                {rateableParticipants.length > 0 && (
+                  <button 
+                    className="btn btn-sm btn-outline-warning fw-bold rounded-pill px-3"
+                    onClick={() => setShowRatingModal(true)}
+                  >
+                    <i className="fa-solid fa-star me-1 text-warning"></i> Đánh giá
+                  </button>
+                )}
+                <a href="#" className="text-primary fw-medium text-decoration-none">Xem tất cả</a>
+              </div>
             </div>
 
             <div className="d-flex flex-wrap gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm">
               {derived.attendees.map((attendee) => (
-                <div key={attendee.id} className="text-center attendee-item">
+                <div key={attendee.id} className="text-center attendee-item position-relative">
                   <img
                     src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
                     alt={attendee.name}
                     className="rounded-circle mb-2 border"
                     style={{ width: '64px', height: '64px', objectFit: 'cover' }}
                   />
-                  <p className="fw-bold mb-0 small text-truncate" style={{ maxWidth: '80px' }}>{attendee.name.split(' ')[0]}</p>
+                  {attendee.badges && attendee.badges.length > 0 && (
+                    <div className="position-absolute top-0 start-100 translate-middle" style={{ zIndex: 5, marginTop: '10px', marginLeft: '-15px' }}>
+                       <span className={`badge rounded-pill border border-white ${attendee.badges[0] === 'Tân binh' ? 'bg-secondary' : attendee.badges[0] === 'Tích cực' ? 'bg-info' : attendee.badges[0] === 'Thân thiện' ? 'bg-success' : attendee.badges[0] === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '9px', padding: '0.25em 0.4em' }}>
+                         {attendee.badges[0] === 'Cảnh báo uy tín' && <i className="fa-solid fa-triangle-exclamation me-1"></i>}
+                         {attendee.badges[0]}
+                       </span>
+                    </div>
+                  )}
+                  <p className="fw-bold mb-0 small text-truncate mx-auto" style={{ maxWidth: '80px' }}>{attendee.name.split(' ')[0]}</p>
                   <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>{attendee.role}</p>
                 </div>
               ))}
             </div>
 
-            <h4 className="fw-bold mb-3">Thảo luận</h4>
-            <div className="card border-0 bg-white shadow-sm rounded-4 p-4 mb-5">
-              <div className="d-flex align-items-start mb-3">
-                <img
-                  src={user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName ?? 'User')}&background=3b82f6&color=fff`}
-                  className="rounded-circle me-3 mt-1"
-                  style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-                  alt="User"
-                />
-                <div className="flex-grow-1">
-                  <textarea
-                    className="form-control bg-light border-0 rounded-3"
-                    rows={2}
-                    placeholder="Thêm bình luận..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                  />
-                  <div className="text-end mt-2">
-                    <button className="btn btn-secondary fw-bold px-4 rounded-pill" onClick={handlePostComment} disabled={!comment.trim()}>
-                      Đăng
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <MatchComments matchId={match.id} />
           </div>
 
           <div className="col-lg-4 d-none d-lg-block">
@@ -337,8 +428,11 @@ const MatchDetail: React.FC = () => {
             <div className="d-flex align-items-center ms-auto">
               <div className="text-end me-3 d-none d-md-block">
                 <span className="fw-bold fs-6 me-3">{derived.feeLabel}</span>
-                <span className="badge bg-warning bg-opacity-25 text-dark border border-warning rounded-pill px-3 py-2 fw-bold">
+                <span className="badge bg-warning bg-opacity-25 text-dark border border-warning rounded-pill px-3 py-2 fw-bold me-2">
                   Còn {derived.spotsLeft} chỗ trống
+                </span>
+                <span className={`badge ${match.status === 'open' ? 'bg-white text-dark border' : match.status === 'completed' ? 'bg-success' : 'bg-secondary'} rounded-pill px-3 py-2 fw-bold shadow-sm`}>
+                  {match.status === 'open' ? 'Đang mở' : match.status === 'full' ? 'Đã đầy' : match.status === 'completed' ? 'Đã kết thúc' : 'Đã hủy'}
                 </span>
               </div>
 
@@ -410,6 +504,47 @@ const MatchDetail: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showReportModal && match && (
+        <ReportModal 
+          reportedMatchId={match.id}
+          onClose={() => setShowReportModal(false)}
+          onSuccess={(reportId) => {
+            setShowReportModal(false);
+            setMyReportId(reportId);
+            setReportPopup({ show: true, reportId });
+          }}
+        />
+      )}
+
+      {reportPopup.show && reportPopup.reportId && (
+        <div className="md-popup-overlay" onClick={() => setReportPopup({ show: false, reportId: null })}>
+          <div className="md-popup-card" onClick={(event) => event.stopPropagation()}>
+            <h5 className="md-popup-title text-success">Gửi thành công</h5>
+            <p className="md-popup-message">Báo cáo của bạn đã được gửi. Chúng tôi sẽ xem xét sớm nhất!</p>
+            <div className="md-popup-actions">
+              <button className="btn btn-outline-secondary rounded-pill px-4" onClick={() => handleUndoReport(reportPopup.reportId!)}>
+                Hoàn tác
+              </button>
+              <button className="btn btn-dark rounded-pill px-4" onClick={() => setReportPopup({ show: false, reportId: null })}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRatingModal && match && (
+        <RatingModal 
+          matchId={match.id}
+          ratees={rateableParticipants}
+          onClose={() => setShowRatingModal(false)}
+          onSuccess={() => {
+            setShowRatingModal(false);
+            setPopup({ type: 'success', message: 'Cảm ơn bạn đã gửi đánh giá!' });
+          }}
+        />
       )}
     </div>
   );
