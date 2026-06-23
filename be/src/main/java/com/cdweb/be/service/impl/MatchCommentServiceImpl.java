@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Comparator;
 import java.util.List;
@@ -69,10 +71,16 @@ public class MatchCommentServiceImpl implements MatchCommentService {
 
         MatchComment savedComment = matchCommentRepository.save(comment);
         MatchCommentDto dto = mapToDto(savedComment);
+        final Integer currentMatchId = match.getId();
 
-        // Broadcast sự kiện qua WebSocket
-        messagingTemplate.convertAndSend("/topic/match/" + match.getId() + "/comments", 
-            (Object) Map.of("type", "CREATE", "data", dto));
+        // Broadcast sự kiện qua WebSocket (sau khi commit để tránh race condition)
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                messagingTemplate.convertAndSend("/topic/match/" + currentMatchId + "/comments", 
+                    (Object) Map.of("type", "CREATE", "data", dto));
+            }
+        });
 
         return dto;
     }
@@ -90,10 +98,16 @@ public class MatchCommentServiceImpl implements MatchCommentService {
         comment.setContent(request.getContent());
         MatchComment updatedComment = matchCommentRepository.save(comment);
         MatchCommentDto dto = mapToDto(updatedComment);
+        final Integer currentMatchId = comment.getMatch().getId();
 
         // Broadcast
-        messagingTemplate.convertAndSend("/topic/match/" + comment.getMatch().getId() + "/comments", 
-            (Object) Map.of("type", "UPDATE", "data", dto));
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                messagingTemplate.convertAndSend("/topic/match/" + currentMatchId + "/comments", 
+                    (Object) Map.of("type", "UPDATE", "data", dto));
+            }
+        });
 
         return dto;
     }
@@ -109,11 +123,17 @@ public class MatchCommentServiceImpl implements MatchCommentService {
         }
         
         Integer matchId = comment.getMatch().getId();
+        final Long parentId = comment.getParentComment() != null ? comment.getParentComment().getId() : null;
         matchCommentRepository.delete(comment);
 
         // Broadcast
-        messagingTemplate.convertAndSend("/topic/match/" + matchId + "/comments", 
-            (Object) Map.of("type", "DELETE", "commentId", commentId, "parentId", comment.getParentComment() != null ? comment.getParentComment().getId() : null));
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                messagingTemplate.convertAndSend("/topic/match/" + matchId + "/comments", 
+                    (Object) Map.of("type", "DELETE", "commentId", commentId, "parentId", parentId));
+            }
+        });
     }
 
     private MatchCommentDto mapToDto(MatchComment comment) {
