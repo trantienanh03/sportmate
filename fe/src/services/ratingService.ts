@@ -62,5 +62,22 @@ export const ratingService = {
       credentials: "include",
     });
     return handleResponse<number[]>(response);
+  },
+
+  getUserReviews: async (userId: number): Promise<UserReviewDto[]> => {
+    const response = await fetch(`${API_URL}/ratings/user/${userId}`, {
+      method: "GET",
+      credentials: "include",
+    });
+    return handleResponse<UserReviewDto[]>(response);
   }
 };
+
+export interface UserReviewDto {
+  reviewerName: string;
+  reviewerAvatarUrl?: string;
+  matchSport: string;
+  ratingScore: number;
+  comment: string;
+  createdAt: string;
+}

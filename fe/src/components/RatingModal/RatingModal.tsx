@@ -25,7 +25,37 @@ const RatingModal: React.FC<RatingModalProps> = ({ matchId, ratees, onClose, onS
   );
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingRatings, setIsLoadingRatings] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchExistingRatings = async () => {
+      try {
+        const existingRatings = await ratingService.getMyRatings(matchId);
+        if (existingRatings && existingRatings.length > 0) {
+          setRatings(prev => {
+            const updated = { ...prev };
+            existingRatings.forEach(r => {
+              if (updated[r.rateeId]) {
+                updated[r.rateeId] = {
+                  ...updated[r.rateeId],
+                  skillScore: r.skillScore,
+                  attitudeScore: r.attitudeScore,
+                  comment: r.comment || ''
+                };
+              }
+            });
+            return updated;
+          });
+        }
+      } catch (e) {
+        console.error("Failed to load existing ratings", e);
+      } finally {
+        setIsLoadingRatings(false);
+      }
+    };
+    fetchExistingRatings();
+  }, [matchId]);
 
 
 
@@ -98,13 +128,20 @@ const RatingModal: React.FC<RatingModalProps> = ({ matchId, ratees, onClose, onS
           <button className="btn-close btn-close-white" onClick={onClose}></button>
         </div>
         <div className="rating-modal-body">
-          <p className="text-muted mb-4">
-            Trận đấu đã kết thúc! Hãy dành chút thời gian đánh giá những người chơi cùng bạn để giúp cộng đồng SportMate ngày càng chất lượng hơn.
-          </p>
+          {isLoadingRatings ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status"></div>
+              <p className="mt-3 text-muted">Đang tải dữ liệu...</p>
+            </div>
+          ) : (
+            <>
+              <p className="text-muted mb-4">
+                Trận đấu đã kết thúc! Hãy dành chút thời gian đánh giá những người chơi cùng bạn để giúp cộng đồng SportMate ngày càng chất lượng hơn. Bạn có thể thay đổi đánh giá bất kỳ lúc nào.
+              </p>
 
-          {error && <div className="alert alert-danger py-2">{error}</div>}
+              {error && <div className="alert alert-danger py-2">{error}</div>}
 
-          <div className="ratees-list">
+              <div className="ratees-list">
             {ratees.map((ratee) => (
               <div key={ratee.id} className="ratee-card mb-4 p-3 border rounded-3 bg-light">
                 <div className="d-flex align-items-center mb-3">
@@ -137,6 +174,8 @@ const RatingModal: React.FC<RatingModalProps> = ({ matchId, ratees, onClose, onS
               </div>
             ))}
           </div>
+          </>
+          )}
         </div>
         <div className="rating-modal-footer">
           <button type="button" className="btn btn-outline-secondary px-4 rounded-pill" onClick={onClose} disabled={isSubmitting}>

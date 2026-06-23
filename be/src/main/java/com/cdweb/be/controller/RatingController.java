@@ -51,4 +51,9 @@ public class RatingController {
         Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(ratingService.getMyRatings(userId, matchId));
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getUserReviews(@PathVariable Integer userId) {
+        return ResponseEntity.ok(ratingService.getUserReviews(userId));
+    }
 }

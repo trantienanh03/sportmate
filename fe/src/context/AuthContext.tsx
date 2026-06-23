@@ -31,6 +31,10 @@ export interface User {
   updatedAt?: string | null;
   sports?: SportCard[] | null;
   availability?: AvailabilitySlot[] | null;
+  avgAttitudeScore?: number | null;
+  avgSkillScore?: number | null;
+  completedMatches?: number | null;
+  badges?: string[] | null;
 }
 
 interface AuthContextType {

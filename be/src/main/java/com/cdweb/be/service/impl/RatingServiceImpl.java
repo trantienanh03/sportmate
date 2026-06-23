@@ -148,4 +148,21 @@ public class RatingServiceImpl implements RatingService {
                 })
                 .collect(Collectors.toList());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.cdweb.be.dto.response.UserReviewDto> getUserReviews(Integer userId) {
+        return matchRatingRepository.findByRateeId(userId).stream()
+                .filter(r -> r.getComment() != null && !r.getComment().trim().isEmpty())
+                .map(r -> com.cdweb.be.dto.response.UserReviewDto.builder()
+                        .reviewerName(r.getRater().getFullName())
+                        .reviewerAvatarUrl(r.getRater().getAvatarUrl())
+                        .matchSport(r.getMatch() != null && r.getMatch().getSport() != null ? r.getMatch().getSport() : "Thể thao")
+                        .ratingScore((r.getAttitudeScore() + r.getSkillScore()) / 2) // Or just attitudeScore
+                        .comment(r.getComment())
+                        .createdAt(r.getCreatedAt())
+                        .build())
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt())) // Newest first
+                .collect(Collectors.toList());
+    }
 }
