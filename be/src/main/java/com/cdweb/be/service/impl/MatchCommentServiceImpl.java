@@ -11,6 +11,8 @@ import com.cdweb.be.repository.MatchCommentRepository;
 import com.cdweb.be.repository.MatchRepository;
 import com.cdweb.be.repository.UserRepository;
 import com.cdweb.be.service.MatchCommentService;
+import com.cdweb.be.service.NotificationService;
+import com.cdweb.be.enums.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class MatchCommentServiceImpl implements MatchCommentService {
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -53,13 +56,24 @@ public class MatchCommentServiceImpl implements MatchCommentService {
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found with id " + request.getMatchId()));
 
         MatchComment parent = null;
+        Integer notificationRecipientId = null;
+        String notificationMsg = "";
+
         if (request.getParentId() != null) {
-            parent = matchCommentRepository.findById(request.getParentId())
+            MatchComment originalParent = matchCommentRepository.findById(request.getParentId())
                     .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Parent comment not found"));
+            
+            notificationRecipientId = originalParent.getUser().getId();
+            notificationMsg = user.getFullName() + " đã trả lời bình luận của bạn trong trận: " + match.getTitle();
+
             // Nếu muốn giới hạn 1 cấp (One level nesting), parent phải là root
+            parent = originalParent;
             if (parent.getParentComment() != null) {
                 parent = parent.getParentComment();
             }
+        } else {
+            notificationRecipientId = match.getHost().getId();
+            notificationMsg = user.getFullName() + " đã bình luận về trận: " + match.getTitle();
         }
 
         MatchComment comment = MatchComment.builder()
@@ -70,6 +84,12 @@ public class MatchCommentServiceImpl implements MatchCommentService {
                 .build();
 
         MatchComment savedComment = matchCommentRepository.save(comment);
+        
+        // Gửi thông báo (chỉ gửi nếu người nhận khác người gửi)
+        if (notificationRecipientId != null && !notificationRecipientId.equals(userId)) {
+            notificationService.sendNotification(notificationRecipientId, userId, "Bình luận mới", notificationMsg, NotificationType.MATCH_COMMENT, match.getId());
+        }
+
         MatchCommentDto dto = mapToDto(savedComment);
         final Integer currentMatchId = match.getId();
 
