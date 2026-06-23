@@ -168,11 +168,16 @@ const ExplorePage: React.FC = () => {
                         
                         <div className="d-flex align-items-center justify-content-between pt-3 border-top">
                           <div className="d-flex align-items-center">
-                            <div className="host-avatar me-2">
+                            <div className="host-avatar me-2 position-relative">
                               {match.host?.avatarUrl ? (
                                 <img src={match.host.avatarUrl} alt={match.host.fullName} />
                               ) : (
                                 <span>{match.host?.fullName?.charAt(0) || 'U'}</span>
+                              )}
+                              {match.host?.badges?.includes('Cảnh báo uy tín') && (
+                                <div className="position-absolute top-0 start-100 translate-middle" style={{ zIndex: 5, marginTop: '2px', marginLeft: '-5px' }}>
+                                  <i className="fa-solid fa-triangle-exclamation text-danger bg-white rounded-circle" style={{ fontSize: '12px' }}></i>
+                                </div>
                               )}
                             </div>
                             <span className="small text-muted fw-medium text-truncate" style={{ maxWidth: '80px' }}>

@@ -195,7 +195,9 @@ const UserHome: React.FC = () => {
                               {formatMatchTime(match.startTime)}
                             </p>
                             <p className="event-group text-muted small mb-1 text-truncate">
-                              bởi {match.host?.fullName || 'Người dùng'} • <span className="badge bg-light text-dark border">{translateSkillLevel(match.skillLevel)}</span>
+                              bởi {match.host?.fullName || 'Người dùng'} 
+                              {match.host?.badges?.includes('Cảnh báo uy tín') && <i className="fa-solid fa-triangle-exclamation text-danger ms-1" title="Cảnh báo uy tín"></i>}
+                              <span className="mx-1">•</span> <span className="badge bg-light text-dark border">{translateSkillLevel(match.skillLevel)}</span>
                             </p>
                             <p className="event-location text-muted small mb-2 text-truncate">
                               <i className="fa-solid fa-location-dot me-1"></i>

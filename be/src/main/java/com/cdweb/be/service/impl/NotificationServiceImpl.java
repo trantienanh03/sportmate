@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -52,12 +54,25 @@ public class NotificationServiceImpl implements NotificationService {
 
         NotificationDto dto = buildDto(saved);
 
-        try {
-            messagingTemplate.convertAndSend("/topic/notifications/" + recipientId, dto);
-            log.info("Sent real-time notification to user id: {}", recipientId);
-        } catch (Exception e) {
-            log.error("Failed to send real-time notification to user id: {} via WebSocket", recipientId, e);
-        }
+        // Tình huống Race Condition có thể xảy ra ở đây nếu gọi convertAndSend trực tiếp:
+        // 1. notificationRepository.save(notification) được gọi bên trong @Transactional.
+        // 2. Nếu gọi convertAndSend ngay lập tức, WebSocket bắn thông báo đến Frontend.
+        // 3. Frontend nhận tín hiệu và gọi API để tải notification mới về.
+        // 4. Nhưng nếu lúc này Transaction chưa commit xong (hoặc bị rollback),
+        //    DB chưa có dữ liệu => Frontend lấy về rỗng hoặc không thấy thông báo vừa nhận.
+        // Giải pháp: Chỉ gửi WebSocket SAU KHI Transaction đã commit thành công vào DB.
+        final NotificationDto finalDto = dto;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    messagingTemplate.convertAndSend("/topic/notifications/" + recipientId, finalDto);
+                    log.info("Sent real-time notification to user id: {}", recipientId);
+                } catch (Exception e) {
+                    log.error("Failed to send real-time notification to user id: {} via WebSocket", recipientId, e);
+                }
+            }
+        });
     }
 
     @Override

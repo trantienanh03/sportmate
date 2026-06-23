@@ -3,6 +3,7 @@ import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
 import { useAuth, type SportCard, type AvailabilitySlot } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
+import { ratingService, type UserReviewDto } from '../../services/ratingService';
 import './ProfilePage.css';
 
 type ProfileFormState = {
@@ -12,14 +13,6 @@ type ProfileFormState = {
   district: string;
   lat: string;
   lng: string;
-};
-
-type ReviewItem = {
-  name: string;
-  title: string;
-  timeAgo: string;
-  message: string;
-  rating: number;
 };
 
 const formatMonthYear = (value?: string | null) => {
@@ -70,30 +63,6 @@ const DEFAULT_WEEK_SLOTS: AvailabilitySlot[] = [
   { label: 'CN', morning: 'Rảnh', afternoon: 'Rảnh', evening: 'Bận' },
 ];
 
-const REVIEWS: ReviewItem[] = [
-  {
-    name: 'Trần Hoàng',
-    title: 'Đối tác trận bóng',
-    timeAgo: '2 ngày trước',
-    message: 'Giao lưu cùng bạn rất vui, vào sân đúng giờ và phối hợp tốt. Sẽ tiếp tục rủ Nam đá chung.',
-    rating: 5,
-  },
-  {
-    name: 'Duo P.',
-    title: 'Badminton Doubles',
-    timeAgo: '1 tuần trước',
-    message: 'Chơi chắc tay, di chuyển ổn và tinh thần thi đấu rất tốt.',
-    rating: 4,
-  },
-  {
-    name: 'Khánh D.',
-    title: 'City Football',
-    timeAgo: '2 tuần trước',
-    message: 'Tổ chức gọn gàng, nhịp trận ổn, rất dễ ghép đội.',
-    rating: 5,
-  },
-];
-
 const ProfilePage: React.FC = () => {
   const { user, login } = useAuth();
   const editorRef = useRef<HTMLElement | null>(null);
@@ -113,6 +82,7 @@ const ProfilePage: React.FC = () => {
   
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>(DEFAULT_WEEK_SLOTS);
   const [sportCards, setSportCards] = useState<SportCard[]>(SPORT_CARDS);
+  const [reviews, setReviews] = useState<UserReviewDto[]>([]);
   const [formData, setFormData] = useState<ProfileFormState>({
     fullName: '',
     avatarUrl: '',
@@ -141,6 +111,9 @@ const ProfilePage: React.FC = () => {
     if (user.availability && user.availability.length > 0) {
       setAvailabilitySlots(user.availability);
     }
+
+    // Fetch reviews
+    ratingService.getUserReviews(user.id).then(setReviews).catch(console.error);
   }, [user]);
 
   // Messages timeout
@@ -165,9 +138,21 @@ const ProfilePage: React.FC = () => {
   }, [isEditingBasic]);
 
   const profileInitial = user?.fullName?.trim()?.charAt(0).toUpperCase() || 'U';
-  const communityRating = '4.9 / 5';
-  const communityRatingText = 'Đánh giá chung';
+  
+  // Calculate combined rating if both exist, or use whichever exists, or default to 0
+  let combinedRating: number | string = 0;
+  if (user?.avgAttitudeScore != null && user?.avgSkillScore != null) {
+    combinedRating = ((user.avgAttitudeScore + user.avgSkillScore) / 2).toFixed(1);
+  } else if (user?.avgAttitudeScore != null) {
+    combinedRating = user.avgAttitudeScore.toFixed(1);
+  } else if (user?.avgSkillScore != null) {
+    combinedRating = user.avgSkillScore.toFixed(1);
+  } else {
+    combinedRating = 'Chưa có';
+  }
+
   const memberSince = user?.createdAt ? formatMonthYear(user.createdAt) : '—';
+  const matchCountText = user?.completedMatches ? `${user.completedMatches} trận` : '0 trận';
 
   // Basic info handlers
   const handleChange =
@@ -332,7 +317,20 @@ const ProfilePage: React.FC = () => {
                   </div>
 
                   <div className="profile-side-name">{user?.fullName || 'Unknown user'}</div>
-                  <div className="profile-side-sub">
+                  
+                  {/* BADGES RENDER HERE */}
+                  {user?.badges && user.badges.length > 0 && (
+                    <div className="profile-side-badges mt-2 mb-1 d-flex flex-wrap justify-content-center gap-1">
+                      {user.badges.map(badge => (
+                        <span key={badge} className={`badge rounded-pill fw-normal ${badge === 'Tân binh' ? 'bg-secondary' : badge === 'Tích cực' ? 'bg-info' : badge === 'Thân thiện' ? 'bg-success' : badge === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '11px' }}>
+                          {badge === 'Cảnh báo uy tín' && <i className="fa-solid fa-triangle-exclamation me-1"></i>}
+                          {badge}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="profile-side-sub mt-2">
                     <i className="fa-solid fa-location-dot me-2" />
                     {user?.district || 'Chưa cập nhật'}
                   </div>
@@ -365,13 +363,13 @@ const ProfilePage: React.FC = () => {
                   </div>
                   <div className="profile-rating-pill">
                     <i className="fa-solid fa-star me-1" />
-                    {communityRating}
+                    {combinedRating}
                   </div>
                 </div>
                 <div className="community-metrics-grid">
                   <div className="community-metric-card community-metric-accent">
-                    <span>{communityRatingText}</span>
-                    <strong>{communityRating}</strong>
+                    <span>Số trận tham gia</span>
+                    <strong>{matchCountText}</strong>
                   </div>
                   <div className="community-metric-card community-metric-soft">
                     <span>Thành viên từ</span>
@@ -586,25 +584,33 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 <div className="review-list">
-                  {REVIEWS.map((review) => (
-                    <article className="review-card-new" key={review.name}>
+                  {reviews.length > 0 ? reviews.map((review, index) => (
+                    <article className="review-card-new" key={index}>
                       <div className="review-card-header">
-                        <div className="review-avatar">{review.name.charAt(0)}</div>
+                        <div className="review-avatar">
+                          {review.reviewerAvatarUrl ? (
+                            <img src={review.reviewerAvatarUrl} alt={review.reviewerName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                          ) : (
+                            review.reviewerName.charAt(0).toUpperCase()
+                          )}
+                        </div>
                         <div>
-                          <div className="review-name-new">{review.name}</div>
+                          <div className="review-name-new">{review.reviewerName}</div>
                           <div className="review-meta-new">
-                            {review.title} • {review.timeAgo}
+                            {review.matchSport} • {new Date(review.createdAt).toLocaleDateString('vi-VN')}
                           </div>
                         </div>
                         <div className="review-stars">
-                          {Array.from({ length: 5 }).map((_, index) => (
-                            <i key={index} className={`fa-star ${index < review.rating ? 'fa-solid' : 'fa-regular'}`} />
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <i key={i} className={`fa-star ${i < review.ratingScore ? 'fa-solid' : 'fa-regular'}`} />
                           ))}
                         </div>
                       </div>
-                      <p className="review-message">{review.message}</p>
+                      <p className="review-message">{review.comment}</p>
                     </article>
-                  ))}
+                  )) : (
+                    <p className="text-muted fst-italic">Chưa có nhận xét nào.</p>
+                  )}
                 </div>
               </div>
             </section>

@@ -22,6 +22,10 @@ public class AuthResponseDto {
     private Double lng;
     private List<SportCardDto> sports;
     private List<AvailabilitySlotDto> availability;
+    private Double avgAttitudeScore;
+    private Double avgSkillScore;
+    private Integer completedMatches;
+    private List<String> badges;
     private Boolean isActive;
     private Boolean isBanned;
     private LocalDateTime createdAt;
