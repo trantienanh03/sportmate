@@ -9,6 +9,7 @@ import CreateMatch from './pages/CreateMatch/CreateMatch';
 import MyRooms from './pages/MyRooms/MyRooms';
 import Messages from './pages/Messages/Messages';
 import ExplorePage from './pages/Explore/ExplorePage';
+import ResetPassword from './pages/ResetPassword/ResetPassword';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -20,6 +21,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               path="/home"
               element={

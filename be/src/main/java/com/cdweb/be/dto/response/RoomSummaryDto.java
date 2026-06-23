@@ -17,6 +17,7 @@ public class RoomSummaryDto {
     private String type;           // "GROUP" | "DIRECT"
     private Integer matchId;
     private Integer participantCount;
+    private Integer createdBy;
     private LocalDateTime lastMessageAt;
     private LocalDateTime createdAt;
 }

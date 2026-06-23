@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khôi phục mật khẩu - SportMate</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f5f7; margin: 0; padding: 0; color: #333333; }
+        .container { max-width: 600px; margin: 30px auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #10B981, #059669); padding: 30px 20px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
+        .content { padding: 40px 30px; line-height: 1.6; }
+        .content h2 { color: #111827; font-size: 20px; margin-top: 0; font-weight: 600; }
+        .btn-wrapper { text-align: center; margin: 35px 0; }
+        .btn { display: inline-block; background-color: #10B981; color: #ffffff !important; font-weight: 600; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); transition: background-color 0.2s; }
+        .btn:hover { background-color: #059669; }
+        .footer { background-color: #f9fafb; padding: 20px; text-align: center; font-size: 13px; color: #6b7280; border-top: 1px solid #e5e7eb; }
+        .note { font-size: 13px; color: #9ca3af; margin-top: 20px; border-top: 1px dashed #e5e7eb; padding-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SportMate</h1>
+        </div>
+        <div class="content">
+            <h2>Xin chào <span th:text="${fullName}">Người dùng</span>,</h2>
+            <p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản SportMate của bạn. Bạn vui lòng nhấn vào nút bên dưới để tiến hành thiết lập mật khẩu mới:</p>
+            <div class="btn-wrapper">
+                <a th:href="${resetUrl}" class="btn" target="_blank">Đặt lại mật khẩu</a>
+            </div>
+            <p>Nếu nút bấm trên không hoạt động, bạn cũng có thể sao chép liên kết dưới đây và dán vào trình duyệt:</p>
+            <p style="word-break: break-all; font-size: 14px; color: #3B82F6;">
+                <a th:href="${resetUrl}" th:text="${resetUrl}">http://localhost:5173/reset-password?token=xxxx</a>
+            </p>
+            <div class="note">
+                <p><strong>Lưu ý:</strong> Liên kết đặt lại mật khẩu này sẽ hết hạn sau <strong>15 phút</strong> vì lý do bảo mật.</p>
+                <p>Nếu bạn không gửi yêu cầu này, vui lòng bỏ qua email này. Tài khoản của bạn sẽ được giữ an toàn tuyệt đối.</p>
+            </div>
+        </div>
+        <div class="footer">
+            <p>© <span th:text="${#temporals.year(#temporals.createNow())}">2026</span> SportMate. All rights reserved.</p>
+            <p>Hệ thống kết nối thể thao phong trào hàng đầu.</p>
+        </div>
+    </div>
+</body>
+</html>

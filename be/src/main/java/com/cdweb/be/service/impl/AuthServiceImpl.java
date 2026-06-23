@@ -2,21 +2,28 @@ package com.cdweb.be.service.impl;
 
 import com.cdweb.be.dto.request.LoginRequestDto;
 import com.cdweb.be.dto.request.RegisterRequestDto;
+import com.cdweb.be.dto.request.ForgotPasswordRequest;
+import com.cdweb.be.dto.request.ResetPasswordRequest;
 import com.cdweb.be.dto.request.UpdateProfileRequestDto;
 import com.cdweb.be.dto.response.AuthResponseDto;
 import com.cdweb.be.entity.User;
 import com.cdweb.be.entity.UserRememberToken;
+import com.cdweb.be.entity.PasswordResetToken;
 import com.cdweb.be.exception.AppException;
 import com.cdweb.be.repository.UserRepository;
 import com.cdweb.be.repository.UserRememberTokenRepository;
+import com.cdweb.be.repository.PasswordResetTokenRepository;
 import com.cdweb.be.service.AuthService;
+import com.cdweb.be.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.cdweb.be.repository.UserStatRepository;
 import com.cdweb.be.repository.ReportRepository;
@@ -30,9 +37,14 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final UserRememberTokenRepository tokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserStatRepository userStatRepository;
     private final ReportRepository reportRepository;
+
+    @Value("${FRONTEND_URL:http://localhost:5173}")
+    private String frontendUrl;
 
     @Override
     @Transactional
@@ -163,6 +175,48 @@ public class AuthServiceImpl implements AuthService {
         }
         
         return badges;
+    }
+
+    @Override
+    @Transactional
+    public void requestForgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Email không tồn tại trong hệ thống"));
+
+        // Xóa token cũ của user nếu có
+        passwordResetTokenRepository.deleteByUser(user);
+
+        // Tạo token mới có thời hạn 15 phút
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .user(user)
+                .token(token)
+                .expiry(LocalDateTime.now().plusMinutes(15))
+                .build();
+        passwordResetTokenRepository.save(resetToken);
+
+        // Gửi email khôi phục mật khẩu
+        String resetUrl = frontendUrl + "/reset-password?token=" + token;
+        emailService.sendPasswordResetEmail(user.getEmail(), user.getFullName(), resetUrl);
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new AppException(HttpStatus.BAD_REQUEST, "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã được sử dụng"));
+
+        if (resetToken.getExpiry().isBefore(LocalDateTime.now())) {
+            passwordResetTokenRepository.delete(resetToken);
+            throw new AppException(HttpStatus.BAD_REQUEST, "Liên kết đặt lại mật khẩu đã hết hạn");
+        }
+
+        User user = resetToken.getUser();
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Hủy bỏ token đã sử dụng
+        passwordResetTokenRepository.delete(resetToken);
     }
 
     private AuthResponseDto toDto(User user) {
