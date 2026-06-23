@@ -251,8 +251,7 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId }) => {
                   <button 
                     className="comment-action-btn font-weight-bold"
                     onClick={() => {
-                      const targetId = comment.parentId || comment.id;
-                      setReplyingToId(replyingToId === targetId ? null : targetId);
+                      setReplyingToId(replyingToId === comment.id ? null : comment.id);
                       setEditingCommentId(null);
                       if (comment.parentId) {
                         setReplyContent(`@${comment.userName} `);
@@ -284,8 +283,8 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId }) => {
             </>
           )}
 
-          {/* Render Reply Input Box if replying to this top-level comment */}
-          {replyingToId === comment.id && !isReply && (
+          {/* Render Reply Input Box if replying to this comment */}
+          {replyingToId === comment.id && (
             <div className="reply-input-area mt-3">
               <div className="d-flex gap-2">
                 <textarea
