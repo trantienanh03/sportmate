@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -113,10 +115,11 @@ public class SplitBillServiceImpl implements SplitBillService {
         savedBill.setMessageId(savedMsg.getId());
         splitBillRepository.save(savedBill);
 
-        // Broadcast tin nhắn realtime tới các thành viên qua WebSocket
+        // Gửi WebSocket SAU KHI transaction commit để tránh race condition:
+        // Nếu gửi trong transaction, FE có thể gọi GET /split-bills/{id} khi DB chưa commit -> 404
         User sender = userRepository.findById(hostId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy thông tin người gửi"));
-        MessageDto msgDto = MessageDto.builder()
+        final MessageDto finalMsgDto = MessageDto.builder()
                 .id(savedMsg.getId())
                 .roomId(savedMsg.getRoomId())
                 .senderId(hostId)
@@ -127,7 +130,13 @@ public class SplitBillServiceImpl implements SplitBillService {
                 .metadata(savedMsg.getMetadata())
                 .createdAt(savedMsg.getCreatedAt())
                 .build();
-        messagingTemplate.convertAndSend("/topic/room/" + room.getId(), msgDto);
+        final Integer roomId = room.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                messagingTemplate.convertAndSend("/topic/room/" + roomId, finalMsgDto);
+            }
+        });
 
         return mapToSplitBillDto(savedBill, savedPayments);
     }
@@ -225,10 +234,51 @@ public class SplitBillServiceImpl implements SplitBillService {
 
         // Kiểm tra xem tất cả đã thanh toán hết chưa để hoàn tất hóa đơn
         boolean allPaid = allPayments.stream().allMatch(p -> p.getStatus() == PaymentStatus.PAID);
+        
         if (allPaid) {
             bill.setStatus(BillStatus.COMPLETED);
             bill.setClosedAt(LocalDateTime.now());
             splitBillRepository.save(bill);
+
+            // Tạo tin nhắn thông báo hóa đơn hoàn thành trong phòng chat dưới dạng FEE_SPLIT để bump card lên
+            Message completeMsg = Message.builder()
+                    .roomId(bill.getRoomId())
+                    .senderId(hostId) // Host làm người gửi
+                    .type(MessageType.FEE_SPLIT)
+                    .content(bill.getTitle())
+                    .metadata("{\"billId\":" + bill.getId() + ",\"status\":\"COMPLETED\"}")
+                    .build();
+            Message savedMsg = messageRepository.save(completeMsg);
+
+            // Cập nhật thời gian hoạt động cuối cùng của phòng chat
+            Room room = roomRepository.findById(bill.getRoomId())
+                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy phòng chat"));
+            room.setLastMessageAt(LocalDateTime.now());
+            roomRepository.save(room);
+
+            // Lấy thông tin người xác nhận gửi WebSocket
+            User sender = userRepository.findById(hostId)
+                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy thông tin Host"));
+
+            final MessageDto finalMsgDto = MessageDto.builder()
+                    .id(savedMsg.getId())
+                    .roomId(savedMsg.getRoomId())
+                    .senderId(hostId)
+                    .senderName(sender.getFullName())
+                    .senderAvatar(sender.getAvatarUrl())
+                    .type(savedMsg.getType().name())
+                    .content(savedMsg.getContent())
+                    .metadata(savedMsg.getMetadata())
+                    .createdAt(savedMsg.getCreatedAt())
+                    .build();
+
+            final Integer roomId = room.getId();
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    messagingTemplate.convertAndSend("/topic/room/" + roomId, finalMsgDto);
+                }
+            });
         }
 
         return mapToSplitBillDto(bill, allPayments);
