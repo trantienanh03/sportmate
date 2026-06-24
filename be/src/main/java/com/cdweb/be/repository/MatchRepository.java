@@ -13,10 +13,20 @@ import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.cdweb.be.enums.MatchStatus;
 
 public interface MatchRepository extends JpaRepository<Match, Integer> {
+    @Modifying
+    @Transactional
+    @Query("update Match m set m.status = com.cdweb.be.enums.MatchStatus.completed where m.startTime < :now and m.status in (com.cdweb.be.enums.MatchStatus.open, com.cdweb.be.enums.MatchStatus.full)")
+    int autoCompleteExpiredMatches(@Param("now") LocalDateTime now);
+
+    @Query("select m from Match m where m.status in (com.cdweb.be.enums.MatchStatus.open, com.cdweb.be.enums.MatchStatus.full) and m.startTime > :now order by m.startTime asc")
+    List<Match> findUpcomingMatches(@Param("now") LocalDateTime now);
+
     List<Match> findByHostIdOrderByStartTimeDesc(Integer hostId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

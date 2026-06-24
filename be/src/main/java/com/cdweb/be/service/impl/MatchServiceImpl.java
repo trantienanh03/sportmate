@@ -50,15 +50,23 @@ public class MatchServiceImpl implements MatchService {
 
     // ── Get All Matches ──────────────────────────────────────────────
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MatchDetailDto> getMatches(Integer currentUserId) {
-        return buildDtos(matchRepository.findAll(), currentUserId);
+        // Tự động quét và cập nhật trạng thái các trận đấu đã quá giờ bắt đầu sang completed
+        checkAndCompleteExpiredMatches();
+
+        // Chỉ hiển thị các trận đấu chưa bắt đầu (startTime > hiện tại) và đang ở trạng thái tuyển người (open/full) trên trang chủ
+        List<Match> upcomingMatches = matchRepository.findUpcomingMatches(LocalDateTime.now());
+        return buildDtos(upcomingMatches, currentUserId);
     }
 
     // ── Match Detail ─────────────────────────────────────────────────
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public MatchDetailDto getMatchDetail(Integer matchId, Integer currentUserId) {
+        // Trước khi lấy chi tiết, tự động cập nhật trạng thái nếu trận đấu đã quá giờ bắt đầu
+        checkAndCompleteExpiredMatches();
+
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
         return buildDto(match, currentUserId);
@@ -388,8 +396,10 @@ public class MatchServiceImpl implements MatchService {
 
     // ── Explore Matches ──────────────────────────────────────────────
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MatchDetailDto> exploreMatches(ExploreMatchRequest request, Integer currentUserId) {
+        // Tự động quét và cập nhật trạng thái các trận đấu đã quá giờ bắt đầu trước khi tìm kiếm
+        checkAndCompleteExpiredMatches();
         Double radiusKm = request.getRadiusKm();
         if (radiusKm == null && request.getLat() != null && request.getLng() != null) {
             radiusKm = 10.0; // default 10km when location is provided
@@ -602,6 +612,21 @@ public class MatchServiceImpl implements MatchService {
                     return buildDtoWithStats(match, participants, joined, globalUserStatMap, globalReportCountMap);
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Tự động quét các trận đấu đã quá giờ bắt đầu (startTime < hiện tại) 
+     * nhưng vẫn ở trạng thái open/full để cập nhật sang completed.
+     */
+    private void checkAndCompleteExpiredMatches() {
+        try {
+            int updatedCount = matchRepository.autoCompleteExpiredMatches(LocalDateTime.now());
+            if (updatedCount > 0) {
+                log.info("Auto-completed {} expired matches successfully.", updatedCount);
+            }
+        } catch (Exception e) {
+            log.error("Failed to auto-complete expired matches", e);
+        }
     }
 
     private void refreshStatusByCapacity(Match match) {
