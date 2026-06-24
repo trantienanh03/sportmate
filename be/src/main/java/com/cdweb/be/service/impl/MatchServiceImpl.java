@@ -52,7 +52,7 @@ public class MatchServiceImpl implements MatchService {
     @Override
     @Transactional(readOnly = true)
     public List<MatchDetailDto> getMatches(Integer currentUserId) {
-        return buildDtos(matchRepository.findAll(), currentUserId);
+        return buildDtos(matchRepository.findAllByOrderByCreatedAtDesc(), currentUserId);
     }
 
     // ── Match Detail ─────────────────────────────────────────────────
