@@ -47,6 +47,14 @@ function App() {
               }
             />
             <Route
+              path="/profile/:id"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/create-match"
               element={
                 <ProtectedRoute>

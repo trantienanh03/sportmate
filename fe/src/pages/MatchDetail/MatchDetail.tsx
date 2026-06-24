@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
@@ -348,16 +348,18 @@ const MatchDetail: React.FC = () => {
           <h1 className="fw-bolder mb-4 match-title">{title}</h1>
           <div className="d-flex align-items-center justify-content-between">
             <div className="d-flex align-items-center">
-              <img
-                src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
-                alt={match.host.fullName}
-                className="rounded-circle me-3 border"
-                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-              />
+              <Link to={`/profile/${match.host.id}`}>
+                <img
+                  src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
+                  alt={match.host.fullName}
+                  className="rounded-circle me-3 border"
+                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                />
+              </Link>
               <div>
                 <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
                 <h6 className="fw-bold mb-0 d-flex align-items-center flex-wrap gap-1">
-                  {match.host.fullName}
+                  <Link to={`/profile/${match.host.id}`} className="text-decoration-none text-dark">{match.host.fullName}</Link>
                   {match.host.badges && match.host.badges.map(badge => (
                     <span key={badge} className={`badge rounded-pill fw-normal ms-1 ${badge === 'Tân binh' ? 'bg-secondary' : badge === 'Tích cực' ? 'bg-info' : badge === 'Thân thiện' ? 'bg-success' : badge === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '10px' }}>
                       {badge === 'Cảnh báo uy tín' && <i className="fa-solid fa-triangle-exclamation me-1"></i>}
@@ -441,12 +443,14 @@ const MatchDetail: React.FC = () => {
             <div className="d-flex flex-wrap gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm">
               {derived.attendees.filter(a => a.status === 'joined' || !a.status).map((attendee) => (
                 <div key={attendee.id} className="text-center attendee-item position-relative">
-                  <img
-                    src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
-                    alt={attendee.name}
-                    className="rounded-circle mb-2 border"
-                    style={{ width: '64px', height: '64px', objectFit: 'cover' }}
-                  />
+                  <Link to={`/profile/${attendee.id}`}>
+                    <img
+                      src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
+                      alt={attendee.name}
+                      className="rounded-circle mb-2 border"
+                      style={{ width: '64px', height: '64px', objectFit: 'cover' }}
+                    />
+                  </Link>
                   {attendee.badges && attendee.badges.length > 0 && (
                     <div className="position-absolute top-0 start-100 translate-middle" style={{ zIndex: 5, marginTop: '10px', marginLeft: '-15px' }}>
                        <span className={`badge rounded-pill border border-white ${attendee.badges[0] === 'Tân binh' ? 'bg-secondary' : attendee.badges[0] === 'Tích cực' ? 'bg-info' : attendee.badges[0] === 'Thân thiện' ? 'bg-success' : attendee.badges[0] === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '9px', padding: '0.25em 0.4em' }}>
@@ -455,7 +459,9 @@ const MatchDetail: React.FC = () => {
                        </span>
                     </div>
                   )}
-                  <p className="fw-bold mb-0 small text-truncate mx-auto" style={{ maxWidth: '80px' }}>{attendee.name.split(' ')[0]}</p>
+                  <p className="fw-bold mb-0 small text-truncate mx-auto" style={{ maxWidth: '80px' }}>
+                    <Link to={`/profile/${attendee.id}`} className="text-decoration-none text-dark">{attendee.name.split(' ')[0]}</Link>
+                  </p>
                   <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>{attendee.role}</p>
                 </div>
               ))}
@@ -468,14 +474,18 @@ const MatchDetail: React.FC = () => {
                   {derived.attendees.filter(a => a.status === 'pending').map(attendee => (
                     <div key={attendee.id} className="d-flex align-items-center justify-content-between p-3 border rounded bg-light">
                       <div className="d-flex align-items-center">
-                        <img
-                          src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
-                          alt={attendee.name}
-                          className="rounded-circle me-3 border"
-                          style={{ width: '48px', height: '48px', objectFit: 'cover' }}
-                        />
+                        <Link to={`/profile/${attendee.id}`}>
+                          <img
+                            src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
+                            alt={attendee.name}
+                            className="rounded-circle me-3 border"
+                            style={{ width: '48px', height: '48px', objectFit: 'cover' }}
+                          />
+                        </Link>
                         <div>
-                          <p className="fw-bold mb-0">{attendee.name}</p>
+                          <p className="fw-bold mb-0">
+                            <Link to={`/profile/${attendee.id}`} className="text-decoration-none text-dark">{attendee.name}</Link>
+                          </p>
                           {attendee.badges && attendee.badges.length > 0 && (
                             <span className="badge bg-secondary rounded-pill mt-1" style={{ fontSize: '10px' }}>{attendee.badges[0]}</span>
                           )}

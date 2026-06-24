@@ -85,6 +85,22 @@ export const authService = {
     return response.json();
   },
 
+  getOtherProfile: async (userId: number) => {
+    const response = await fetch(`${API_URL}/profile/${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("User not found");
+    }
+
+    return response.json();
+  },
+
   updateProfile: async (data: any) => {
     const response = await fetch(`${API_URL}/profile`, {
       method: "PUT",

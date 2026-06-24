@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { matchService, type MatchComment } from '../../services/matchService';
 import { Client } from '@stomp/stompjs';
@@ -218,16 +219,18 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId }) => {
   const renderComment = (comment: MatchComment, isReply = false) => {
     return (
       <div key={comment.id} className={`comment-item ${isReply ? 'reply-item' : ''}`}>
-        {comment.userAvatarUrl ? (
-          <img src={comment.userAvatarUrl} alt={comment.userName} className="comment-avatar" />
-        ) : (
-          <div className="comment-avatar-placeholder">
-            {comment.userName.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <Link to={`/profile/${comment.userId}`} className="text-decoration-none">
+          {comment.userAvatarUrl ? (
+            <img src={comment.userAvatarUrl} alt={comment.userName} className="comment-avatar" />
+          ) : (
+            <div className="comment-avatar-placeholder">
+              {comment.userName.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </Link>
         <div className="comment-content">
           <div className="comment-header">
-            <span className="comment-author">{comment.userName}</span>
+            <Link to={`/profile/${comment.userId}`} className="comment-author text-decoration-none text-dark">{comment.userName}</Link>
             <span className="comment-time">{formatDate(comment.createdAt)}</span>
           </div>
           {editingCommentId === comment.id ? (

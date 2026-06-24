@@ -107,6 +107,11 @@ public class AuthController {
         return ResponseEntity.ok(authService.getProfile(userId));
     }
 
+    @GetMapping("/profile/{userId}")
+    public ResponseEntity<AuthResponseDto> getOtherUserProfile(@PathVariable Integer userId) {
+        return ResponseEntity.ok(authService.getProfile(userId));
+    }
+
     @PutMapping("/profile")
     public ResponseEntity<AuthResponseDto> updateUserProfile(
             @Valid @RequestBody UpdateProfileRequestDto request,
