@@ -340,6 +340,7 @@ public class MatchServiceImpl implements MatchService {
                 .feePerPerson(fee)
                 .startTime(start)
                 .endTime(end)
+                .imageUrl(request.getImageUrl())
                 .build();
 
             refreshStatusByCapacity(match);
@@ -561,6 +562,7 @@ public class MatchServiceImpl implements MatchService {
                 .venue(venueDto)
                 .participants(participantDtos)
                 .joined(joined)
+                .imageUrl(match.getImageUrl())
                 .build();
     }
 

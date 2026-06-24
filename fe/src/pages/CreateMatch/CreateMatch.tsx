@@ -179,6 +179,7 @@ const CreateMatch: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [venues, setVenues] = useState<VenueItem[]>([]);
   const [venuesLoading, setVenuesLoading] = useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
 
   useEffect(() => {
     setVenuesLoading(true);
@@ -196,6 +197,34 @@ const CreateMatch: React.FC = () => {
 
   const set = (key: keyof FormData, value: any) =>
     setForm(prev => ({ ...prev, [key]: value }));
+
+  const handleGenerateDescription = async () => {
+    if (!form.sport || !form.date) {
+      setToastMessage('Vui lòng chọn môn thể thao và ngày giờ trước (Bước 1, 2) để AI có dữ liệu viết.');
+      return;
+    }
+    setIsGeneratingDesc(true);
+    try {
+      const payload = {
+        sport: form.sport === 'other' ? form.customSport : SPORTS.find(s => s.id === form.sport)?.label || form.sport,
+        location: form.location,
+        date: form.date,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        skillLevel: SKILL_LEVELS.find(s => s.id === form.skillLevel)?.label || form.skillLevel,
+        maxPlayers: form.maxPlayers,
+        feeType: form.feeType === 'free' ? 'Miễn phí' : 'Có phí',
+        fee: form.feeType === 'paid' ? form.fee : 0
+      };
+      const res = await matchService.generateDescription(payload);
+      set('description', res.description);
+      setToastMessage('Đã viết mô tả thành công!');
+    } catch (err) {
+      setToastMessage('Có lỗi khi kết nối AI. Vui lòng thử lại sau.');
+    } finally {
+      setIsGeneratingDesc(false);
+    }
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -317,7 +346,7 @@ const CreateMatch: React.FC = () => {
 
               {step === 1 && <Step1 form={form} set={set} />}
               {step === 2 && <Step2 form={form} set={set} venues={venues} venuesLoading={venuesLoading} />}
-              {step === 3 && <Step3 form={form} set={set} handleImageUpload={handleImageUpload} />}
+              {step === 3 && <Step3 form={form} set={set} handleImageUpload={handleImageUpload} isGeneratingDesc={isGeneratingDesc} onGenerateDescription={handleGenerateDescription} />}
 
               <div className="mt-4">
                 {step < 3 ? (
@@ -595,7 +624,9 @@ const Step3: React.FC<{
   form: FormData; 
   set: (k: keyof FormData, v: any) => void; 
   handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}> = ({ form, set, handleImageUpload }) => (
+  isGeneratingDesc: boolean;
+  onGenerateDescription: () => void;
+}> = ({ form, set, handleImageUpload, isGeneratingDesc, onGenerateDescription }) => (
   <div>
     <p className="letter-spacing mb-1" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
       Bước 3 / 3
@@ -726,9 +757,24 @@ const Step3: React.FC<{
     </div>
 
     <div className="cm-field-group mt-3">
-      <label className="cm-label">
-        Mô tả thêm <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(không bắt buộc)</span>
-      </label>
+      <div className="d-flex justify-content-between align-items-center mb-1">
+        <label className="cm-label mb-0">
+          Mô tả thêm <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(không bắt buộc)</span>
+        </label>
+        <button 
+          type="button"
+          className="btn btn-sm d-flex align-items-center rounded-pill px-3 py-1" 
+          style={{ fontSize: '0.75rem', fontWeight: 600, background: 'linear-gradient(45deg, #FF6B6B, #4ECDC4)', color: 'white', border: 'none', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+          onClick={onGenerateDescription}
+          disabled={isGeneratingDesc}
+        >
+          {isGeneratingDesc ? (
+            <><span className="spinner-border spinner-border-sm me-2" role="status"></span> Đang viết...</>
+          ) : (
+            <><i className="fa-solid fa-wand-magic-sparkles me-2"></i> AI Viết Hộ</>
+          )}
+        </button>
+      </div>
       <textarea
         className="cm-input cm-textarea"
         rows={3}

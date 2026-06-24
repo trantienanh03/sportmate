@@ -23,6 +23,7 @@ import java.util.Map;
 public class MatchController {
 
     private final MatchService matchService;
+    private final com.cdweb.be.service.GeminiService geminiService;
 
     @GetMapping
     public ResponseEntity<List<MatchDetailDto>> getMatches(HttpServletRequest httpRequest) {
@@ -146,5 +147,11 @@ public class MatchController {
                     .body(Map.of("message", "Trạng thái không hợp lệ"));
         }
         return ResponseEntity.ok(matchService.updateMatchStatus(id, status, userId));
+    }
+
+    @PostMapping("/generate-description")
+    public ResponseEntity<?> generateDescription(@RequestBody Map<String, Object> payload) {
+        String description = geminiService.generateMatchDescription(payload);
+        return ResponseEntity.ok(Map.of("description", description));
     }
 }

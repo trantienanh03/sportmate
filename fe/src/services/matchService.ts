@@ -152,15 +152,25 @@ export const matchService = {
     return updated;
   },
 
-  createMatch: async (data: object): Promise<MatchDetail> => {
-    const response = await fetch(`${API_URL}/matches`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(data),
-    });
-    return handleResponse<MatchDetail>(response);
-  },
+    createMatch: async (data: object): Promise<MatchDetail> => {
+      const response = await fetch(`${API_URL}/matches`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      return handleResponse<MatchDetail>(response);
+    },
+  
+    generateDescription: async (data: object): Promise<{description: string}> => {
+      const response = await fetch(`${API_URL}/matches/generate-description`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      return handleResponse<{description: string}>(response);
+    },
 
   getMatches: async () => {
     const response = await fetch(`${API_URL}/matches`, {

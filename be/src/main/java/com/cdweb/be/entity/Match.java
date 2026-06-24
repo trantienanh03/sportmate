@@ -81,6 +81,9 @@ public class Match {
     @Column(name = "lng")
     private Double lng;
 
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

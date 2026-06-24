@@ -11,15 +11,15 @@ import { ratingService } from '../../services/ratingService';
 import './MatchDetail.css';
 
 const SPORT_IMAGES: Record<string, string> = {
-  football: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80',
-  soccer: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80',
-  badminton: 'https://images.unsplash.com/photo-1613918431706-0808f5f3a3fd?auto=format&fit=crop&w=1200&q=80',
-  tennis: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1200&q=80',
-  volleyball: 'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=1200&q=80',
-  basketball: 'https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80',
-  pickleball: 'https://images.unsplash.com/photo-1515573396941-6f3d8f0c4fbd?auto=format&fit=crop&w=1200&q=80',
-  running: 'https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=1200&q=80',
-  default: 'https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80',
+  football: '/hero_football.png',
+  soccer: '/hero_football.png',
+  badminton: '/hero_badminton.png',
+  tennis: '/hero_tennis.png',
+  volleyball: '/hero_football.png', // Fallback
+  basketball: '/hero_basketball.png',
+  pickleball: '/hero_tennis.png', // Fallback
+  running: '/hero_football.png', // Fallback
+  default: '/hero_football.png',
 };
 
 const SPORT_EMOJI: Record<string, string> = {
@@ -138,7 +138,7 @@ const MatchDetail: React.FC = () => {
 
     const spotsLeft = Math.max(match.maxPlayers - match.currentPlayers, 0);
     const feeLabel = match.feePerPerson === 0 ? 'Miễn phí' : `${match.feePerPerson.toLocaleString('vi-VN')} VND`;
-    const heroImage = getSportImage(match.sport);
+    const heroImage = match.imageUrl || getSportImage(match.sport);
     const attendees = [
       { id: match.host.id, name: match.host.fullName, role: 'Người tổ chức', avatar: match.host.avatarUrl, badges: match.host.badges || [] },
       ...match.participants
