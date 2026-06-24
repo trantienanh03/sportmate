@@ -26,6 +26,7 @@ public class GlobalExceptionHandler {
     
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGlobalException(Exception ex) {
-        return ResponseEntity.status(500).body(Map.of("message", ex.getMessage(), "error", ex.getClass().getName()));
+        ex.printStackTrace();
+        return ResponseEntity.status(500).body(Map.of("message", String.valueOf(ex.getMessage()), "error", ex.getClass().getName()));
     }
 }

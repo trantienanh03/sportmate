@@ -21,6 +21,7 @@ import com.cdweb.be.service.MatchService;
 import com.cdweb.be.service.RoomService;
 import com.cdweb.be.service.NotificationService;
 import com.cdweb.be.enums.NotificationType;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,7 @@ public class MatchServiceImpl implements MatchService {
     private final NotificationService notificationService;
     private final com.cdweb.be.repository.UserStatRepository userStatRepository;
     private final com.cdweb.be.repository.ReportRepository reportRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // ── Get All Matches ──────────────────────────────────────────────
     @Override
@@ -85,35 +87,39 @@ public class MatchServiceImpl implements MatchService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
 
+        boolean isApprovalReq = match.getIsApprovalRequired() != null && match.getIsApprovalRequired();
+        String initialStatus = isApprovalReq ? "pending" : "joined";
+
         matchParticipantRepository.save(MatchParticipant.builder()
-                .match(match).user(user).role("member").status("joined").build());
+                .match(match).user(user).role("member").status(initialStatus).build());
 
-        match.setCurrentPlayers((short) (match.getCurrentPlayers() + 1));
-        refreshStatusByCapacity(match);
-        matchRepository.save(match);
+        if (!isApprovalReq) {
+            match.setCurrentPlayers((short) (match.getCurrentPlayers() + 1));
+            refreshStatusByCapacity(match);
+            matchRepository.save(match);
 
-        // Tự động tham gia phòng chat của match (nếu phòng tồn tại)
-        // Lưu ý: Lưu trực tiếp qua Repository để tránh lỗi 'transaction rollback-only'
-        // khi dùng RoomService nếu có exception ném ra.
-        roomRepository.findByMatchId(matchId).ifPresent(room -> {
-            boolean alreadyInRoom = roomMemberRepository
-                    .findByRoomIdAndUserIdAndLeftAtIsNull(room.getId(), userId).isPresent();
-            if (!alreadyInRoom) {
-                roomMemberRepository.save(com.cdweb.be.entity.RoomMember.builder()
-                        .roomId(room.getId())
-                        .userId(userId)
-                        .role(com.cdweb.be.enums.MemberRole.MEMBER)
-                        .build());
-            }
-        });
+            // Tự động tham gia phòng chat của match (nếu phòng tồn tại)
+            roomRepository.findByMatchId(matchId).ifPresent(room -> {
+                boolean alreadyInRoom = roomMemberRepository
+                        .findByRoomIdAndUserIdAndLeftAtIsNull(room.getId(), userId).isPresent();
+                if (!alreadyInRoom) {
+                    roomMemberRepository.save(com.cdweb.be.entity.RoomMember.builder()
+                            .roomId(room.getId())
+                            .userId(userId)
+                            .role(com.cdweb.be.enums.MemberRole.MEMBER)
+                            .build());
+                }
+            });
+        }
 
         // Gửi thông báo tới Host của trận đấu
         try {
             if (match.getHost() != null && !match.getHost().getId().equals(userId)) {
+                String notifTitle = isApprovalReq ? "yêu cầu tham gia mới (chờ duyệt)" : "thành viên mới tham gia";
                 notificationService.sendNotification(
                         match.getHost().getId(),
                         userId,
-                        "yêu cầu tham gia mới",
+                        notifTitle,
                         user.getFullName() + " muốn tham gia trận đấu " + match.getTitle() + " của bạn.",
                         NotificationType.MATCH_JOINED,
                         matchId
@@ -123,6 +129,7 @@ public class MatchServiceImpl implements MatchService {
             log.error("Error sending join match notification for match: {}", matchId, e);
         }
 
+        sendMatchUpdateEvent(matchId);
         return buildDto(match, userId);
     }
 
@@ -150,18 +157,20 @@ public class MatchServiceImpl implements MatchService {
         matchParticipantRepository.delete(participant);
         matchParticipantRepository.flush();
 
-        if (match.getCurrentPlayers() > 0) {
-            match.setCurrentPlayers((short) (match.getCurrentPlayers() - 1));
-        }
+        if ("joined".equals(participant.getStatus())) {
+            if (match.getCurrentPlayers() > 0) {
+                match.setCurrentPlayers((short) (match.getCurrentPlayers() - 1));
+            }
 
-        // Tự động rời phòng chat (soft delete bằng cách ghi nhận thời gian rời)
-        roomRepository.findByMatchId(matchId).ifPresent(room -> {
-            roomMemberRepository.findByRoomIdAndUserIdAndLeftAtIsNull(room.getId(), userId)
-                    .ifPresent(member -> {
-                        member.setLeftAt(LocalDateTime.now());
-                        roomMemberRepository.save(member);
-                    });
-        });
+            // Tự động rời phòng chat (soft delete bằng cách ghi nhận thời gian rời)
+            roomRepository.findByMatchId(matchId).ifPresent(room -> {
+                roomMemberRepository.findByRoomIdAndUserIdAndLeftAtIsNull(room.getId(), userId)
+                        .ifPresent(member -> {
+                            member.setLeftAt(LocalDateTime.now());
+                            roomMemberRepository.save(member);
+                        });
+            });
+        }
         refreshStatusByCapacity(match);
         matchRepository.save(match);
 
@@ -181,7 +190,117 @@ public class MatchServiceImpl implements MatchService {
             log.error("Error sending leave match notification for match: {}", matchId, e);
         }
 
+        sendMatchUpdateEvent(matchId);
         return buildDto(match, userId);
+    }
+
+    @Override
+    @Transactional
+    public MatchDetailDto approveParticipant(Integer matchId, Integer participantUserId, Integer hostId) {
+        Match match = matchRepository.findByIdForUpdate(matchId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
+
+        if (!match.getHost().getId().equals(hostId)) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Chỉ Host mới có quyền duyệt");
+        }
+
+        MatchParticipant participant = matchParticipantRepository
+                .findByMatch_IdAndUser_Id(matchId, participantUserId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Participant not found"));
+
+        if (!"pending".equals(participant.getStatus())) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Người dùng này không ở trạng thái chờ duyệt");
+        }
+
+        refreshStatusByCapacity(match);
+        if (match.getStatus() != MatchStatus.open) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Trận đấu đã đầy hoặc đã đóng");
+        }
+        if (match.getCurrentPlayers() >= match.getMaxPlayers()) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Match is full");
+        }
+
+        participant.setStatus("joined");
+        matchParticipantRepository.save(participant);
+
+        match.setCurrentPlayers((short) (match.getCurrentPlayers() + 1));
+        refreshStatusByCapacity(match);
+        matchRepository.save(match);
+
+        // Tham gia phòng chat
+        roomRepository.findByMatchId(matchId).ifPresent(room -> {
+            roomMemberRepository.findById(new com.cdweb.be.entity.RoomMember.RoomMemberId(room.getId(), participantUserId))
+                    .ifPresentOrElse(
+                            member -> {
+                                member.setLeftAt(null);
+                                roomMemberRepository.save(member);
+                            },
+                            () -> {
+                                roomMemberRepository.save(com.cdweb.be.entity.RoomMember.builder()
+                                        .roomId(room.getId())
+                                        .userId(participantUserId)
+                                        .role(com.cdweb.be.enums.MemberRole.MEMBER)
+                                        .build());
+                            }
+                    );
+        });
+
+        // Gửi thông báo cho participant
+        try {
+            notificationService.sendNotification(
+                    participantUserId,
+                    hostId,
+                    "yêu cầu tham gia được duyệt",
+                    "Yêu cầu tham gia trận đấu " + match.getTitle() + " của bạn đã được duyệt.",
+                    NotificationType.MATCH_JOINED,
+                    matchId
+            );
+        } catch (Exception e) {
+            log.error("Error sending approve notification for match: {}", matchId, e);
+        }
+
+        sendMatchUpdateEvent(matchId);
+        return buildDto(match, hostId);
+    }
+
+    @Override
+    @Transactional
+    public MatchDetailDto rejectParticipant(Integer matchId, Integer participantUserId, Integer hostId, String reason) {
+        Match match = matchRepository.findByIdForUpdate(matchId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
+
+        if (!match.getHost().getId().equals(hostId)) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Chỉ Host mới có quyền từ chối");
+        }
+
+        MatchParticipant participant = matchParticipantRepository
+                .findByMatch_IdAndUser_Id(matchId, participantUserId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Participant not found"));
+
+        if (!"pending".equals(participant.getStatus())) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Người dùng này không ở trạng thái chờ duyệt");
+        }
+
+        participant.setStatus("rejected");
+        participant.setRejectReason(reason);
+        matchParticipantRepository.save(participant);
+
+        // Gửi thông báo cho participant
+        try {
+            notificationService.sendNotification(
+                    participantUserId,
+                    hostId,
+                    "yêu cầu tham gia bị từ chối",
+                    "Yêu cầu tham gia trận đấu " + match.getTitle() + " của bạn bị từ chối. Lý do: " + (reason != null && !reason.trim().isEmpty() ? reason : "Không có lý do"),
+                    NotificationType.MATCH_REJECTED,
+                    matchId
+            );
+        } catch (Exception e) {
+            log.error("Error sending reject notification", e);
+        }
+
+        sendMatchUpdateEvent(matchId);
+        return buildDto(match, hostId);
     }
 
     @Override
@@ -222,6 +341,7 @@ public class MatchServiceImpl implements MatchService {
             log.error("Error sending match cancellation notifications for match: {}", matchId, e);
         }
 
+        sendMatchUpdateEvent(matchId);
         return buildDto(match, hostId);
     }
 
@@ -261,6 +381,7 @@ public class MatchServiceImpl implements MatchService {
             log.error("Error sending match resumption notifications for match: {}", matchId, e);
         }
 
+        sendMatchUpdateEvent(matchId);
         return buildDto(match, hostId);
     }
 
@@ -341,6 +462,7 @@ public class MatchServiceImpl implements MatchService {
                 .startTime(start)
                 .endTime(end)
                 .imageUrl(request.getImageUrl())
+                .isApprovalRequired(request.getIsApprovalRequired() != null ? request.getIsApprovalRequired() : false)
                 .build();
 
             refreshStatusByCapacity(match);
@@ -539,6 +661,7 @@ public class MatchServiceImpl implements MatchService {
                         .avatarUrl(p.getUser().getAvatarUrl())
                         .role(p.getRole())
                         .status(p.getStatus())
+                        .rejectReason(p.getRejectReason())
                         .badges(calculateBadges(userStatMap.get(p.getUser().getId()), userReportCountMap.getOrDefault(p.getUser().getId(), 0L)))
                         .build())
                 .collect(Collectors.toList());
@@ -563,6 +686,7 @@ public class MatchServiceImpl implements MatchService {
                 .participants(participantDtos)
                 .joined(joined)
                 .imageUrl(match.getImageUrl())
+                .isApprovalRequired(match.getIsApprovalRequired() != null && match.getIsApprovalRequired())
                 .build();
     }
 
@@ -617,5 +741,26 @@ public class MatchServiceImpl implements MatchService {
         }
 
         match.setStatus(MatchStatus.open);
+    }
+
+    private void sendMatchUpdateEvent(Integer matchId) {
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    doSendMatchUpdateEvent(matchId);
+                }
+            });
+        } else {
+            doSendMatchUpdateEvent(matchId);
+        }
+    }
+
+    private void doSendMatchUpdateEvent(Integer matchId) {
+        try {
+            messagingTemplate.convertAndSend("/topic/matches/" + matchId, (Object) java.util.Map.of("type", "MATCH_UPDATED"));
+        } catch (Exception e) {
+            log.error("Failed to send socket match update for match {}", matchId, e);
+        }
     }
 }

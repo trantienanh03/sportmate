@@ -5,6 +5,7 @@ public enum NotificationType {
     MATCH_LEFT,
     MATCH_CANCELLED,
     MATCH_RESUMED,
+    MATCH_REJECTED,
     MATCH_COMMENT,
     SYSTEM
 }

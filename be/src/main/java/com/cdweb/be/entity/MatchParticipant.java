@@ -36,6 +36,9 @@ public class MatchParticipant {
     @Builder.Default
     private String status = "joined";
 
+    @Column(name = "reject_reason", length = 255)
+    private String rejectReason;
+
     @CreationTimestamp
     @Column(name = "joined_at", nullable = false, updatable = false)
     private LocalDateTime joinedAt;

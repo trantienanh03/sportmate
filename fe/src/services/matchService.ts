@@ -27,6 +27,7 @@ export interface MatchParticipant {
   role: string;
   status: string;
   badges?: string[];
+  rejectReason?: string;
 }
 
 export interface MatchComment {
@@ -62,6 +63,7 @@ export interface MatchDetail {
   joined: boolean;
   distance?: number;
   imageUrl?: string;
+  isApprovalRequired?: boolean;
 }
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
@@ -149,6 +151,38 @@ export const matchService = {
       cachedMyRooms = cachedMyRooms.map((m) => (m.id === id ? updated : m));
     }
 
+    return updated;
+  },
+
+  approveParticipant: async (id: number, participantId: number): Promise<MatchDetail> => {
+    const response = await fetch(`${API_URL}/matches/${id}/participants/${participantId}/approve`, {
+      method: "POST",
+      credentials: "include",
+    });
+    const updated = await handleResponse<MatchDetail>(response);
+    if (cachedMatches) {
+      cachedMatches = cachedMatches.map((m) => (m.id === id ? updated : m));
+    }
+    if (cachedMyRooms) {
+      cachedMyRooms = cachedMyRooms.map((m) => (m.id === id ? updated : m));
+    }
+    return updated;
+  },
+
+  rejectParticipant: async (id: number, participantId: number, reason: string): Promise<MatchDetail> => {
+    const response = await fetch(`${API_URL}/matches/${id}/participants/${participantId}/reject`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ reason }),
+    });
+    const updated = await handleResponse<MatchDetail>(response);
+    if (cachedMatches) {
+      cachedMatches = cachedMatches.map((m) => (m.id === id ? updated : m));
+    }
+    if (cachedMyRooms) {
+      cachedMyRooms = cachedMyRooms.map((m) => (m.id === id ? updated : m));
+    }
     return updated;
   },
 

@@ -17,4 +17,5 @@ public class ParticipantDto {
     private String role;
     private String status;
     private List<String> badges;
+    private String rejectReason;
 }

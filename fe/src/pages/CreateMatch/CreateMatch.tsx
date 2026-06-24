@@ -67,6 +67,7 @@ interface FormData {
   fee: string;
   description: string;
   imageUrl: string;
+  isApprovalRequired: boolean;
 }
 
 const INITIAL_FORM: FormData = {
@@ -84,6 +85,7 @@ const INITIAL_FORM: FormData = {
   fee: '',
   description: '',
   imageUrl: '',
+  isApprovalRequired: false,
 };
 
 const formatDate = (d: string) => {
@@ -293,7 +295,8 @@ const CreateMatch: React.FC = () => {
         maxPlayers: form.maxPlayers,
         feeType: form.feeType,
         fee: form.feeType === 'paid' ? (parseInt(form.fee) || 0) : null,
-        imageUrl: form.imageUrl || null
+        imageUrl: form.imageUrl || null,
+        isApprovalRequired: form.isApprovalRequired
       };
 
       const newMatch = await matchService.createMatch(payload);
@@ -692,6 +695,30 @@ const Step3: React.FC<{
           <span className="cm-fee-suffix">VND / người</span>
         </div>
       )}
+    </div>
+
+    <div className="cm-field-group mt-3">
+      <div className="d-flex align-items-center justify-content-between p-3 rounded" style={{ backgroundColor: '#f8f9fa', border: '1px solid #e9ecef' }}>
+        <div>
+          <label className="cm-label mb-1" style={{ fontSize: '0.9rem', color: '#343a40' }}>
+            <i className="fa-solid fa-user-shield me-2" style={{ color: 'var(--text-muted)' }}></i>Kiểm duyệt người chơi
+          </label>
+          <div className="text-muted" style={{ fontSize: '0.75rem', maxWidth: '280px' }}>
+            Người chơi cần được bạn phê duyệt mới có thể chính thức tham gia trận đấu.
+          </div>
+        </div>
+        <div className="form-check form-switch" style={{ margin: 0, padding: 0 }}>
+          <input
+            className="form-check-input ms-2 mt-0"
+            type="checkbox"
+            role="switch"
+            id="isApprovalRequired"
+            checked={form.isApprovalRequired}
+            onChange={e => set('isApprovalRequired', e.target.checked)}
+            style={{ width: '2.5rem', height: '1.25rem', cursor: 'pointer' }}
+          />
+        </div>
+      </div>
     </div>
 
     <div className="cm-field-group mt-3">

@@ -98,6 +98,34 @@ public class MatchController {
         return ResponseEntity.ok(matchService.resumeMatch(id, userId));
     }
 
+    @PostMapping("/{id}/participants/{participantId}/approve")
+    public ResponseEntity<MatchDetailDto> approveParticipant(
+            @PathVariable Integer id,
+            @PathVariable Integer participantId,
+            HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Integer hostId = (Integer) session.getAttribute("userId");
+        return ResponseEntity.ok(matchService.approveParticipant(id, participantId, hostId));
+    }
+
+    @PostMapping("/{id}/participants/{participantId}/reject")
+    public ResponseEntity<MatchDetailDto> rejectParticipant(
+            @PathVariable Integer id,
+            @PathVariable Integer participantId,
+            @RequestBody Map<String, String> payload,
+            HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Integer hostId = (Integer) session.getAttribute("userId");
+        String reason = payload.get("reason");
+        return ResponseEntity.ok(matchService.rejectParticipant(id, participantId, hostId, reason));
+    }
+
     @PostMapping
     public ResponseEntity<?> createMatch(
             @Valid @RequestBody CreateMatchRequest request,
