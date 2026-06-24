@@ -629,6 +629,15 @@ public class MatchServiceImpl implements MatchService {
         }
     }
 
+    // Lấy lịch trình của người dùng. Trước đó thực hiện tự động hoàn thành các trận đã qua giờ.
+    @Override
+    @Transactional
+    public List<MatchDetailDto> getUserSchedule(Integer userId) {
+        checkAndCompleteExpiredMatches();
+        List<Match> scheduleMatches = matchRepository.findUserSchedule(userId, LocalDateTime.now());
+        return buildDtos(scheduleMatches, userId);
+    }
+
     private void refreshStatusByCapacity(Match match) {
         if (match.getStatus() == MatchStatus.cancelled || match.getStatus() == MatchStatus.completed) {
             return;

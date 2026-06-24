@@ -202,6 +202,16 @@ export const matchService = {
     return data;
   },
 
+  // Gọi API lấy lịch trình cá nhân của người dùng hiện tại
+  getSchedule: async (): Promise<MatchDetail[]> => {
+    const response = await fetch(`${API_URL}/matches/schedule`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    return handleResponse<MatchDetail[]>(response);
+  },
+
   updateMatchStatus: async (id: number, status: string): Promise<MatchDetail> => {
     const response = await fetch(`${API_URL}/matches/${id}/status`, {
       method: "PUT",

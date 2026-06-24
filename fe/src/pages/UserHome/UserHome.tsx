@@ -16,8 +16,53 @@ const UserHome: React.FC = () => {
   });
   const [error, setError] = useState<string>('');
 
+  // Lưu danh sách lịch trình cá nhân của người dùng (các trận đấu tham gia hoặc làm host)
+  const [scheduleMatches, setScheduleMatches] = useState<any[]>([]);
+  const [isScheduleLoading, setIsScheduleLoading] = useState<boolean>(true);
+
+  // Phân loại các trận đấu: do chính người dùng hiện tại tổ chức và các trận do người khác tổ chức
   const hostMatches = matches.filter((m) => user && m.host?.id === user.id);
   const otherMatches = matches.filter((m) => !user || m.host?.id !== user.id);
+
+  // Trả về class FontAwesome icon phù hợp cho từng môn thể thao tương ứng
+  const getSportIcon = (sport?: string) => {
+    if (!sport) return "fa-futbol";
+    const s = sport.toLowerCase();
+    if (s.includes("bóng đá") || s.includes("football") || s.includes("soccer")) {
+      return "fa-futbol";
+    }
+    if (s.includes("cầu lông") || s.includes("badminton") || s.includes("pickleball")) {
+      return "fa-table-tennis-paddle-ball";
+    }
+    if (s.includes("tennis") || s.includes("quần vợt")) {
+      return "fa-baseball";
+    }
+    if (s.includes("bóng rổ") || s.includes("basketball")) {
+      return "fa-basketball";
+    }
+    if (s.includes("bóng chuyền") || s.includes("volleyball")) {
+      return "fa-volleyball";
+    }
+    return "fa-futbol";
+  };
+
+  // Tự động gọi API lấy lịch trình cá nhân của user khi trang chủ được load hoặc user thay đổi
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      if (!user) return;
+      setIsScheduleLoading(true);
+      try {
+        const data = await matchService.getSchedule();
+        setScheduleMatches(data);
+      } catch (err) {
+        console.error("Không thể tải lịch trình:", err);
+      } finally {
+        setIsScheduleLoading(false);
+      }
+    };
+
+    fetchSchedule();
+  }, [user]);
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -102,7 +147,7 @@ const UserHome: React.FC = () => {
         <div className="container">
           <div className="row">
 
-            <div className="col-xl-3 col-lg-4 col-md-5 mb-4">
+            <div className="col-xl-3 col-lg-4 col-md-5 order-2 order-md-1 mb-4">
 
               <div className="sidebar-card profile-card mb-4">
                 <div className="d-flex align-items-center mb-3">
@@ -124,20 +169,51 @@ const UserHome: React.FC = () => {
               <div className="sidebar-card mb-4 p-3">
                 <div className="sidebar-card-header mb-3">
                   <h6 className="fw-bold mb-0">Lịch trình của bạn</h6>
-                  <a href="#" className="text-primary text-decoration-none small fw-bold">Xem tất cả</a>
+                  <Link to="/explore" className="text-primary text-decoration-none small fw-bold">Xem tất cả</Link>
                 </div>
 
-                <div className="d-flex gap-2 mb-3">
-                  <span className="fw-bold small" style={{ cursor: 'pointer', borderBottom: '2px solid #212529', paddingBottom: '4px' }}>Tham gia</span>
-                  <span className="text-muted fw-medium small" style={{ cursor: 'pointer' }}>Đã lưu</span>
-                </div>
-
-                <div className="text-center py-3">
-                  <h6 className="fw-bold mb-3">Lịch trình của bạn đang trống</h6>
-                  <button className="btn btn-dark rounded-pill px-4 py-2 fw-bold w-100">
-                    Tìm sự kiện
-                  </button>
-                </div>
+                {isScheduleLoading ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-border spinner-border-sm text-dark" role="status">
+                      <span className="visually-hidden">Đang tải...</span>
+                    </div>
+                  </div>
+                ) : scheduleMatches.length === 0 ? (
+                  <div className="text-center py-3">
+                    <h6 className="fw-bold mb-3">Lịch trình của bạn đang trống</h6>
+                    <Link to="/explore" className="btn btn-dark rounded-pill px-4 py-2 fw-bold w-100 text-white text-decoration-none d-inline-block">
+                      Tìm sự kiện
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="schedule-list d-flex flex-column gap-2">
+                    {scheduleMatches.map((match) => (
+                      <Link
+                        key={match.id}
+                        to={`/matches/${match.id}`}
+                        className="schedule-item-link text-decoration-none text-dark d-block p-2 rounded"
+                      >
+                        <div className="d-flex align-items-start gap-2">
+                          <div className="schedule-sport-icon-wrap">
+                            <i className={`fa-solid ${getSportIcon(match.sport)} text-primary`} style={{ fontSize: '0.9rem' }}></i>
+                          </div>
+                          <div className="schedule-info flex-grow-1 overflow-hidden" style={{ minWidth: 0 }}>
+                            <h6 className="fw-bold mb-0 text-truncate" style={{ fontSize: '0.85rem' }} title={match.title}>
+                              {match.title}
+                            </h6>
+                            <p className="text-muted small mb-0 text-truncate" style={{ fontSize: '0.72rem' }}>
+                              {formatMatchTime(match.startTime)}
+                            </p>
+                            <p className="text-muted small mb-0 text-truncate" style={{ fontSize: '0.72rem' }}>
+                              <i className="fa-solid fa-location-dot me-1"></i>
+                              {match.venue?.name || match.locationText || 'Chưa có địa điểm'}
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="sidebar-card mb-4 p-3">
@@ -156,7 +232,7 @@ const UserHome: React.FC = () => {
 
             </div>
 
-            <div className="col-xl-9 col-lg-8 col-md-7 ps-lg-5">
+            <div className="col-xl-9 col-lg-8 col-md-7 order-1 order-md-2 ps-lg-5">
               {error && <div className="alert alert-danger mb-4">{error}</div>}
 
               {isMatchesLoading ? (

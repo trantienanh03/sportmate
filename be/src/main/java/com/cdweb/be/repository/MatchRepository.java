@@ -26,6 +26,16 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
 
     @Query(value = "SELECT m.* FROM matches m WHERE m.status IN ('open'::match_status, 'full'::match_status) AND m.start_time > :now ORDER BY m.start_time ASC", nativeQuery = true)
     List<Match> findUpcomingMatches(@Param("now") LocalDateTime now);
+    
+    // Truy vấn native lấy các trận đấu chưa kết thúc (open/full) mà user làm host hoặc đã tham gia thành công (joined)
+    // Sắp xếp theo thứ tự start_time tăng dần (gần nhất đến xa nhất)
+    @Query(value = "SELECT DISTINCT m.* FROM matches m " +
+                   "LEFT JOIN match_participants mp ON m.id = mp.match_id " +
+                   "WHERE (m.host_id = :userId OR (mp.user_id = :userId AND mp.status = 'joined')) " +
+                   "AND m.status IN ('open'::match_status, 'full'::match_status) " +
+                   "AND m.start_time > :now " +
+                   "ORDER BY m.start_time ASC", nativeQuery = true)
+    List<Match> findUserSchedule(@Param("userId") Integer userId, @Param("now") LocalDateTime now);
 
     List<Match> findByHostIdOrderByStartTimeDesc(Integer hostId);
 

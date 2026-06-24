@@ -18,4 +18,5 @@ public interface MatchService {
     List<MatchDetailDto> getMyCreatedMatches(Integer hostId);
     MatchDetailDto updateMatchStatus(Integer matchId, com.cdweb.be.enums.MatchStatus status, Integer hostId);
     List<MatchDetailDto> exploreMatches(ExploreMatchRequest request, Integer currentUserId);
+    List<MatchDetailDto> getUserSchedule(Integer userId);
 }

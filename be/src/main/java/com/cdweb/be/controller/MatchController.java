@@ -40,6 +40,17 @@ public class MatchController {
         return ResponseEntity.ok(matchService.exploreMatches(request, userId));
     }
 
+    // API lấy lịch trình cá nhân của người dùng (các trận đấu tham gia hoặc làm host)
+    @GetMapping("/schedule")
+    public ResponseEntity<List<MatchDetailDto>> getUserSchedule(HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Integer userId = (Integer) session.getAttribute("userId");
+        return ResponseEntity.ok(matchService.getUserSchedule(userId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<MatchDetailDto> getMatch(
             @PathVariable Integer id,

@@ -234,3 +234,34 @@
   50% { transform: translateY(-10px) rotate(15deg); opacity: 1; }
   100% { transform: translateY(0) rotate(15deg); opacity: 0.5; }
 }
+
+.schedule-list {
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px;
+  margin: -4px;
+}
+
+.schedule-item-link {
+  background-color: var(--surface);
+  transition: all var(--transition);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.schedule-item-link:hover {
+  transform: translateX(4px);
+  border-color: var(--primary-light);
+  background-color: var(--surface-2);
+}
+
+.schedule-sport-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--surface-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
