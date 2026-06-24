@@ -16,6 +16,9 @@ const UserHome: React.FC = () => {
   });
   const [error, setError] = useState<string>('');
 
+  const hostMatches = matches.filter((m) => user && m.host?.id === user.id);
+  const otherMatches = matches.filter((m) => !user || m.host?.id !== user.id);
+
   useEffect(() => {
     const fetchMatches = async () => {
       try {
@@ -154,71 +157,129 @@ const UserHome: React.FC = () => {
             </div>
 
             <div className="col-xl-9 col-lg-8 col-md-7 ps-lg-5">
-
-              <div className="section-header d-flex justify-content-between align-items-center mb-4">
-                <h4 className="fw-bold m-0">Gợi ý cho bạn</h4>
-                <a href="#" className="text-primary text-decoration-none fw-bold">Xem tất cả</a>
-              </div>
-
               {error && <div className="alert alert-danger mb-4">{error}</div>}
 
-              <div className="row g-4">
-                {isMatchesLoading ? (
-                  <div className="col-12 text-center py-5">
-                    <div className="spinner-border text-dark" role="status">
-                      <span className="visually-hidden">Đang tải...</span>
-                    </div>
-                    <p className="mt-2 text-muted">Đang tải danh sách trận đấu...</p>
+              {isMatchesLoading ? (
+                <div className="text-center py-5">
+                  <div className="spinner-border text-dark" role="status">
+                    <span className="visually-hidden">Đang tải...</span>
                   </div>
-                ) : matches.length === 0 ? (
-                  <div className="col-12 text-center py-5">
-                    <i className="fa-solid fa-calendar-minus text-muted fa-3x mb-3"></i>
-                    <h5 className="fw-bold">Chưa có trận đấu nào</h5>
-                    <p className="text-muted">Hãy tạo trận đấu đầu tiên để mọi người cùng tham gia!</p>
-                    <Link to="/create-match" className="btn btn-dark rounded-pill px-4 py-2 fw-bold mt-2">
-                      Tạo trận đấu ngay
-                    </Link>
-                  </div>
-                ) : (
-                  matches.map((match) => (
-                    <div className="col-lg-4 col-sm-6" key={match.id}>
-                      <Link to={`/matches/${match.id}`} className="text-decoration-none text-dark">
-                        <div className="event-card">
-                          <div className="event-img-wrapper">
-                            <img src={match.imageUrl || getSportImage(match.sport)} alt={match.title} className="event-img" />
+                  <p className="mt-2 text-muted">Đang tải danh sách trận đấu...</p>
+                </div>
+              ) : matches.length === 0 ? (
+                <div className="text-center py-5">
+                  <i className="fa-solid fa-calendar-minus text-muted fa-3x mb-3"></i>
+                  <h5 className="fw-bold">Chưa có trận đấu nào</h5>
+                  <p className="text-muted">Hãy tạo trận đấu đầu tiên để mọi người cùng tham gia!</p>
+                  <Link to="/create-match" className="btn btn-dark rounded-pill px-4 py-2 fw-bold mt-2">
+                    Tạo trận đấu ngay
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  {/* Trận đấu bạn tổ chức */}
+                  {user && hostMatches.length > 0 && (
+                    <div className="mb-5">
+                      <div className="section-header d-flex justify-content-between align-items-center mb-4">
+                        <h4 className="fw-bold m-0">Trận đấu của bạn</h4>
+                        <a href="#" className="text-primary text-decoration-none fw-bold">Xem tất cả</a>
+                      </div>
+                      <div className="row g-4">
+                        {hostMatches.map((match) => (
+                          <div className="col-lg-4 col-sm-6" key={match.id}>
+                            <Link to={`/matches/${match.id}`} className="text-decoration-none text-dark">
+                              <div className="event-card">
+                                <div className="event-img-wrapper">
+                                  <img src={match.imageUrl || getSportImage(match.sport)} alt={match.title} className="event-img" />
+                                </div>
+                                <div className="event-details mt-3">
+                                  <h5 className="event-title fw-bold" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '2.8rem' }} title={match.title}>
+                                    {match.title}
+                                  </h5>
+                                  <p className="event-time text-muted small fw-medium mb-1">
+                                    {formatMatchTime(match.startTime)}
+                                  </p>
+                                  <p className="event-group text-muted small mb-1 text-truncate">
+                                    bởi {match.host?.fullName || 'Người dùng'} 
+                                    {match.host?.badges?.includes('Cảnh báo uy tín') && <i className="fa-solid fa-triangle-exclamation text-danger ms-1" title="Cảnh báo uy tín"></i>}
+                                    <span className="mx-1">•</span> <span className="badge bg-light text-dark border">{translateSkillLevel(match.skillLevel)}</span>
+                                  </p>
+                                  <p className="event-location text-muted small mb-2 text-truncate">
+                                    <i className="fa-solid fa-location-dot me-1"></i>
+                                    {match.venue?.name || match.locationText || 'Chưa có địa điểm'}
+                                  </p>
+                                  <div className="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                                    <span className="small text-muted fw-semibold">
+                                      <i className="fa-solid fa-users me-1 text-primary"></i>
+                                      {match.currentPlayers || 1}/{match.maxPlayers} người
+                                    </span>
+                                    <span className="fw-bold text-dark small">
+                                      {match.feePerPerson === 0 ? 'Miễn phí' : `${match.feePerPerson.toLocaleString('vi-VN')}đ`}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </Link>
                           </div>
-                          <div className="event-details mt-3">
-                            <h5 className="event-title fw-bold" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '2.8rem' }} title={match.title}>
-                              {match.title}
-                            </h5>
-                            <p className="event-time text-muted small fw-medium mb-1">
-                              {formatMatchTime(match.startTime)}
-                            </p>
-                            <p className="event-group text-muted small mb-1 text-truncate">
-                              bởi {match.host?.fullName || 'Người dùng'} 
-                              {match.host?.badges?.includes('Cảnh báo uy tín') && <i className="fa-solid fa-triangle-exclamation text-danger ms-1" title="Cảnh báo uy tín"></i>}
-                              <span className="mx-1">•</span> <span className="badge bg-light text-dark border">{translateSkillLevel(match.skillLevel)}</span>
-                            </p>
-                            <p className="event-location text-muted small mb-2 text-truncate">
-                              <i className="fa-solid fa-location-dot me-1"></i>
-                              {match.venue?.name || match.locationText || 'Chưa có địa điểm'}
-                            </p>
-                            <div className="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
-                              <span className="small text-muted fw-semibold">
-                                <i className="fa-solid fa-users me-1 text-primary"></i>
-                                {match.currentPlayers || 1}/{match.maxPlayers} người
-                              </span>
-                              <span className="fw-bold text-dark small">
-                                {match.feePerPerson === 0 ? 'Miễn phí' : `${match.feePerPerson.toLocaleString('vi-VN')}đ`}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
+                        ))}
+                      </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  )}
+
+                  {/* Trận đấu khác */}
+                  <div>
+                    <div className="section-header d-flex justify-content-between align-items-center mb-4">
+                      <h4 className="fw-bold m-0">Trận đấu dành cho bạn</h4>
+                      <a href="#" className="text-primary text-decoration-none fw-bold">Xem tất cả</a>
+                    </div>
+                    {otherMatches.length === 0 ? (
+                      <div className="text-center py-4 text-muted small bg-light rounded p-3">
+                        Không có trận đấu gợi ý nào khác từ người dùng khác.
+                      </div>
+                    ) : (
+                      <div className="row g-4">
+                        {otherMatches.map((match) => (
+                          <div className="col-lg-4 col-sm-6" key={match.id}>
+                            <Link to={`/matches/${match.id}`} className="text-decoration-none text-dark">
+                              <div className="event-card">
+                                <div className="event-img-wrapper">
+                                  <img src={match.imageUrl || getSportImage(match.sport)} alt={match.title} className="event-img" />
+                                </div>
+                                <div className="event-details mt-3">
+                                  <h5 className="event-title fw-bold" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '2.8rem' }} title={match.title}>
+                                    {match.title}
+                                  </h5>
+                                  <p className="event-time text-muted small fw-medium mb-1">
+                                    {formatMatchTime(match.startTime)}
+                                  </p>
+                                  <p className="event-group text-muted small mb-1 text-truncate">
+                                    bởi {match.host?.fullName || 'Người dùng'} 
+                                    {match.host?.badges?.includes('Cảnh báo uy tín') && <i className="fa-solid fa-triangle-exclamation text-danger ms-1" title="Cảnh báo uy tín"></i>}
+                                    <span className="mx-1">•</span> <span className="badge bg-light text-dark border">{translateSkillLevel(match.skillLevel)}</span>
+                                  </p>
+                                  <p className="event-location text-muted small mb-2 text-truncate">
+                                    <i className="fa-solid fa-location-dot me-1"></i>
+                                    {match.venue?.name || match.locationText || 'Chưa có địa điểm'}
+                                  </p>
+                                  <div className="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                                    <span className="small text-muted fw-semibold">
+                                      <i className="fa-solid fa-users me-1 text-primary"></i>
+                                      {match.currentPlayers || 1}/{match.maxPlayers} người
+                                    </span>
+                                    <span className="fw-bold text-dark small">
+                                      {match.feePerPerson === 0 ? 'Miễn phí' : `${match.feePerPerson.toLocaleString('vi-VN')}đ`}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </Link>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               <div className="section-header d-flex justify-content-between align-items-center mt-5 mb-4">
                 <h4 className="fw-bold m-0">Từ các nhóm của bạn</h4>
