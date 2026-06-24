@@ -62,7 +62,7 @@ const MatchDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<'cancel' | 'resume' | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'cancel' | 'resume' | 'complete' | null>(null);
   const [popup, setPopup] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportPopup, setReportPopup] = useState<{ show: boolean; reportId: number | null }>({ show: false, reportId: null });
@@ -193,26 +193,42 @@ const MatchDetail: React.FC = () => {
     setConfirmAction('resume');
   };
 
+  const handleCompleteMatch = async () => {
+    setConfirmAction('complete');
+  };
+
+  // Xác nhận hành động (hủy, khôi phục hoặc hoàn thành) và thực hiện gọi API tương ứng
   const handleConfirmAction = async () => {
     if (!match || !confirmAction) return;
 
-    const isCancel = confirmAction === 'cancel';
     setActionLoading(true);
     try {
-      const updated = isCancel ? await matchService.cancelMatch(match.id) : await matchService.resumeMatch(match.id);
+      let updated;
+      if (confirmAction === 'cancel') {
+        updated = await matchService.cancelMatch(match.id);
+      } else if (confirmAction === 'complete') {
+        updated = await matchService.updateMatchStatus(match.id, 'completed');
+      } else {
+        updated = await matchService.resumeMatch(match.id);
+      }
+      
       setMatch(updated);
       setPopup({
         type: 'success',
-        message: isCancel ? 'Trận đấu đã được hủy.' : 'Trận đấu đã được khôi phục.',
+        message: confirmAction === 'cancel' 
+          ? 'Trận đấu đã được hủy.' 
+          : confirmAction === 'complete'
+          ? 'Trận đấu đã được xác nhận hoàn thành.'
+          : 'Trận đấu đã được khôi phục.',
       });
       setConfirmAction(null);
     } catch (e) {
       setPopup({
         type: 'error',
-        message: e instanceof Error ? e.message : isCancel ? 'Không thể hủy trận đấu' : 'Không thể khôi phục trận đấu',
+        message: e instanceof Error ? e.message : 'Không thể thực hiện yêu cầu',
       });
     } finally {
-      setConfirmAction(null);
+      setActionLoading(false);
     }
   };
 
@@ -256,10 +272,18 @@ const MatchDetail: React.FC = () => {
   const title = match.title;
   const address = match.venue?.address || match.locationText || 'Chưa có địa điểm';
   const venueName = match.venue?.name || match.locationText || 'TBD';
-  const confirmTitle = confirmAction === 'cancel' ? 'Xác nhận hủy trận' : 'Khôi phục trận đấu';
+  const confirmTitle = 
+    confirmAction === 'cancel' 
+      ? 'Xác nhận hủy trận' 
+      : confirmAction === 'complete'
+      ? 'Xác nhận hoàn thành trận'
+      : 'Khôi phục trận đấu';
+
   const confirmMessage =
     confirmAction === 'cancel'
       ? 'Bạn có chắc muốn hủy trận đấu này không?'
+      : confirmAction === 'complete'
+      ? 'Bạn có chắc chắn muốn xác nhận trận đấu này đã hoàn thành không?'
       : 'Khôi phục trận đấu để tiếp tục tuyển người?';
   const popupTitle =
     popup?.type === 'success' ? 'Thành công' : popup?.type === 'error' ? 'Có lỗi xảy ra' : 'Thông báo';
@@ -442,9 +466,14 @@ const MatchDetail: React.FC = () => {
               </button>
 
               {canHostCancel ? (
-                <button className="btn btn-danger rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleCancelMatch} disabled={actionLoading}>
-                  {actionLoading ? '...' : 'Hủy trận đấu'}
-                </button>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-outline-danger rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleCancelMatch} disabled={actionLoading}>
+                    {actionLoading ? '...' : 'Hủy trận đấu'}
+                  </button>
+                  <button className="btn btn-success rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleCompleteMatch} disabled={actionLoading}>
+                    {actionLoading ? '...' : 'Hoàn thành trận'}
+                  </button>
+                </div>
               ) : canHostResume ? (
                 <button className="btn btn-success rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleResumeMatch} disabled={actionLoading}>
                   {actionLoading ? '...' : 'Ngừng hủy & tiếp tục'}
