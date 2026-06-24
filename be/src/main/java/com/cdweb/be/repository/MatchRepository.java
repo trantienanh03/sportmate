@@ -21,10 +21,10 @@ import com.cdweb.be.enums.MatchStatus;
 public interface MatchRepository extends JpaRepository<Match, Integer> {
     @Modifying
     @Transactional
-    @Query("update Match m set m.status = com.cdweb.be.enums.MatchStatus.completed where m.startTime < :now and m.status in (com.cdweb.be.enums.MatchStatus.open, com.cdweb.be.enums.MatchStatus.full)")
+    @Query(value = "UPDATE matches SET status = 'completed'::match_status WHERE start_time < :now AND status IN ('open'::match_status, 'full'::match_status)", nativeQuery = true)
     int autoCompleteExpiredMatches(@Param("now") LocalDateTime now);
 
-    @Query("select m from Match m where m.status in (com.cdweb.be.enums.MatchStatus.open, com.cdweb.be.enums.MatchStatus.full) and m.startTime > :now order by m.startTime asc")
+    @Query(value = "SELECT m.* FROM matches m WHERE m.status IN ('open'::match_status, 'full'::match_status) AND m.start_time > :now ORDER BY m.start_time ASC", nativeQuery = true)
     List<Match> findUpcomingMatches(@Param("now") LocalDateTime now);
 
     List<Match> findByHostIdOrderByStartTimeDesc(Integer hostId);
