@@ -1,5 +1,8 @@
 const API_URL = "http://localhost:8080/api/rooms";
 
+let cachedRooms: RoomSummaryDto[] | null = null;
+let cachedRoomMessages: Record<number, MessageDto[]> = {};
+
 export interface RoomSummaryDto {
   id: number;
   name: string;
@@ -37,7 +40,9 @@ export const chatService = {
       throw new Error("Failed to load rooms");
     }
 
-    return response.json();
+    const data = await response.json();
+    cachedRooms = data;
+    return data;
   },
 
   getMessages: async (roomId: number, before?: number): Promise<MessageDto[]> => {
@@ -58,7 +63,12 @@ export const chatService = {
       throw new Error("Failed to load messages");
     }
 
-    return response.json();
+    const data = await response.json();
+    // Chỉ cache tin nhắn chính (không phải load phân trang) để tránh làm hỏng cấu trúc cache tin nhắn
+    if (!before) {
+      cachedRoomMessages[roomId] = data;
+    }
+    return data;
   },
 
   joinRoom: async (roomId: number): Promise<void> => {
@@ -88,4 +98,9 @@ export const chatService = {
       throw new Error("Failed to leave room");
     }
   },
+
+  getCachedRooms: (): RoomSummaryDto[] | null => cachedRooms,
+  hasCachedRooms: (): boolean => cachedRooms !== null,
+  getCachedRoomMessages: (roomId: number): MessageDto[] | undefined => cachedRoomMessages[roomId],
+  hasCachedRoomMessages: (roomId: number): boolean => cachedRoomMessages[roomId] !== undefined,
 };
