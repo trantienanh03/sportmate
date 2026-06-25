@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import { useAuth } from '../../context/AuthContext';
 import { matchService, type MatchDetail as MatchDetailType } from '../../services/matchService';
@@ -296,7 +296,7 @@ const MatchDetail: React.FC = () => {
         <div className="container">
           <h1 className="fw-bolder mb-4 match-title">{title}</h1>
           <div className="d-flex align-items-center justify-content-between">
-            <div className="d-flex align-items-center">
+            <Link to={`/profile/${match.host.id}`} className="text-decoration-none text-dark d-flex align-items-center">
               <img
                 src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
                 alt={match.host.fullName}
@@ -315,7 +315,7 @@ const MatchDetail: React.FC = () => {
                   ))}
                 </h6>
               </div>
-            </div>
+            </Link>
             {user && match.host.id !== user.id && (
               myReportId ? (
                 <button 
@@ -379,7 +379,11 @@ const MatchDetail: React.FC = () => {
 
             <div className="d-flex flex-wrap gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm">
               {derived.attendees.map((attendee) => (
-                <div key={attendee.id} className="text-center attendee-item position-relative">
+                <Link 
+                  key={attendee.id} 
+                  to={`/profile/${attendee.id}`} 
+                  className="text-center attendee-item position-relative text-decoration-none text-dark d-block"
+                >
                   <img
                     src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
                     alt={attendee.name}
@@ -396,7 +400,7 @@ const MatchDetail: React.FC = () => {
                   )}
                   <p className="fw-bold mb-0 small text-truncate mx-auto" style={{ maxWidth: '80px' }}>{attendee.name.split(' ')[0]}</p>
                   <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>{attendee.role}</p>
-                </div>
+                </Link>
               ))}
             </div>
 

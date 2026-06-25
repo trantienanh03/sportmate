@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
 import { useAuth, type SportCard, type AvailabilitySlot } from '../../context/AuthContext';
@@ -65,7 +66,20 @@ const DEFAULT_WEEK_SLOTS: AvailabilitySlot[] = [
 
 const ProfilePage: React.FC = () => {
   const { user, login } = useAuth();
+  const { id } = useParams<{ id?: string }>();
+  const navigate = useNavigate();
   const editorRef = useRef<HTMLElement | null>(null);
+  
+  // Xác định xem có phải là trang cá nhân của chính mình hay không
+  const isOwnProfile = !id || Number(id) === user?.id;
+  const [profileData, setProfileData] = useState<any>(() => {
+    if (isOwnProfile) return user || null;
+    return id ? authService.getCachedProfile(Number(id)) || null : null;
+  });
+  const [isProfileLoading, setIsProfileLoading] = useState<boolean>(() => {
+    if (isOwnProfile) return !user;
+    return id ? !authService.hasCachedProfile(Number(id)) : true;
+  });
   
   // Independent Edit States
   const [isEditingBasic, setIsEditingBasic] = useState(false);
@@ -92,29 +106,74 @@ const ProfilePage: React.FC = () => {
     lng: '',
   });
 
-  // Sync data from user
+  // Đồng bộ hoặc tải dữ liệu profile dựa trên isOwnProfile và id
   useEffect(() => {
-    if (!user) return;
+    const loadProfile = async () => {
+      if (isOwnProfile) {
+        if (!user) return;
+        setProfileData(user);
+        setFormData({
+          fullName: user.fullName ?? '',
+          avatarUrl: user.avatarUrl ?? '',
+          bio: user.bio ?? '',
+          district: user.district ?? '',
+          lat: toInputValue(user.lat),
+          lng: toInputValue(user.lng),
+        });
+        if (user.sports && user.sports.length > 0) {
+          setSportCards(user.sports);
+        } else {
+          setSportCards(SPORT_CARDS);
+        }
+        if (user.availability && user.availability.length > 0) {
+          setAvailabilitySlots(user.availability);
+        } else {
+          setAvailabilitySlots(DEFAULT_WEEK_SLOTS);
+        }
+        try {
+          const fetchedReviews = await ratingService.getUserReviews(user.id);
+          setReviews(fetchedReviews);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsProfileLoading(false);
+        }
+      } else if (id) {
+        setIsProfileLoading(true);
+        try {
+          const otherUser = await authService.getOtherProfile(Number(id));
+          setProfileData(otherUser);
+          setFormData({
+            fullName: otherUser.fullName ?? '',
+            avatarUrl: otherUser.avatarUrl ?? '',
+            bio: otherUser.bio ?? '',
+            district: otherUser.district ?? '',
+            lat: toInputValue(otherUser.lat),
+            lng: toInputValue(otherUser.lng),
+          });
+          if (otherUser.sports && otherUser.sports.length > 0) {
+            setSportCards(otherUser.sports);
+          } else {
+            setSportCards([]);
+          }
+          if (otherUser.availability && otherUser.availability.length > 0) {
+            setAvailabilitySlots(otherUser.availability);
+          } else {
+            setAvailabilitySlots(DEFAULT_WEEK_SLOTS);
+          }
+          const fetchedReviews = await ratingService.getUserReviews(otherUser.id);
+          setReviews(fetchedReviews);
+        } catch (err) {
+          console.error("Không thể tải thông tin profile người dùng khác:", err);
+          setErrorMessage("Không thể tải thông tin người dùng này.");
+        } finally {
+          setIsProfileLoading(false);
+        }
+      }
+    };
 
-    setFormData({
-      fullName: user.fullName ?? '',
-      avatarUrl: user.avatarUrl ?? '',
-      bio: user.bio ?? '',
-      district: user.district ?? '',
-      lat: toInputValue(user.lat),
-      lng: toInputValue(user.lng),
-    });
-
-    if (user.sports && user.sports.length > 0) {
-      setSportCards(user.sports);
-    }
-    if (user.availability && user.availability.length > 0) {
-      setAvailabilitySlots(user.availability);
-    }
-
-    // Fetch reviews
-    ratingService.getUserReviews(user.id).then(setReviews).catch(console.error);
-  }, [user]);
+    loadProfile();
+  }, [id, user, isOwnProfile]);
 
   // Messages timeout
   useEffect(() => {
@@ -137,22 +196,22 @@ const ProfilePage: React.FC = () => {
     };
   }, [isEditingBasic]);
 
-  const profileInitial = user?.fullName?.trim()?.charAt(0).toUpperCase() || 'U';
+  const profileInitial = profileData?.fullName?.trim()?.charAt(0).toUpperCase() || 'U';
   
   // Calculate combined rating if both exist, or use whichever exists, or default to 0
   let combinedRating: number | string = 0;
-  if (user?.avgAttitudeScore != null && user?.avgSkillScore != null) {
-    combinedRating = ((user.avgAttitudeScore + user.avgSkillScore) / 2).toFixed(1);
-  } else if (user?.avgAttitudeScore != null) {
-    combinedRating = user.avgAttitudeScore.toFixed(1);
-  } else if (user?.avgSkillScore != null) {
-    combinedRating = user.avgSkillScore.toFixed(1);
+  if (profileData?.avgAttitudeScore != null && profileData?.avgSkillScore != null) {
+    combinedRating = ((profileData.avgAttitudeScore + profileData.avgSkillScore) / 2).toFixed(1);
+  } else if (profileData?.avgAttitudeScore != null) {
+    combinedRating = profileData.avgAttitudeScore.toFixed(1);
+  } else if (profileData?.avgSkillScore != null) {
+    combinedRating = profileData.avgSkillScore.toFixed(1);
   } else {
     combinedRating = 'Chưa có';
   }
 
-  const memberSince = user?.createdAt ? formatMonthYear(user.createdAt) : '—';
-  const matchCountText = user?.completedMatches ? `${user.completedMatches} trận` : '0 trận';
+  const memberSince = profileData?.createdAt ? formatMonthYear(profileData.createdAt) : '—';
+  const matchCountText = profileData?.completedMatches ? `${profileData.completedMatches} trận` : '0 trận';
 
   // Basic info handlers
   const handleChange =
@@ -304,8 +363,16 @@ const ProfilePage: React.FC = () => {
       <LoggedInNavbar />
 
       <main className="profile-main-area">
-        <div className="container profile-container">
-          <div className="profile-grid-layout">
+        {isProfileLoading ? (
+          <div className="container py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '50vh' }}>
+            <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+              <span className="visually-hidden">Đang tải...</span>
+            </div>
+            <p className="mt-3 text-muted fw-medium">Đang tải thông tin hồ sơ...</p>
+          </div>
+        ) : (
+          <div className="container profile-container">
+            <div className="profile-grid-layout">
             
             {/* LEFT SIDEBAR */}
             <div className="profile-sidebar-stack">
@@ -313,15 +380,15 @@ const ProfilePage: React.FC = () => {
                 <div className="profile-side-cover" />
                 <div className="profile-side-body">
                   <div className="profile-side-avatar">
-                    {user?.avatarUrl ? <img src={user.avatarUrl} alt={user.fullName} /> : <span>{profileInitial}</span>}
+                    {profileData?.avatarUrl ? <img src={profileData.avatarUrl} alt={profileData.fullName} /> : <span>{profileInitial}</span>}
                   </div>
 
-                  <div className="profile-side-name">{user?.fullName || 'Unknown user'}</div>
+                  <div className="profile-side-name">{profileData?.fullName || 'Unknown user'}</div>
                   
                   {/* BADGES RENDER HERE */}
-                  {user?.badges && user.badges.length > 0 && (
+                  {profileData?.badges && profileData.badges.length > 0 && (
                     <div className="profile-side-badges mt-2 mb-1 d-flex flex-wrap justify-content-center gap-1">
-                      {user.badges.map(badge => (
+                      {profileData.badges.map((badge: string) => (
                         <span key={badge} className={`badge rounded-pill fw-normal ${badge === 'Tân binh' ? 'bg-secondary' : badge === 'Tích cực' ? 'bg-info' : badge === 'Thân thiện' ? 'bg-success' : badge === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '11px' }}>
                           {badge === 'Cảnh báo uy tín' && <i className="fa-solid fa-triangle-exclamation me-1"></i>}
                           {badge}
@@ -332,26 +399,33 @@ const ProfilePage: React.FC = () => {
 
                   <div className="profile-side-sub mt-2">
                     <i className="fa-solid fa-location-dot me-2" />
-                    {user?.district || 'Chưa cập nhật'}
+                    {profileData?.district || 'Chưa cập nhật'}
                   </div>
 
                   <div className="profile-side-bio">
-                    {user?.bio || 'Tạo hồ sơ thật gọn, rõ và dễ nhìn để những người khác nắm được phong cách chơi của bạn.'}
+                    {profileData?.bio || 'Tạo hồ sơ thật gọn, rõ và dễ nhìn để những người khác nắm được phong cách chơi của bạn.'}
                   </div>
 
                   <div className="profile-side-actions">
-                    <button
-                      type="button"
-                      className="btn btn-primary profile-main-btn w-100"
-                      onClick={() => setIsEditingBasic(true)}
-                    >
-                      <i className="fa-regular fa-pen-to-square me-2" />
-                      Chỉnh sửa thông tin cơ bản
-                    </button>
-                    <button type="button" className="btn btn-outline-secondary profile-secondary-btn w-100">
-                      <i className="fa-regular fa-paper-plane me-2" />
-                      Nhắn tin
-                    </button>
+                    {isOwnProfile ? (
+                      <button
+                        type="button"
+                        className="btn btn-primary profile-main-btn w-100"
+                        onClick={() => setIsEditingBasic(true)}
+                      >
+                        <i className="fa-regular fa-pen-to-square me-2" />
+                        Chỉnh sửa thông tin cơ bản
+                      </button>
+                    ) : (
+                      <button 
+                        type="button" 
+                        className="btn btn-outline-secondary profile-secondary-btn w-100"
+                        onClick={() => navigate('/messages')}
+                      >
+                        <i className="fa-regular fa-paper-plane me-2" />
+                        Nhắn tin
+                      </button>
+                    )}
                   </div>
                 </div>
               </aside>
@@ -389,7 +463,7 @@ const ProfilePage: React.FC = () => {
                     <div>
                       <h2 className="profile-card-title">Phong cách chơi</h2>
                     </div>
-                    {!isEditingSports && (
+                    {!isEditingSports && isOwnProfile && (
                       <button className="btn btn-sm btn-light text-primary border-0 fw-semibold" onClick={() => setIsEditingSports(true)}>
                         <i className="fa-regular fa-pen-to-square me-1" /> Sửa
                       </button>
@@ -497,7 +571,7 @@ const ProfilePage: React.FC = () => {
                     <div>
                       <h2 className="profile-card-title">Thời gian ghép trận</h2>
                     </div>
-                    {!isEditingAvailability && (
+                    {!isEditingAvailability && isOwnProfile && (
                       <button className="btn btn-sm btn-light text-primary border-0 fw-semibold" onClick={() => setIsEditingAvailability(true)}>
                         <i className="fa-regular fa-pen-to-square me-1" /> Sửa
                       </button>
@@ -614,8 +688,9 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
             </section>
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* BASIC INFO EDITOR MODAL */}

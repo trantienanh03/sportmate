@@ -1,5 +1,7 @@
 const API_URL = "http://localhost:8080/api/auth";
 
+let cachedProfiles: Record<number, any> = {};
+
 export const authService = {
   login: async (data: any) => {
     const response = await fetch(`${API_URL}/login`, {
@@ -83,6 +85,25 @@ export const authService = {
     }
 
     return response.json();
+  },
+
+  // Lấy thông tin profile của người dùng khác qua ID
+  getOtherProfile: async (id: number) => {
+    const response = await fetch(`${API_URL}/profile/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Không thể lấy thông tin người dùng");
+    }
+
+    const data = await response.json();
+    cachedProfiles[id] = data;
+    return data;
   },
 
   updateProfile: async (data: any) => {
@@ -175,4 +196,6 @@ export const authService = {
 
     return response.text();
   },
+  getCachedProfile: (id: number): any | undefined => cachedProfiles[id],
+  hasCachedProfile: (id: number): boolean => cachedProfiles[id] !== undefined,
 };
