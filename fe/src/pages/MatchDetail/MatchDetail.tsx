@@ -143,37 +143,85 @@ const MatchDetail: React.FC = () => {
 
   const cancelMutation = useMutation({
     mutationFn: () => matchService.cancelMatch(Number(id)),
-    onSuccess: (data) => {
-      queryClient.setQueryData(matchKeys.detail(Number(id)), data);
-      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
-      setPopup({ type: 'success', message: 'Trận đấu đã được hủy.' });
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: matchKeys.detail(Number(id)) });
+      const previousMatch = queryClient.getQueryData<MatchDetailType>(matchKeys.detail(Number(id)));
+      if (previousMatch) {
+        queryClient.setQueryData<MatchDetailType>(matchKeys.detail(Number(id)), {
+          ...previousMatch,
+          status: 'cancelled'
+        });
+      }
+      return { previousMatch };
     },
-    onError: (err: Error) => {
-      setPopup({ type: 'error', message: err.message });
+    onError: (err, _variables, context) => {
+      if (context?.previousMatch) {
+        queryClient.setQueryData(matchKeys.detail(Number(id)), context.previousMatch);
+      }
+      setPopup({ type: 'error', message: err instanceof Error ? err.message : 'Không thể hủy trận đấu' });
+    },
+    onSettled: (data) => {
+      if (data) {
+        setPopup({ type: 'success', message: 'Trận đấu đã được hủy.' });
+      }
+      queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
     }
   });
 
   const resumeMutation = useMutation({
     mutationFn: () => matchService.resumeMatch(Number(id)),
-    onSuccess: (data) => {
-      queryClient.setQueryData(matchKeys.detail(Number(id)), data);
-      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
-      setPopup({ type: 'success', message: 'Trận đấu đã được khôi phục.' });
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: matchKeys.detail(Number(id)) });
+      const previousMatch = queryClient.getQueryData<MatchDetailType>(matchKeys.detail(Number(id)));
+      if (previousMatch) {
+        queryClient.setQueryData<MatchDetailType>(matchKeys.detail(Number(id)), {
+          ...previousMatch,
+          status: 'upcoming'
+        });
+      }
+      return { previousMatch };
     },
-    onError: (err: Error) => {
-      setPopup({ type: 'error', message: err.message });
+    onError: (err, _variables, context) => {
+      if (context?.previousMatch) {
+        queryClient.setQueryData(matchKeys.detail(Number(id)), context.previousMatch);
+      }
+      setPopup({ type: 'error', message: err instanceof Error ? err.message : 'Không thể khôi phục trận đấu' });
+    },
+    onSettled: (data) => {
+      if (data) {
+        setPopup({ type: 'success', message: 'Trận đấu đã được khôi phục.' });
+      }
+      queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
     }
   });
 
   const completeMutation = useMutation({
     mutationFn: () => matchService.updateMatchStatus(Number(id), 'completed'),
-    onSuccess: (data) => {
-      queryClient.setQueryData(matchKeys.detail(Number(id)), data);
-      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
-      setPopup({ type: 'success', message: 'Trận đấu đã được xác nhận hoàn thành.' });
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: matchKeys.detail(Number(id)) });
+      const previousMatch = queryClient.getQueryData<MatchDetailType>(matchKeys.detail(Number(id)));
+      if (previousMatch) {
+        queryClient.setQueryData<MatchDetailType>(matchKeys.detail(Number(id)), {
+          ...previousMatch,
+          status: 'completed'
+        });
+      }
+      return { previousMatch };
     },
-    onError: (err: Error) => {
-      setPopup({ type: 'error', message: err.message });
+    onError: (err, _variables, context) => {
+      if (context?.previousMatch) {
+        queryClient.setQueryData(matchKeys.detail(Number(id)), context.previousMatch);
+      }
+      setPopup({ type: 'error', message: err instanceof Error ? err.message : 'Không thể hoàn thành trận đấu' });
+    },
+    onSettled: (data) => {
+      if (data) {
+        setPopup({ type: 'success', message: 'Trận đấu đã được xác nhận hoàn thành.' });
+      }
+      queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
     }
   });
 
