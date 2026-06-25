@@ -4,7 +4,9 @@ import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
 import { useAuth, type SportCard, type AvailabilitySlot } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
-import { ratingService, type UserReviewDto } from '../../services/ratingService';
+import { useProfileQuery, useUserReviewsQuery } from '../../hooks/useProfileQueries';
+import ProfilePageSkeleton from '../../components/Skeletons/ProfilePageSkeleton';
+import ReviewCardSkeleton from '../../components/Skeletons/ReviewCardSkeleton';
 import './ProfilePage.css';
 
 type ProfileFormState = {
@@ -72,14 +74,13 @@ const ProfilePage: React.FC = () => {
   
   // Xác định xem có phải là trang cá nhân của chính mình hay không
   const isOwnProfile = !id || Number(id) === user?.id;
-  const [profileData, setProfileData] = useState<any>(() => {
-    if (isOwnProfile) return user || null;
-    return id ? authService.getCachedProfile(Number(id)) || null : null;
-  });
-  const [isProfileLoading, setIsProfileLoading] = useState<boolean>(() => {
-    if (isOwnProfile) return !user;
-    return id ? !authService.hasCachedProfile(Number(id)) : true;
-  });
+
+  const { data: otherProfile, isLoading: isOtherProfileLoading } = useProfileQuery(Number(id), !isOwnProfile);
+  const profileData = isOwnProfile ? user : otherProfile;
+  const isProfileLoading = isOwnProfile ? !user : isOtherProfileLoading;
+
+  const targetUserId = isOwnProfile ? user?.id : Number(id);
+  const { data: reviews = [], isLoading: isReviewsLoading } = useUserReviewsQuery(Number(targetUserId), !!targetUserId);
   
   // Independent Edit States
   const [isEditingBasic, setIsEditingBasic] = useState(false);
@@ -96,7 +97,6 @@ const ProfilePage: React.FC = () => {
   
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>(DEFAULT_WEEK_SLOTS);
   const [sportCards, setSportCards] = useState<SportCard[]>(SPORT_CARDS);
-  const [reviews, setReviews] = useState<UserReviewDto[]>([]);
   const [formData, setFormData] = useState<ProfileFormState>({
     fullName: '',
     avatarUrl: '',
@@ -106,74 +106,20 @@ const ProfilePage: React.FC = () => {
     lng: '',
   });
 
-  // Đồng bộ hoặc tải dữ liệu profile dựa trên isOwnProfile và id
+  // Tự động đồng bộ các state chỉnh sửa khi dữ liệu profileData thay đổi (từ cache hoặc API)
   useEffect(() => {
-    const loadProfile = async () => {
-      if (isOwnProfile) {
-        if (!user) return;
-        setProfileData(user);
-        setFormData({
-          fullName: user.fullName ?? '',
-          avatarUrl: user.avatarUrl ?? '',
-          bio: user.bio ?? '',
-          district: user.district ?? '',
-          lat: toInputValue(user.lat),
-          lng: toInputValue(user.lng),
-        });
-        if (user.sports && user.sports.length > 0) {
-          setSportCards(user.sports);
-        } else {
-          setSportCards(SPORT_CARDS);
-        }
-        if (user.availability && user.availability.length > 0) {
-          setAvailabilitySlots(user.availability);
-        } else {
-          setAvailabilitySlots(DEFAULT_WEEK_SLOTS);
-        }
-        try {
-          const fetchedReviews = await ratingService.getUserReviews(user.id);
-          setReviews(fetchedReviews);
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setIsProfileLoading(false);
-        }
-      } else if (id) {
-        setIsProfileLoading(true);
-        try {
-          const otherUser = await authService.getOtherProfile(Number(id));
-          setProfileData(otherUser);
-          setFormData({
-            fullName: otherUser.fullName ?? '',
-            avatarUrl: otherUser.avatarUrl ?? '',
-            bio: otherUser.bio ?? '',
-            district: otherUser.district ?? '',
-            lat: toInputValue(otherUser.lat),
-            lng: toInputValue(otherUser.lng),
-          });
-          if (otherUser.sports && otherUser.sports.length > 0) {
-            setSportCards(otherUser.sports);
-          } else {
-            setSportCards([]);
-          }
-          if (otherUser.availability && otherUser.availability.length > 0) {
-            setAvailabilitySlots(otherUser.availability);
-          } else {
-            setAvailabilitySlots(DEFAULT_WEEK_SLOTS);
-          }
-          const fetchedReviews = await ratingService.getUserReviews(otherUser.id);
-          setReviews(fetchedReviews);
-        } catch (err) {
-          console.error("Không thể tải thông tin profile người dùng khác:", err);
-          setErrorMessage("Không thể tải thông tin người dùng này.");
-        } finally {
-          setIsProfileLoading(false);
-        }
-      }
-    };
-
-    loadProfile();
-  }, [id, user, isOwnProfile]);
+    if (!profileData) return;
+    setFormData({
+      fullName: profileData.fullName ?? '',
+      avatarUrl: profileData.avatarUrl ?? '',
+      bio: profileData.bio ?? '',
+      district: profileData.district ?? '',
+      lat: toInputValue(profileData.lat),
+      lng: toInputValue(profileData.lng),
+    });
+    setSportCards(profileData.sports && profileData.sports.length > 0 ? profileData.sports : SPORT_CARDS);
+    setAvailabilitySlots(profileData.availability && profileData.availability.length > 0 ? profileData.availability : DEFAULT_WEEK_SLOTS);
+  }, [profileData]);
 
   // Messages timeout
   useEffect(() => {
@@ -363,13 +309,8 @@ const ProfilePage: React.FC = () => {
       <LoggedInNavbar />
 
       <main className="profile-main-area">
-        {isProfileLoading ? (
-          <div className="container py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '50vh' }}>
-            <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
-              <span className="visually-hidden">Đang tải...</span>
-            </div>
-            <p className="mt-3 text-muted fw-medium">Đang tải thông tin hồ sơ...</p>
-          </div>
+        {isProfileLoading || !profileData ? (
+          <ProfilePageSkeleton />
         ) : (
           <div className="container profile-container">
             <div className="profile-grid-layout">
@@ -658,7 +599,12 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 <div className="review-list">
-                  {reviews.length > 0 ? reviews.map((review, index) => (
+                  {isReviewsLoading ? (
+                    <div>
+                      <ReviewCardSkeleton />
+                      <ReviewCardSkeleton />
+                    </div>
+                  ) : reviews.length > 0 ? reviews.map((review, index) => (
                     <article className="review-card-new" key={index}>
                       <div className="review-card-header">
                         <div className="review-avatar">

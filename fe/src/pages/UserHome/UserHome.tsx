@@ -1,88 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
 import { useAuth } from '../../context/AuthContext';
 import { matchService } from '../../services/matchService';
+import { useMatchesQuery, useScheduleQuery } from '../../hooks/useMatchQueries';
+import MatchCardSkeleton from '../../components/Skeletons/MatchCardSkeleton';
+import ScheduleItemSkeleton from '../../components/Skeletons/ScheduleItemSkeleton';
 import './UserHome.css';
+
+// Trả về class FontAwesome icon phù hợp cho từng môn thể thao tương ứng
+const getSportIcon = (sport?: string) => {
+  if (!sport) return "fa-futbol";
+  const s = sport.toLowerCase();
+  if (s.includes("bóng đá") || s.includes("football") || s.includes("soccer")) {
+    return "fa-futbol";
+  }
+  if (s.includes("cầu lông") || s.includes("badminton") || s.includes("pickleball")) {
+    return "fa-table-tennis-paddle-ball";
+  }
+  if (s.includes("tennis") || s.includes("quần vợt")) {
+    return "fa-baseball";
+  }
+  if (s.includes("bóng rổ") || s.includes("basketball")) {
+    return "fa-basketball";
+  }
+  if (s.includes("bóng chuyền") || s.includes("volleyball")) {
+    return "fa-volleyball";
+  }
+  return "fa-futbol";
+};
 
 const UserHome: React.FC = () => {
   const { user } = useAuth();
-  const [matches, setMatches] = useState<any[]>(() => {
-    return matchService.getCachedMatches() || [];
-  });
-  const [isMatchesLoading, setIsMatchesLoading] = useState<boolean>(() => {
-    return !matchService.hasCachedMatches();
-  });
-  const [error, setError] = useState<string>('');
-
-  // Lưu danh sách lịch trình cá nhân của người dùng (các trận đấu tham gia hoặc làm host)
-  const [scheduleMatches, setScheduleMatches] = useState<any[]>([]);
-  const [isScheduleLoading, setIsScheduleLoading] = useState<boolean>(true);
+  const { data: matches = [], isLoading: isMatchesLoading, error: matchesError } = useMatchesQuery();
+  const { data: scheduleMatches = [], isLoading: isScheduleLoading } = useScheduleQuery(!!user);
+  const error = matchesError ? (matchesError as Error).message || "Không thể tải danh sách trận đấu" : "";
 
   // Phân loại các trận đấu: do chính người dùng hiện tại tổ chức và các trận do người khác tổ chức
   const hostMatches = matches.filter((m) => user && m.host?.id === user.id);
   const otherMatches = matches.filter((m) => !user || m.host?.id !== user.id);
-
-  // Trả về class FontAwesome icon phù hợp cho từng môn thể thao tương ứng
-  const getSportIcon = (sport?: string) => {
-    if (!sport) return "fa-futbol";
-    const s = sport.toLowerCase();
-    if (s.includes("bóng đá") || s.includes("football") || s.includes("soccer")) {
-      return "fa-futbol";
-    }
-    if (s.includes("cầu lông") || s.includes("badminton") || s.includes("pickleball")) {
-      return "fa-table-tennis-paddle-ball";
-    }
-    if (s.includes("tennis") || s.includes("quần vợt")) {
-      return "fa-baseball";
-    }
-    if (s.includes("bóng rổ") || s.includes("basketball")) {
-      return "fa-basketball";
-    }
-    if (s.includes("bóng chuyền") || s.includes("volleyball")) {
-      return "fa-volleyball";
-    }
-    return "fa-futbol";
-  };
-
-  // Tự động gọi API lấy lịch trình cá nhân của user khi trang chủ được load hoặc user thay đổi
-  useEffect(() => {
-    const fetchSchedule = async () => {
-      if (!user) return;
-      setIsScheduleLoading(true);
-      try {
-        const data = await matchService.getSchedule();
-        setScheduleMatches(data);
-      } catch (err) {
-        console.error("Không thể tải lịch trình:", err);
-      } finally {
-        setIsScheduleLoading(false);
-      }
-    };
-
-    fetchSchedule();
-  }, [user]);
-
-  useEffect(() => {
-    const fetchMatches = async () => {
-      try {
-        if (!matchService.hasCachedMatches()) {
-          setIsMatchesLoading(true);
-        }
-        const data = await matchService.getMatches();
-        setMatches(data);
-      } catch (err: any) {
-        if (!matchService.hasCachedMatches()) {
-          setError(err.message || "Không thể tải danh sách trận đấu");
-        }
-      } finally {
-        setIsMatchesLoading(false);
-      }
-    };
-
-    fetchMatches();
-  }, []);
 
   const getSportImage = (sport: string) => {
     if (!sport) return '/hero_football.png';
@@ -173,10 +130,10 @@ const UserHome: React.FC = () => {
                 </div>
 
                 {isScheduleLoading ? (
-                  <div className="text-center py-4">
-                    <div className="spinner-border spinner-border-sm text-dark" role="status">
-                      <span className="visually-hidden">Đang tải...</span>
-                    </div>
+                  <div className="d-flex flex-column gap-2">
+                    {Array(3).fill(0).map((_, i) => (
+                      <ScheduleItemSkeleton key={i} />
+                    ))}
                   </div>
                 ) : scheduleMatches.length === 0 ? (
                   <div className="text-center py-3">
@@ -192,6 +149,11 @@ const UserHome: React.FC = () => {
                         key={match.id}
                         to={`/matches/${match.id}`}
                         className="schedule-item-link text-decoration-none text-dark d-block p-2 rounded"
+                        onMouseEnter={() => {
+                          if (!matchService.hasCachedMatchDetail(match.id)) {
+                            matchService.getMatch(match.id).catch(() => {});
+                          }
+                        }}
                       >
                         <div className="d-flex align-items-start gap-2">
                           <div className="schedule-sport-icon-wrap">
@@ -236,11 +198,12 @@ const UserHome: React.FC = () => {
               {error && <div className="alert alert-danger mb-4">{error}</div>}
 
               {isMatchesLoading ? (
-                <div className="text-center py-5">
-                  <div className="spinner-border text-dark" role="status">
-                    <span className="visually-hidden">Đang tải...</span>
-                  </div>
-                  <p className="mt-2 text-muted">Đang tải danh sách trận đấu...</p>
+                <div className="row g-4">
+                  {Array(6).fill(0).map((_, i) => (
+                    <div className="col-lg-4 col-sm-6" key={i}>
+                      <MatchCardSkeleton />
+                    </div>
+                  ))}
                 </div>
               ) : matches.length === 0 ? (
                 <div className="text-center py-5">
@@ -263,7 +226,15 @@ const UserHome: React.FC = () => {
                       <div className="row g-4">
                         {hostMatches.map((match) => (
                           <div className="col-lg-4 col-sm-6" key={match.id}>
-                            <Link to={`/matches/${match.id}`} className="text-decoration-none text-dark">
+                            <Link 
+                              to={`/matches/${match.id}`} 
+                              className="text-decoration-none text-dark"
+                              onMouseEnter={() => {
+                                if (!matchService.hasCachedMatchDetail(match.id)) {
+                                  matchService.getMatch(match.id).catch(() => {});
+                                }
+                              }}
+                            >
                               <div className="event-card">
                                 <div className="event-img-wrapper">
                                   <img src={match.imageUrl || getSportImage(match.sport)} alt={match.title} className="event-img" />
@@ -316,7 +287,15 @@ const UserHome: React.FC = () => {
                       <div className="row g-4">
                         {otherMatches.map((match) => (
                           <div className="col-lg-4 col-sm-6" key={match.id}>
-                            <Link to={`/matches/${match.id}`} className="text-decoration-none text-dark">
+                            <Link 
+                              to={`/matches/${match.id}`} 
+                              className="text-decoration-none text-dark"
+                              onMouseEnter={() => {
+                                if (!matchService.hasCachedMatchDetail(match.id)) {
+                                  matchService.getMatch(match.id).catch(() => {});
+                                }
+                              }}
+                            >
                               <div className="event-card">
                                 <div className="event-img-wrapper">
                                   <img src={match.imageUrl || getSportImage(match.sport)} alt={match.title} className="event-img" />
