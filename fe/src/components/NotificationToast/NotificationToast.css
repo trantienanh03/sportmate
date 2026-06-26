@@ -113,3 +113,11 @@
     transform: translateX(0) scale(1);
   }
 }
+
+.notification-toast-card.toast-bill-notification {
+  border-left: 4px solid var(--success);
+}
+
+.notification-toast-card.toast-bill-notification:hover {
+  border-color: var(--success);
+}

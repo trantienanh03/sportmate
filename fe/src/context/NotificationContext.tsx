@@ -13,6 +13,7 @@ interface ToastMessage {
   senderName: string;
   senderAvatar: string | null;
   roomId: number;
+  type: string;
 }
 
 interface NotificationContextType {
@@ -39,13 +40,24 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const showToast = (notif: NotificationDto) => {
     const id = Math.random().toString();
+    
+    let toastTitle = notif.title;
+    if (notif.type === "BILL_CREATED") {
+      toastTitle = "Hóa đơn chia tiền mới";
+    } else if (notif.type === "BILL_PAID") {
+      toastTitle = "Đã báo thanh toán";
+    } else if (notif.type === "BILL_CONFIRMED") {
+      toastTitle = "Xác nhận thanh toán";
+    }
+
     const newToast = {
       id,
-      title: notif.title, // Tên phòng chat
-      content: notif.content, // Nội dung tin nhắn rút gọn
+      title: toastTitle,
+      content: notif.content,
       senderName: notif.senderName,
       senderAvatar: notif.senderAvatar,
-      roomId: notif.relatedEntityId as number
+      roomId: notif.relatedEntityId as number,
+      type: notif.type
     };
     setToasts((prev) => [...prev, newToast]);
     setTimeout(() => {
@@ -139,7 +151,12 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
           const isViewingThisRoom = window.location.pathname === "/messages" && 
             new URLSearchParams(window.location.search).get("roomId") === String(newNotif.relatedEntityId);
 
-          if (newNotif.type === "NEW_MESSAGE" && isViewingThisRoom) {
+          const isBillOrMsg = newNotif.type === "NEW_MESSAGE" || 
+            newNotif.type === "BILL_CREATED" || 
+            newNotif.type === "BILL_PAID" || 
+            newNotif.type === "BILL_CONFIRMED";
+
+          if (isBillOrMsg && isViewingThisRoom) {
             // Tự động mark read trên backend nếu đang xem trực tiếp phòng này
             notificationService.markAsRead(newNotif.id).catch(err => console.error(err));
             setNotifications((prev) => [{ ...newNotif, isRead: true }, ...prev]);
@@ -147,7 +164,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
             setNotifications((prev) => [newNotif, ...prev]);
             setUnreadCount((prev) => prev + 1);
 
-            if (newNotif.type === "NEW_MESSAGE") {
+            if (isBillOrMsg) {
               showToast(newNotif);
             }
           }
@@ -185,29 +202,42 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       {/* Container hiển thị các Toast thông báo tin nhắn mới */}
       <div className="notification-toast-container">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className="notification-toast-card"
-            onClick={() => {
-              navigate(`/messages?roomId=${toast.roomId}`);
-              setToasts((prev) => prev.filter((t) => t.id !== toast.id));
-            }}
-          >
-            <div className="toast-avatar-wrapper">
-              {toast.senderAvatar ? (
-                <img src={toast.senderAvatar} alt={toast.senderName} className="toast-avatar-img" />
-              ) : (
-                <span className="toast-avatar-placeholder">
-                  {toast.senderName.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div className="toast-content-wrapper">
-              <div className="toast-room-title">{toast.title}</div>
-              <div className="toast-sender-name">{toast.senderName}</div>
-              <p className="toast-message-text">{toast.content}</p>
-            </div>
+        {toasts.map((toast) => {
+          const isBillType = toast.type === "BILL_CREATED" || toast.type === "BILL_PAID" || toast.type === "BILL_CONFIRMED";
+          return (
+            <div
+              key={toast.id}
+              className={`notification-toast-card ${isBillType ? "toast-bill-notification" : ""}`}
+              onClick={() => {
+                navigate(`/messages?roomId=${toast.roomId}`);
+                setToasts((prev) => prev.filter((t) => t.id !== toast.id));
+              }}
+            >
+              <div className="toast-avatar-wrapper">
+                {toast.senderAvatar ? (
+                  <img src={toast.senderAvatar} alt={toast.senderName} className="toast-avatar-img" />
+                ) : (
+                  <span className="toast-avatar-placeholder">
+                    {toast.senderName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="toast-content-wrapper">
+                <div className="toast-room-title">
+                  {toast.type === "BILL_CREATED" && (
+                    <i className="fa-solid fa-file-invoice-dollar me-1 text-success"></i>
+                  )}
+                  {toast.type === "BILL_PAID" && (
+                    <i className="fa-solid fa-receipt me-1 text-warning"></i>
+                  )}
+                  {toast.type === "BILL_CONFIRMED" && (
+                    <i className="fa-solid fa-circle-check me-1 text-success"></i>
+                  )}
+                  {toast.title}
+                </div>
+                <div className="toast-sender-name">{toast.senderName}</div>
+                <p className="toast-message-text">{toast.content}</p>
+              </div>
             <button
               className="toast-close-btn"
               onClick={(e) => {
@@ -218,7 +248,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
               <i className="fa-solid fa-xmark"></i>
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
     </NotificationContext.Provider>
   );

@@ -25,7 +25,12 @@ const LoggedInNavbar: React.FC = () => {
 
   const handleNotificationClick = (notif: any) => {
     markAsRead(notif.id);
-    if (notif.type === "NEW_MESSAGE") {
+    if (
+      notif.type === "NEW_MESSAGE" ||
+      notif.type === "BILL_CREATED" ||
+      notif.type === "BILL_PAID" ||
+      notif.type === "BILL_CONFIRMED"
+    ) {
       navigate(`/messages?roomId=${notif.relatedEntityId}`);
     } else if (notif.relatedEntityId) {
       navigate(`/matches/${notif.relatedEntityId}`);
@@ -504,6 +509,15 @@ const LoggedInNavbar: React.FC = () => {
                           </div>
                           <div className="notification-content-wrapper flex-grow-1">
                             <p className="notification-title mb-1 text-wrap">
+                              {notif.type === "BILL_CREATED" && (
+                                <i className="fa-solid fa-file-invoice-dollar me-1 text-success"></i>
+                              )}
+                              {notif.type === "BILL_PAID" && (
+                                <i className="fa-solid fa-receipt me-1 text-warning"></i>
+                              )}
+                              {notif.type === "BILL_CONFIRMED" && (
+                                <i className="fa-solid fa-circle-check me-1 text-success"></i>
+                              )}
                               <strong>{notif.senderName}</strong> {notif.title}
                             </p>
                             <p className="notification-desc mb-1 text-wrap">

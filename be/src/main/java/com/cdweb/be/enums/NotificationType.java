@@ -7,5 +7,8 @@ public enum NotificationType {
     MATCH_RESUMED,
     MATCH_COMMENT,
     SYSTEM,
-    NEW_MESSAGE
+    NEW_MESSAGE,
+    BILL_CREATED,
+    BILL_PAID,
+    BILL_CONFIRMED
 }

@@ -14,7 +14,7 @@ export interface NotificationDto {
   id: number;
   title: string;
   content: string;
-  type: "MATCH_JOINED" | "MATCH_LEFT" | "MATCH_CANCELLED" | "MATCH_RESUMED" | "SYSTEM" | "NEW_MESSAGE";
+  type: "MATCH_JOINED" | "MATCH_LEFT" | "MATCH_CANCELLED" | "MATCH_RESUMED" | "SYSTEM" | "NEW_MESSAGE" | "BILL_CREATED" | "BILL_PAID" | "BILL_CONFIRMED";
   relatedEntityId: number | null;
   isRead: boolean;
   createdAt: string;
