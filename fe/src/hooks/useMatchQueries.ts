@@ -7,6 +7,7 @@ export const matchKeys = {
   lists: () => [...matchKeys.all, 'list'] as const,
   list: () => [...matchKeys.lists()] as const,
   schedule: () => [...matchKeys.all, 'schedule'] as const,
+  myRooms: () => [...matchKeys.all, 'my-rooms'] as const,
   details: () => [...matchKeys.all, 'detail'] as const,
   detail: (id: number) => [...matchKeys.details(), id] as const,
   explore: (search: string) => [...matchKeys.all, 'explore', search] as const,
@@ -26,6 +27,14 @@ export function useScheduleQuery(enabled: boolean) {
     queryKey: matchKeys.schedule(),
     queryFn: () => matchService.getSchedule(),
     enabled,
+  });
+}
+
+// Hook truy vấn danh sách các trận đấu/phòng của tôi (My Rooms)
+export function useMyRoomsQuery() {
+  return useQuery<MatchDetail[]>({
+    queryKey: matchKeys.myRooms(),
+    queryFn: () => matchService.getMyRooms(),
   });
 }
 

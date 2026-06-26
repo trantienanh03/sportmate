@@ -3,16 +3,15 @@ import { Link, useLocation } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import ExploreFilterSidebar from '../../components/ExploreFilterSidebar/ExploreFilterSidebar';
 import Footer from '../../components/Footer/Footer';
-import { matchService, type ExploreParams } from '../../services/matchService';
-import { useQueryClient } from '@tanstack/react-query';
-import { useExploreQuery, matchKeys } from '../../hooks/useMatchQueries';
+import { type ExploreParams } from '../../services/matchService';
+import { useExploreQuery } from '../../hooks/useMatchQueries';
 import MatchCardSkeleton from '../../components/Skeletons/MatchCardSkeleton';
+import PrefetchMatchLink from '../../components/PrefetchMatchLink/PrefetchMatchLink';
 import './ExplorePage.css';
 
 const ExplorePage: React.FC = () => {
   const location = useLocation();
   const search = location.search;
-  const queryClient = useQueryClient();
 
   // Phân tích tham số tìm kiếm từ URL query string
   const { exploreParams, hasLocation } = useMemo(() => {
@@ -118,16 +117,10 @@ const ExplorePage: React.FC = () => {
                 <div className="row g-4">
                   {matches.map((match) => (
                     <div className="col-xl-4 col-md-6" key={match.id}>
-                  <Link 
+                  <PrefetchMatchLink 
+                    matchId={match.id}
                     to={`/matches/${match.id}`} 
                     className="text-decoration-none text-dark"
-                    onMouseEnter={() => {
-                      // Tiền tải (prefetch) dữ liệu chi tiết trận đấu vào cache React Query
-                      queryClient.prefetchQuery({
-                        queryKey: matchKeys.detail(match.id),
-                        queryFn: () => matchService.getMatch(match.id),
-                      });
-                    }}
                   >
                     <div className="explore-event-card h-100">
                       <div className="event-img-wrapper">
@@ -195,7 +188,7 @@ const ExplorePage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  </Link>
+                  </PrefetchMatchLink>
                     </div>
                   ))}
                 </div>

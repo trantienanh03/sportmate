@@ -5,7 +5,6 @@ import './styles/variables.css'
 import './styles/global.css'
 import App from './App.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 // Khởi tạo QueryClient quản lý cache server-state cho toàn bộ ứng dụng
 const queryClient = new QueryClient({
@@ -23,8 +22,6 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
-      {/* Hiển thị thanh DevTools ở dưới góc màn hình hỗ trợ kiểm tra trạng thái cache */}
-      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </StrictMode>,
 )

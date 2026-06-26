@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
 import { useAuth } from '../../context/AuthContext';
-import { matchService } from '../../services/matchService';
 import { useMatchesQuery, useScheduleQuery } from '../../hooks/useMatchQueries';
 import MatchCardSkeleton from '../../components/Skeletons/MatchCardSkeleton';
 import ScheduleItemSkeleton from '../../components/Skeletons/ScheduleItemSkeleton';
+import PrefetchMatchLink from '../../components/PrefetchMatchLink/PrefetchMatchLink';
 import './UserHome.css';
 
 // Trả về class FontAwesome icon phù hợp cho từng môn thể thao tương ứng
@@ -145,15 +145,11 @@ const UserHome: React.FC = () => {
                 ) : (
                   <div className="schedule-list d-flex flex-column gap-2">
                     {scheduleMatches.map((match) => (
-                      <Link
+                      <PrefetchMatchLink
                         key={match.id}
+                        matchId={match.id}
                         to={`/matches/${match.id}`}
                         className="schedule-item-link text-decoration-none text-dark d-block p-2 rounded"
-                        onMouseEnter={() => {
-                          if (!matchService.hasCachedMatchDetail(match.id)) {
-                            matchService.getMatch(match.id).catch(() => {});
-                          }
-                        }}
                       >
                         <div className="d-flex align-items-start gap-2">
                           <div className="schedule-sport-icon-wrap">
@@ -172,7 +168,7 @@ const UserHome: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                      </Link>
+                      </PrefetchMatchLink>
                     ))}
                   </div>
                 )}
@@ -226,14 +222,10 @@ const UserHome: React.FC = () => {
                       <div className="row g-4">
                         {hostMatches.map((match) => (
                           <div className="col-lg-4 col-sm-6" key={match.id}>
-                            <Link 
+                            <PrefetchMatchLink 
+                              matchId={match.id}
                               to={`/matches/${match.id}`} 
                               className="text-decoration-none text-dark"
-                              onMouseEnter={() => {
-                                if (!matchService.hasCachedMatchDetail(match.id)) {
-                                  matchService.getMatch(match.id).catch(() => {});
-                                }
-                              }}
                             >
                               <div className="event-card">
                                 <div className="event-img-wrapper">
@@ -266,7 +258,7 @@ const UserHome: React.FC = () => {
                                   </div>
                                 </div>
                               </div>
-                            </Link>
+                            </PrefetchMatchLink>
                           </div>
                         ))}
                       </div>
@@ -287,14 +279,10 @@ const UserHome: React.FC = () => {
                       <div className="row g-4">
                         {otherMatches.map((match) => (
                           <div className="col-lg-4 col-sm-6" key={match.id}>
-                            <Link 
+                            <PrefetchMatchLink 
+                              matchId={match.id}
                               to={`/matches/${match.id}`} 
                               className="text-decoration-none text-dark"
-                              onMouseEnter={() => {
-                                if (!matchService.hasCachedMatchDetail(match.id)) {
-                                  matchService.getMatch(match.id).catch(() => {});
-                                }
-                              }}
                             >
                               <div className="event-card">
                                 <div className="event-img-wrapper">
@@ -327,7 +315,7 @@ const UserHome: React.FC = () => {
                                   </div>
                                 </div>
                               </div>
-                            </Link>
+                            </PrefetchMatchLink>
                           </div>
                         ))}
                       </div>

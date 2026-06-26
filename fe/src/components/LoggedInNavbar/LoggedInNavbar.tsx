@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { sportService, type SportItem } from "../../services/sportService";
 import { matchService, type MatchDetail } from "../../services/matchService";
 import { useNotifications } from "../../context/NotificationContext";
+import { useSportsQuery } from "../../hooks/useSportQueries";
 import "./LoggedInNavbar.css";
 
 const LoggedInNavbar: React.FC = () => {
@@ -45,7 +45,9 @@ const LoggedInNavbar: React.FC = () => {
 
   const [keyword, setKeyword] = useState("");
   const [showFilter, setShowFilter] = useState(false);
-  const [sports, setSports] = useState<SportItem[]>([]);
+
+  // Sử dụng React Query để tự động cache danh mục thể thao toàn cục (staleTime 24h)
+  const { data: sports = [] } = useSportsQuery();
 
   const [selectedSport, setSelectedSport] = useState("");
   const [skillLevel, setSkillLevel] = useState("");
@@ -65,18 +67,6 @@ const LoggedInNavbar: React.FC = () => {
   const isSyncingRef = useRef(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const liveSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const fetchSports = async () => {
-      try {
-        const data = await sportService.getSports();
-        setSports(data);
-      } catch (err) {
-        console.error("Error fetching sports:", err);
-      }
-    };
-    fetchSports();
-  }, []);
 
   useEffect(() => {
     if (location.pathname === "/explore") {
