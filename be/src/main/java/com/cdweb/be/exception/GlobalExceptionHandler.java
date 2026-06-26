@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -26,7 +29,7 @@ public class GlobalExceptionHandler {
     
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGlobalException(Exception ex) {
-        ex.printStackTrace();
+        log.error("Unhandled exception occurred", ex);
         return ResponseEntity.status(500).body(Map.of("message", String.valueOf(ex.getMessage()), "error", ex.getClass().getName()));
     }
 }

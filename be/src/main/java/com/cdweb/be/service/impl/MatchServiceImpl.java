@@ -21,6 +21,7 @@ import com.cdweb.be.service.MatchService;
 import com.cdweb.be.service.RoomService;
 import com.cdweb.be.service.NotificationService;
 import com.cdweb.be.enums.NotificationType;
+import com.cdweb.be.util.BadgeUtil;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -80,18 +82,26 @@ public class MatchServiceImpl implements MatchService {
         if (match.getCurrentPlayers() >= match.getMaxPlayers()) {
             throw new AppException(HttpStatus.BAD_REQUEST, "Match is full");
         }
-        if (matchParticipantRepository.existsByMatch_IdAndUser_Id(matchId, userId)) {
-            throw new AppException(HttpStatus.CONFLICT, "You have already joined this match");
-        }
+        
+        boolean isApprovalReq = match.getIsApprovalRequired() != null && match.getIsApprovalRequired();
+        String initialStatus = isApprovalReq ? "pending" : "joined";
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
 
-        boolean isApprovalReq = match.getIsApprovalRequired() != null && match.getIsApprovalRequired();
-        String initialStatus = isApprovalReq ? "pending" : "joined";
-
-        matchParticipantRepository.save(MatchParticipant.builder()
-                .match(match).user(user).role("member").status(initialStatus).build());
+        Optional<MatchParticipant> existingOpt = matchParticipantRepository.findByMatch_IdAndUser_Id(matchId, userId);
+        if (existingOpt.isPresent()) {
+            MatchParticipant existing = existingOpt.get();
+            if ("joined".equals(existing.getStatus()) || "pending".equals(existing.getStatus())) {
+                throw new AppException(HttpStatus.CONFLICT, "You have already joined this match");
+            }
+            existing.setStatus(initialStatus);
+            existing.setRejectReason(null);
+            matchParticipantRepository.save(existing);
+        } else {
+            matchParticipantRepository.save(MatchParticipant.builder()
+                    .match(match).user(user).role("member").status(initialStatus).build());
+        }
 
         if (!isApprovalReq) {
             match.setCurrentPlayers((short) (match.getCurrentPlayers() + 1));
@@ -100,15 +110,20 @@ public class MatchServiceImpl implements MatchService {
 
             // Tự động tham gia phòng chat của match (nếu phòng tồn tại)
             roomRepository.findByMatchId(matchId).ifPresent(room -> {
-                boolean alreadyInRoom = roomMemberRepository
-                        .findByRoomIdAndUserIdAndLeftAtIsNull(room.getId(), userId).isPresent();
-                if (!alreadyInRoom) {
-                    roomMemberRepository.save(com.cdweb.be.entity.RoomMember.builder()
-                            .roomId(room.getId())
-                            .userId(userId)
-                            .role(com.cdweb.be.enums.MemberRole.MEMBER)
-                            .build());
-                }
+                roomMemberRepository.findById(new com.cdweb.be.entity.RoomMember.RoomMemberId(room.getId(), userId))
+                        .ifPresentOrElse(
+                                member -> {
+                                    member.setLeftAt(null);
+                                    roomMemberRepository.save(member);
+                                },
+                                () -> {
+                                    roomMemberRepository.save(com.cdweb.be.entity.RoomMember.builder()
+                                            .roomId(room.getId())
+                                            .userId(userId)
+                                            .role(com.cdweb.be.enums.MemberRole.MEMBER)
+                                            .build());
+                                }
+                        );
             });
         }
 
@@ -573,43 +588,6 @@ public class MatchServiceImpl implements MatchService {
         return buildDto(match, participants, joined);
     }
 
-    private List<String> calculateBadges(com.cdweb.be.entity.UserStat stat, long reportCount) {
-        List<String> badges = new java.util.ArrayList<>();
-        
-        // Cảnh báo uy tín: reports > 3 hoặc avgAttitudeScore < 3.0
-        boolean hasWarning = false;
-        if (reportCount >= 3) {
-            hasWarning = true;
-        }
-        if (stat != null && stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() > 0 && stat.getAvgAttitudeScore() < 3.0) {
-            hasWarning = true;
-        }
-        
-        if (hasWarning) {
-            badges.add("Cảnh báo uy tín");
-        }
-
-        if (stat == null) {
-            if (!hasWarning) badges.add("Tân binh");
-            return badges;
-        }
-        
-        if (stat.getCompletedMatches() != null && stat.getCompletedMatches() < 5) {
-            badges.add("Tân binh");
-        } else if (stat.getCompletedMatches() != null && stat.getCompletedMatches() >= 5) {
-            badges.add("Tích cực");
-        }
-        
-        if (stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() >= 4.5) {
-            badges.add("Thân thiện");
-        }
-        
-        if (stat.getAvgSkillScore() != null && stat.getAvgSkillScore() >= 4.5) {
-            badges.add("Chuyên nghiệp");
-        }
-        
-        return badges;
-    }
 
     private MatchDetailDto buildDto(Match match, List<MatchParticipant> participants, boolean joined) {
         List<Integer> userIdsToFetch = new java.util.ArrayList<>();
@@ -637,7 +615,10 @@ public class MatchServiceImpl implements MatchService {
                     .id(match.getHost().getId())
                     .fullName(match.getHost().getFullName())
                     .avatarUrl(match.getHost().getAvatarUrl())
-                    .badges(calculateBadges(userStatMap.get(match.getHost().getId()), userReportCountMap.getOrDefault(match.getHost().getId(), 0L)))
+                    .badges(BadgeUtil.calculateBadges(
+                            userStatMap.get(match.getHost().getId()),
+                            userReportCountMap.getOrDefault(match.getHost().getId(), 0L)
+                    ))
                     .build();
         }
 
@@ -662,7 +643,10 @@ public class MatchServiceImpl implements MatchService {
                         .role(p.getRole())
                         .status(p.getStatus())
                         .rejectReason(p.getRejectReason())
-                        .badges(calculateBadges(userStatMap.get(p.getUser().getId()), userReportCountMap.getOrDefault(p.getUser().getId(), 0L)))
+                        .badges(BadgeUtil.calculateBadges(
+                                userStatMap.get(p.getUser().getId()),
+                                userReportCountMap.getOrDefault(p.getUser().getId(), 0L)
+                        ))
                         .build())
                 .collect(Collectors.toList());
 

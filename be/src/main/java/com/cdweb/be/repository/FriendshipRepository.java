@@ -16,7 +16,7 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Integer>
     @Query("SELECT f FROM Friendship f WHERE (f.requester.id = :userId OR f.addressee.id = :userId) AND f.status = 'ACCEPTED'")
     List<Friendship> findAcceptedFriendships(@Param("userId") Integer userId);
 
-    @Query("SELECT f FROM Friendship f WHERE f.addressee.id = :userId AND f.status = 'PENDING'")
+    @Query("SELECT f FROM Friendship f WHERE (f.requester.id = :userId OR f.addressee.id = :userId) AND COALESCE(f.actionUserId, f.requester.id) != :userId AND f.status = 'PENDING'")
     List<Friendship> findPendingRequestsForUser(@Param("userId") Integer userId);
 
     @Query("SELECT COUNT(f) > 0 FROM Friendship f WHERE ((f.requester.id = :userId1 AND f.addressee.id = :userId2) OR (f.requester.id = :userId2 AND f.addressee.id = :userId1)) AND f.status = 'ACCEPTED'")

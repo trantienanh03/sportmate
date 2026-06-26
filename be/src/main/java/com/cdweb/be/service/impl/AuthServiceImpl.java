@@ -15,6 +15,7 @@ import com.cdweb.be.repository.UserRememberTokenRepository;
 import com.cdweb.be.repository.PasswordResetTokenRepository;
 import com.cdweb.be.service.AuthService;
 import com.cdweb.be.service.EmailService;
+import com.cdweb.be.util.BadgeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -137,45 +138,7 @@ public class AuthServiceImpl implements AuthService {
         tokenRepository.deleteByToken(token);
     }
 
-    private List<String> calculateBadges(UserStat stat, long reportCount) {
-        List<String> badges = new ArrayList<>();
-        
-        boolean hasWarning = false;
-        if (reportCount >= 3) {
-            hasWarning = true;
-        }
-        if (stat != null && stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() > 0 && stat.getAvgAttitudeScore() < 3.0) {
-            hasWarning = true;
-        }
-        
-        if (hasWarning) {
-            badges.add("Cảnh báo uy tín");
-        }
 
-        if (stat == null) {
-            if (!hasWarning) badges.add("Tân binh");
-            return badges;
-        }
-        
-        if (stat.getCompletedMatches() != null && stat.getCompletedMatches() < 5) {
-            badges.add("Tân binh");
-        } else if (stat.getCompletedMatches() != null && stat.getCompletedMatches() >= 5) {
-            badges.add("Tích cực");
-        }
-        
-        if (stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() >= 4.5) {
-            badges.add("Thân thiện");
-        }
-        if (stat.getAvgSkillScore() != null && stat.getAvgSkillScore() >= 4.0) {
-            badges.add("Chuyên nghiệp");
-        }
-        
-        if (badges.isEmpty() && !hasWarning) {
-            badges.add("Tân binh");
-        }
-        
-        return badges;
-    }
 
     @Override
     @Transactional
@@ -222,7 +185,7 @@ public class AuthServiceImpl implements AuthService {
     private AuthResponseDto toDto(User user) {
         UserStat stat = userStatRepository.findByUserId(user.getId()).orElse(null);
         long reportCount = reportRepository.countByReportedUserId(user.getId());
-        List<String> badges = calculateBadges(stat, reportCount);
+        List<String> badges = BadgeUtil.calculateBadges(stat, reportCount);
 
         return AuthResponseDto.builder()
                 .id(user.getId())

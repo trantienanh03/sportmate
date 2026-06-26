@@ -10,7 +10,9 @@ import org.springframework.http.ResponseEntity;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class GeminiService {
 
@@ -65,7 +67,7 @@ public class GeminiService {
             }
             return "Không thể tạo mô tả lúc này.";
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to generate description from Gemini", e);
             return "Đã xảy ra lỗi khi kết nối tới AI. Chi tiết: " + e.getMessage();
         }
     }

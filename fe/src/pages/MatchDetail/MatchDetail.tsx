@@ -173,7 +173,7 @@ const MatchDetail: React.FC = () => {
     const feeLabel = match.feePerPerson === 0 ? 'Miễn phí' : `${match.feePerPerson.toLocaleString('vi-VN')} VND`;
     const heroImage = match.imageUrl || getSportImage(match.sport);
     const attendees = [
-      { id: match.host.id, name: match.host.fullName, role: 'Người tổ chức', avatar: match.host.avatarUrl, badges: match.host.badges || [] },
+      { id: match.host.id, name: match.host.fullName, role: 'Người tổ chức', avatar: match.host.avatarUrl, badges: match.host.badges || [], status: 'joined', rejectReason: undefined },
       ...match.participants
         .filter((participant) => participant.userId !== match.host.id)
         .map((participant) => ({
@@ -587,8 +587,8 @@ const MatchDetail: React.FC = () => {
                   {match.status === 'cancelled' ? 'Host đã ngừng hoạt động trận này' : 'Trận đã kết thúc'}
                 </button>
               ) : myParticipant?.status === 'rejected' ? (
-                <button className="btn btn-secondary rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" disabled>
-                  Bị từ chối
+                <button className="btn btn-outline-danger rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleJoin} disabled={actionLoading || isLocked}>
+                  {actionLoading ? '...' : 'Bị từ chối - Gửi lại'}
                 </button>
               ) : myParticipant?.status === 'pending' ? (
                 <button className="btn btn-warning rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleLeave} disabled={actionLoading || isLocked}>

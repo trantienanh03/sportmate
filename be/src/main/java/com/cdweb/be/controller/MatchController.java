@@ -178,7 +178,12 @@ public class MatchController {
     }
 
     @PostMapping("/generate-description")
-    public ResponseEntity<?> generateDescription(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> generateDescription(@RequestBody Map<String, Object> payload, HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Bạn cần đăng nhập để thực hiện chức năng này"));
+        }
         String description = geminiService.generateMatchDescription(payload);
         return ResponseEntity.ok(Map.of("description", description));
     }

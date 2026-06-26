@@ -1045,6 +1045,7 @@ const ProfilePage: React.FC = () => {
                       await friendshipService.unfriend(unfriendConfirm.userId);
                       if (isOtherUser && targetUserId === unfriendConfirm.userId) {
                         setFriendStatus({ status: 'NONE' });
+                        setActiveTab('info');
                       } else {
                         setFriendsList(prev => prev.filter(f => f.userId !== unfriendConfirm.userId));
                       }

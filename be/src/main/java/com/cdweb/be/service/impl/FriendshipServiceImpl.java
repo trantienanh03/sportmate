@@ -13,6 +13,7 @@ import com.cdweb.be.repository.UserRepository;
 import com.cdweb.be.repository.UserStatRepository;
 import com.cdweb.be.service.FriendshipService;
 import com.cdweb.be.service.NotificationService;
+import com.cdweb.be.util.BadgeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -50,9 +51,13 @@ public class FriendshipServiceImpl implements FriendshipService {
             throw new AppException(HttpStatus.BAD_REQUEST, "Friendship or request already exists");
         }
 
+        User sortedRequester = requesterId < addresseeId ? requester : addressee;
+        User sortedAddressee = requesterId < addresseeId ? addressee : requester;
+
         Friendship friendship = Friendship.builder()
-                .requester(requester)
-                .addressee(addressee)
+                .requester(sortedRequester)
+                .addressee(sortedAddressee)
+                .actionUserId(requesterId)
                 .status("PENDING")
                 .build();
         friendshipRepository.save(friendship);
@@ -72,7 +77,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         Friendship friendship = friendshipRepository.findFriendshipBetween(userId, requesterId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Friend request not found"));
 
-        if (!friendship.getAddressee().getId().equals(userId)) {
+        if (friendship.getActionUserId().equals(userId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "Bạn không thể chấp nhận lời mời này");
         }
 
@@ -87,7 +92,7 @@ public class FriendshipServiceImpl implements FriendshipService {
                 requesterId,
                 userId,
                 "Chấp nhận kết bạn",
-                friendship.getAddressee().getFullName() + " đã chấp nhận lời mời kết bạn của bạn.",
+                (friendship.getRequester().getId().equals(userId) ? friendship.getRequester().getFullName() : friendship.getAddressee().getFullName()) + " đã chấp nhận lời mời kết bạn của bạn.",
                 NotificationType.FRIEND_ACCEPTED,
                 userId
         );
@@ -98,7 +103,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         Friendship friendship = friendshipRepository.findFriendshipBetween(userId, requesterId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Friend request not found"));
 
-        if (!friendship.getAddressee().getId().equals(userId)) {
+        if (friendship.getActionUserId().equals(userId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "Bạn không thể từ chối lời mời này");
         }
 
@@ -141,7 +146,7 @@ public class FriendshipServiceImpl implements FriendshipService {
             return new FriendshipStatusDto("FRIENDS");
         }
 
-        if (f.getRequester().getId().equals(myId)) {
+        if (f.getActionUserId().equals(myId)) {
             return new FriendshipStatusDto("PENDING_SENT");
         } else {
             return new FriendshipStatusDto("PENDING_RECEIVED");
@@ -153,7 +158,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         
         long reportCount = reportRepository.countByReportedUserId(friend.getId());
         UserStat stat = userStatRepository.findByUserId(friend.getId()).orElse(new UserStat());
-        List<String> badges = calculateBadges(stat, reportCount);
+        List<String> badges = BadgeUtil.calculateBadges(stat, reportCount);
 
         return FriendDto.builder()
                 .userId(friend.getId())
@@ -165,43 +170,5 @@ public class FriendshipServiceImpl implements FriendshipService {
                 .build();
     }
 
-    private List<String> calculateBadges(UserStat stat, long reportCount) {
-        List<String> badges = new ArrayList<>();
-        
-        boolean hasWarning = false;
-        if (reportCount >= 3) {
-            hasWarning = true;
-        }
-        if (stat != null && stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() > 0 && stat.getAvgAttitudeScore() < 3.0) {
-            hasWarning = true;
-        }
-        
-        if (hasWarning) {
-            badges.add("Cảnh báo uy tín");
-        }
 
-        if (stat == null) {
-            if (!hasWarning) badges.add("Tân binh");
-            return badges;
-        }
-        
-        if (stat.getCompletedMatches() != null && stat.getCompletedMatches() < 5) {
-            badges.add("Tân binh");
-        } else if (stat.getCompletedMatches() != null && stat.getCompletedMatches() >= 5) {
-            badges.add("Tích cực");
-        }
-        
-        if (stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() >= 4.5) {
-            badges.add("Thân thiện");
-        }
-        if (stat.getAvgSkillScore() != null && stat.getAvgSkillScore() >= 4.0) {
-            badges.add("Chuyên nghiệp");
-        }
-        
-        if (badges.isEmpty() && !hasWarning) {
-            badges.add("Tân binh");
-        }
-        
-        return badges;
-    }
 }

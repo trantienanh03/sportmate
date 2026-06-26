@@ -35,6 +35,9 @@ public class Friendship {
     @Builder.Default
     private String status = "PENDING"; // PENDING, ACCEPTED
 
+    @Column(name = "action_user_id")
+    private Integer actionUserId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -42,4 +45,14 @@ public class Friendship {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+    
+    public Integer getActionUserId() {
+        if (actionUserId != null) {
+            return actionUserId;
+        }
+        if (requester != null) {
+            return requester.getId();
+        }
+        return null;
+    }
 }
