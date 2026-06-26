@@ -1,8 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { notificationService, type NotificationDto } from "../services/notificationService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import "../components/NotificationToast/NotificationToast.css";
+
+interface ToastMessage {
+  id: string;
+  title: string;
+  content: string;
+  senderName: string;
+  senderAvatar: string | null;
+  roomId: number;
+}
 
 interface NotificationContextType {
   notifications: NotificationDto[];
@@ -19,10 +30,28 @@ const WS_URL = "http://localhost:8080/ws";
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const clientRef = useRef<Client | null>(null);
+
+  const showToast = (notif: NotificationDto) => {
+    const id = Math.random().toString();
+    const newToast = {
+      id,
+      title: notif.title, // Tên phòng chat
+      content: notif.content, // Nội dung tin nhắn rút gọn
+      senderName: notif.senderName,
+      senderAvatar: notif.senderAvatar,
+      roomId: notif.relatedEntityId as number
+    };
+    setToasts((prev) => [...prev, newToast]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4500);
+  };
 
   const fetchNotifications = async (page = 0, size = 10) => {
     if (!user) return;
@@ -105,8 +134,23 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       client.subscribe(`/topic/notifications/${user.id}`, (message) => {
         if (message.body) {
           const newNotif: NotificationDto = JSON.parse(message.body);
-          setNotifications((prev) => [newNotif, ...prev]);
-          setUnreadCount((prev) => prev + 1);
+          
+          // Kiểm tra nếu người dùng đang ở trong chính phòng chat này
+          const isViewingThisRoom = window.location.pathname === "/messages" && 
+            new URLSearchParams(window.location.search).get("roomId") === String(newNotif.relatedEntityId);
+
+          if (newNotif.type === "NEW_MESSAGE" && isViewingThisRoom) {
+            // Tự động mark read trên backend nếu đang xem trực tiếp phòng này
+            notificationService.markAsRead(newNotif.id).catch(err => console.error(err));
+            setNotifications((prev) => [{ ...newNotif, isRead: true }, ...prev]);
+          } else {
+            setNotifications((prev) => [newNotif, ...prev]);
+            setUnreadCount((prev) => prev + 1);
+
+            if (newNotif.type === "NEW_MESSAGE") {
+              showToast(newNotif);
+            }
+          }
         }
       });
     };
@@ -138,6 +182,44 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       }}
     >
       {children}
+
+      {/* Container hiển thị các Toast thông báo tin nhắn mới */}
+      <div className="notification-toast-container">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className="notification-toast-card"
+            onClick={() => {
+              navigate(`/messages?roomId=${toast.roomId}`);
+              setToasts((prev) => prev.filter((t) => t.id !== toast.id));
+            }}
+          >
+            <div className="toast-avatar-wrapper">
+              {toast.senderAvatar ? (
+                <img src={toast.senderAvatar} alt={toast.senderName} className="toast-avatar-img" />
+              ) : (
+                <span className="toast-avatar-placeholder">
+                  {toast.senderName.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="toast-content-wrapper">
+              <div className="toast-room-title">{toast.title}</div>
+              <div className="toast-sender-name">{toast.senderName}</div>
+              <p className="toast-message-text">{toast.content}</p>
+            </div>
+            <button
+              className="toast-close-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setToasts((prev) => prev.filter((t) => t.id !== toast.id));
+              }}
+            >
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        ))}
+      </div>
     </NotificationContext.Provider>
   );
 };

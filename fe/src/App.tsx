@@ -29,8 +29,8 @@ function PageLoader() {
 function App() {
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <BrowserRouter>
+      <BrowserRouter>
+        <NotificationProvider>
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
@@ -93,8 +93,8 @@ function App() {
               />
             </Routes>
           </Suspense>
-        </BrowserRouter>
-      </NotificationProvider>
+        </NotificationProvider>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

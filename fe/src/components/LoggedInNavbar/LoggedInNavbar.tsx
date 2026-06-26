@@ -13,6 +13,10 @@ const LoggedInNavbar: React.FC = () => {
 
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
+  const unreadMessageCount = notifications.filter(n => n.type === "NEW_MESSAGE" && !n.isRead).length;
+  const unreadGeneralCount = Math.max(0, unreadCount - unreadMessageCount);
+  const generalNotifications = notifications.filter(n => n.type !== "NEW_MESSAGE");
+
   const handleMarkAllAsRead = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -21,7 +25,9 @@ const LoggedInNavbar: React.FC = () => {
 
   const handleNotificationClick = (notif: any) => {
     markAsRead(notif.id);
-    if (notif.relatedEntityId) {
+    if (notif.type === "NEW_MESSAGE") {
+      navigate(`/messages?roomId=${notif.relatedEntityId}`);
+    } else if (notif.relatedEntityId) {
       navigate(`/matches/${notif.relatedEntityId}`);
     }
   };
@@ -451,8 +457,8 @@ const LoggedInNavbar: React.FC = () => {
                 aria-expanded="false"
               >
                 <i className="fa-regular fa-bell"></i>
-                {unreadCount > 0 && (
-                  <span className="notification-badge">{unreadCount}</span>
+                {unreadGeneralCount > 0 && (
+                  <span className="notification-badge">{unreadGeneralCount}</span>
                 )}
               </a>
               <div className="dropdown-menu dropdown-menu-end notification-dropdown shadow-lg border-0">
@@ -468,14 +474,14 @@ const LoggedInNavbar: React.FC = () => {
                   )}
                 </div>
                 <div className="notification-body">
-                  {notifications.length === 0 ? (
+                  {generalNotifications.length === 0 ? (
                     <div className="notification-empty py-4 text-center text-muted">
                       <i className="fa-regular fa-bell-slash fs-3 mb-2 d-block text-muted"></i>
                       Không có thông báo mới
                     </div>
                   ) : (
                     <div className="notification-list">
-                      {notifications.map((notif) => (
+                      {generalNotifications.map((notif) => (
                         <button
                           key={notif.id}
                           className={`notification-item d-flex gap-3 text-start border-0 w-100 ${
@@ -526,8 +532,11 @@ const LoggedInNavbar: React.FC = () => {
               </div>
             </li>
             <li className="nav-item mx-2">
-              <Link className="nav-link nav-icon-link" to="/messages">
+              <Link className="nav-link nav-icon-link position-relative" to="/messages">
                 <i className="fa-regular fa-message"></i>
+                {unreadMessageCount > 0 && (
+                  <span className="notification-badge">{unreadMessageCount}</span>
+                )}
               </Link>
             </li>
             <li className="nav-item mx-2">

@@ -16,6 +16,7 @@ import type { SplitBillDto } from "../../services/splitBillService";
 import { useQueryClient } from "@tanstack/react-query";
 import { useChatRoomsQuery, useChatMessagesQuery, chatKeys } from "../../hooks/useChatQueries";
 import ChatListSkeleton from "../../components/Skeletons/ChatListSkeleton";
+import { useNotifications } from "../../context/NotificationContext";
 
 const Messages: React.FC = () => {
 
@@ -34,6 +35,8 @@ const Messages: React.FC = () => {
   const activeCardUpdateRef = useRef<((bill: SplitBillDto) => void) | null>(null);
   const [completedBills, setCompletedBills] = useState<Record<number, boolean>>({});
   const [showRoomSidebar, setShowRoomSidebar] = useState<boolean>(false);
+
+  const { notifications, markAsRead } = useNotifications();
 
   // Quản lý trạng thái chưa đọc thủ công khi có tin nhắn mới qua WebSocket
   const [unreadRooms, setUnreadRooms] = useState<Record<number, boolean>>({});
@@ -54,6 +57,52 @@ const Messages: React.FC = () => {
       .then(user => setUserId(user.id))
       .catch(err => console.error("Không thể lấy thông tin người dùng:", err));
   }, []);
+
+  // Khởi tạo trạng thái chấm đỏ chưa đọc từ danh sách thông báo đã lưu
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const unreadMap: Record<number, boolean> = {};
+      notifications.forEach((notif) => {
+        if (notif.type === "NEW_MESSAGE" && !notif.isRead && notif.relatedEntityId) {
+          unreadMap[notif.relatedEntityId] = true;
+        }
+      });
+      setUnreadRooms((prev) => ({ ...unreadMap, ...prev }));
+    }
+  }, [notifications]);
+
+  // Đồng bộ hóa chấm đỏ chưa đọc và đẩy phòng chat lên đầu khi có tin nhắn mới
+  useEffect(() => {
+    const latestNotif = notifications[0];
+    if (latestNotif && latestNotif.type === "NEW_MESSAGE" && !latestNotif.isRead) {
+      const roomId = latestNotif.relatedEntityId;
+      if (roomId && roomId !== selectedConvoId) {
+        setUnreadRooms((prev) => ({ ...prev, [roomId]: true }));
+
+        // Cập nhật cache để đẩy phòng chat lên đầu danh sách phòng
+        queryClient.setQueryData<RoomSummaryDto[]>(chatKeys.rooms(), (oldRooms) => {
+          if (!oldRooms) return oldRooms;
+          return oldRooms.map((r) => {
+            if (r.id === roomId) {
+              return { ...r, lastMessageAt: latestNotif.createdAt };
+            }
+            return r;
+          });
+        });
+      }
+    }
+  }, [notifications, selectedConvoId, queryClient]);
+
+  // Tự động đánh dấu đã đọc các thông báo tin nhắn của phòng đang xem
+  useEffect(() => {
+    if (selectedConvoId && notifications.length > 0) {
+      notifications.forEach((notif) => {
+        if (notif.type === "NEW_MESSAGE" && notif.relatedEntityId === selectedConvoId && !notif.isRead) {
+          markAsRead(notif.id);
+        }
+      });
+    }
+  }, [selectedConvoId, notifications, markAsRead]);
 
   // Xử lý sự kiện nhận tin nhắn mới từ WebSocket
   const handleNewMessage = useCallback((newMsg: MessageDto) => {
@@ -144,7 +193,7 @@ const Messages: React.FC = () => {
       messages: cachedMsgs,
       hasUnread: !!unreadRooms[selectedConvoId]
     };
-  }, [rooms, selectedConvoId, unreadRooms, queryClient]);
+  }, [rooms, selectedConvoId, unreadRooms, queryClient, activeRoomMessages]);
 
   const isHost = activeConvo && userId !== null && activeConvo.createdBy === userId;
 
@@ -171,7 +220,7 @@ const Messages: React.FC = () => {
         const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
         return timeB - timeA;
       });
-  }, [rooms, activeTab, searchQuery, unreadRooms, queryClient]);
+  }, [rooms, activeTab, searchQuery, unreadRooms, queryClient, activeRoomMessages]);
 
   const handleSelectConvo = (id: number) => {
     setSelectedConvoId(id);
