@@ -22,7 +22,11 @@ const LoggedInNavbar: React.FC = () => {
   const handleNotificationClick = (notif: any) => {
     markAsRead(notif.id);
     if (notif.relatedEntityId) {
-      navigate(`/matches/${notif.relatedEntityId}`);
+      if (notif.type === 'FRIEND_REQUEST' || notif.type === 'FRIEND_ACCEPTED') {
+        navigate(`/profile/${notif.relatedEntityId}`);
+      } else {
+        navigate(`/matches/${notif.relatedEntityId}`);
+      }
     }
   };
 
