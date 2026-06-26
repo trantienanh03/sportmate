@@ -48,6 +48,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       toastTitle = "Đã báo thanh toán";
     } else if (notif.type === "BILL_CONFIRMED") {
       toastTitle = "Xác nhận thanh toán";
+    } else if (notif.type === "MATCH_REVIEW_REQUEST") {
+      toastTitle = "Yêu cầu đánh giá đồng đội";
     }
 
     const newToast = {
@@ -164,7 +166,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
             setNotifications((prev) => [newNotif, ...prev]);
             setUnreadCount((prev) => prev + 1);
 
-            if (isBillOrMsg) {
+            if (isBillOrMsg || newNotif.type === "MATCH_REVIEW_REQUEST") {
               showToast(newNotif);
             }
           }
@@ -204,12 +206,19 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       <div className="notification-toast-container">
         {toasts.map((toast) => {
           const isBillType = toast.type === "BILL_CREATED" || toast.type === "BILL_PAID" || toast.type === "BILL_CONFIRMED";
+          const isReviewType = toast.type === "MATCH_REVIEW_REQUEST";
           return (
             <div
               key={toast.id}
-              className={`notification-toast-card ${isBillType ? "toast-bill-notification" : ""}`}
+              className={`notification-toast-card ${
+                isBillType ? "toast-bill-notification" : isReviewType ? "toast-match-review" : ""
+              }`}
               onClick={() => {
-                navigate(`/messages?roomId=${toast.roomId}`);
+                if (toast.type === "MATCH_REVIEW_REQUEST") {
+                  navigate(`/matches/${toast.roomId}`);
+                } else {
+                  navigate(`/messages?roomId=${toast.roomId}`);
+                }
                 setToasts((prev) => prev.filter((t) => t.id !== toast.id));
               }}
             >
@@ -232,6 +241,9 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
                   )}
                   {toast.type === "BILL_CONFIRMED" && (
                     <i className="fa-solid fa-circle-check me-1 text-success"></i>
+                  )}
+                  {toast.type === "MATCH_REVIEW_REQUEST" && (
+                    <i className="fa-solid fa-star me-1 text-warning"></i>
                   )}
                   {toast.title}
                 </div>

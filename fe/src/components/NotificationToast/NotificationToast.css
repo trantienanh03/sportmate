@@ -121,3 +121,11 @@
 .notification-toast-card.toast-bill-notification:hover {
   border-color: var(--success);
 }
+
+.notification-toast-card.toast-match-review {
+  border-left: 4px solid var(--accent);
+}
+
+.notification-toast-card.toast-match-review:hover {
+  border-color: var(--accent);
+}

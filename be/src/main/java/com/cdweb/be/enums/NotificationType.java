@@ -10,5 +10,6 @@ public enum NotificationType {
     NEW_MESSAGE,
     BILL_CREATED,
     BILL_PAID,
-    BILL_CONFIRMED
+    BILL_CONFIRMED,
+    MATCH_REVIEW_REQUEST
 }

@@ -391,6 +391,26 @@ public class MatchServiceImpl implements MatchService {
         match.setStatus(status);
         matchRepository.save(match);
 
+        if (status == MatchStatus.completed) {
+            try {
+                List<MatchParticipant> participants = matchParticipantRepository.findByMatch_Id(matchId);
+                for (MatchParticipant participant : participants) {
+                    if (!participant.getUser().getId().equals(hostId)) {
+                        notificationService.sendNotification(
+                                participant.getUser().getId(),
+                                hostId,
+                                "yêu cầu đánh giá đồng đội",
+                                "Trận đấu \"" + match.getTitle() + "\" đã kết thúc. Hãy gửi đánh giá cho những người chơi khác.",
+                                NotificationType.MATCH_REVIEW_REQUEST,
+                                matchId
+                        );
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Lỗi gửi thông báo yêu cầu đánh giá trận đấu: ", e);
+            }
+        }
+
         return buildDto(match, hostId);
     }
 

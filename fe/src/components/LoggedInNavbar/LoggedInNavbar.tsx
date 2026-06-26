@@ -518,6 +518,9 @@ const LoggedInNavbar: React.FC = () => {
                               {notif.type === "BILL_CONFIRMED" && (
                                 <i className="fa-solid fa-circle-check me-1 text-success"></i>
                               )}
+                              {notif.type === "MATCH_REVIEW_REQUEST" && (
+                                <i className="fa-solid fa-star me-1 text-warning"></i>
+                              )}
                               <strong>{notif.senderName}</strong> {notif.title}
                             </p>
                             <p className="notification-desc mb-1 text-wrap">
