@@ -19,6 +19,8 @@ import com.cdweb.be.enums.MatchStatus;
 public interface MatchRepository extends JpaRepository<Match, Integer> {
     List<Match> findByHostIdOrderByStartTimeDesc(Integer hostId);
 
+    List<Match> findAllByOrderByCreatedAtDesc();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select m from Match m where m.id = :id")
     Optional<Match> findByIdForUpdate(@Param("id") Integer id);

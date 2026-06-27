@@ -109,6 +109,12 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
           setUnreadCount((prev) => prev + 1);
         }
       });
+
+      client.subscribe(`/topic/friends/${user.id}`, (message) => {
+        if (message.body.includes('FRIEND_REJECTED') || message.body.includes('FRIEND_REMOVED')) {
+          window.dispatchEvent(new CustomEvent('friendship_update_event', { detail: message.body }));
+        }
+      });
     };
 
     client.onStompError = (frame) => {

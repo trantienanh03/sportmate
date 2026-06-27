@@ -81,6 +81,14 @@ public class Match {
     @Column(name = "lng")
     private Double lng;
 
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
+    @Column(name = "is_approval_required", nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    @com.fasterxml.jackson.annotation.JsonProperty("isApprovalRequired")
+    private Boolean isApprovalRequired = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

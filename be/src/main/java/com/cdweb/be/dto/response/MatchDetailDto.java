@@ -2,6 +2,7 @@ package com.cdweb.be.dto.response;
 
 import lombok.Builder;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,5 +28,8 @@ public class MatchDetailDto {
     private VenueDto venue;
     private List<ParticipantDto> participants;
     private boolean joined;
+    private String imageUrl;
     private Double distance; // km from user, null when no coordinates
+    @JsonProperty("isApprovalRequired")
+    private boolean isApprovalRequired;
 }

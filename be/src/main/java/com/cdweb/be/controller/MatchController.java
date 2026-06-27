@@ -23,6 +23,7 @@ import java.util.Map;
 public class MatchController {
 
     private final MatchService matchService;
+    private final com.cdweb.be.service.GeminiService geminiService;
 
     @GetMapping
     public ResponseEntity<List<MatchDetailDto>> getMatches(HttpServletRequest httpRequest) {
@@ -97,6 +98,34 @@ public class MatchController {
         return ResponseEntity.ok(matchService.resumeMatch(id, userId));
     }
 
+    @PostMapping("/{id}/participants/{participantId}/approve")
+    public ResponseEntity<MatchDetailDto> approveParticipant(
+            @PathVariable Integer id,
+            @PathVariable Integer participantId,
+            HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Integer hostId = (Integer) session.getAttribute("userId");
+        return ResponseEntity.ok(matchService.approveParticipant(id, participantId, hostId));
+    }
+
+    @PostMapping("/{id}/participants/{participantId}/reject")
+    public ResponseEntity<MatchDetailDto> rejectParticipant(
+            @PathVariable Integer id,
+            @PathVariable Integer participantId,
+            @RequestBody Map<String, String> payload,
+            HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Integer hostId = (Integer) session.getAttribute("userId");
+        String reason = payload.get("reason");
+        return ResponseEntity.ok(matchService.rejectParticipant(id, participantId, hostId, reason));
+    }
+
     @PostMapping
     public ResponseEntity<?> createMatch(
             @Valid @RequestBody CreateMatchRequest request,
@@ -146,5 +175,16 @@ public class MatchController {
                     .body(Map.of("message", "Trạng thái không hợp lệ"));
         }
         return ResponseEntity.ok(matchService.updateMatchStatus(id, status, userId));
+    }
+
+    @PostMapping("/generate-description")
+    public ResponseEntity<?> generateDescription(@RequestBody Map<String, Object> payload, HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Bạn cần đăng nhập để thực hiện chức năng này"));
+        }
+        String description = geminiService.generateMatchDescription(payload);
+        return ResponseEntity.ok(Map.of("description", description));
     }
 }

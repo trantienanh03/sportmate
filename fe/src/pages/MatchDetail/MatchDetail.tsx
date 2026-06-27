@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import { useAuth } from '../../context/AuthContext';
 import { matchService, type MatchDetail as MatchDetailType } from '../../services/matchService';
@@ -11,15 +13,15 @@ import { ratingService } from '../../services/ratingService';
 import './MatchDetail.css';
 
 const SPORT_IMAGES: Record<string, string> = {
-  football: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80',
-  soccer: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80',
-  badminton: 'https://images.unsplash.com/photo-1613918431706-0808f5f3a3fd?auto=format&fit=crop&w=1200&q=80',
-  tennis: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1200&q=80',
-  volleyball: 'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=1200&q=80',
-  basketball: 'https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80',
-  pickleball: 'https://images.unsplash.com/photo-1515573396941-6f3d8f0c4fbd?auto=format&fit=crop&w=1200&q=80',
-  running: 'https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=1200&q=80',
-  default: 'https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80',
+  football: '/hero_football.png',
+  soccer: '/hero_football.png',
+  badminton: '/hero_badminton.png',
+  tennis: '/hero_tennis.png',
+  volleyball: '/hero_football.png', // Fallback
+  basketball: '/hero_basketball.png',
+  pickleball: '/hero_tennis.png', // Fallback
+  running: '/hero_football.png', // Fallback
+  default: '/hero_football.png',
 };
 
 const SPORT_EMOJI: Record<string, string> = {
@@ -71,6 +73,8 @@ const MatchDetail: React.FC = () => {
   const [rateableParticipants, setRateableParticipants] = useState<any[]>([]);
   const [showRatingModal, setShowRatingModal] = useState(false);
 
+  const clientRef = useRef<Client | null>(null);
+
   useEffect(() => {
     if (!id) return;
 
@@ -81,6 +85,35 @@ const MatchDetail: React.FC = () => {
       .then(setMatch)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
+
+    // WebSocket Connection
+    const client = new Client({
+      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      connectHeaders: {},
+      debug: () => {}, 
+      reconnectDelay: 5000,
+    });
+
+    client.onConnect = () => {
+      client.subscribe(`/topic/matches/${id}`, (message) => {
+        if (message.body) {
+          matchService.getMatch(Number(id)).then(setMatch).catch(console.error);
+        }
+      });
+    };
+
+    client.onStompError = (frame) => {
+      console.error("STOMP Error:", frame.headers["message"]);
+    };
+
+    client.activate();
+    clientRef.current = client;
+
+    return () => {
+      if (clientRef.current) {
+        clientRef.current.deactivate();
+      }
+    };
   }, [id]);
 
   useEffect(() => {
@@ -138,9 +171,9 @@ const MatchDetail: React.FC = () => {
 
     const spotsLeft = Math.max(match.maxPlayers - match.currentPlayers, 0);
     const feeLabel = match.feePerPerson === 0 ? 'Miễn phí' : `${match.feePerPerson.toLocaleString('vi-VN')} VND`;
-    const heroImage = getSportImage(match.sport);
+    const heroImage = match.imageUrl || getSportImage(match.sport);
     const attendees = [
-      { id: match.host.id, name: match.host.fullName, role: 'Người tổ chức', avatar: match.host.avatarUrl, badges: match.host.badges || [] },
+      { id: match.host.id, name: match.host.fullName, role: 'Người tổ chức', avatar: match.host.avatarUrl, badges: match.host.badges || [], status: 'joined', rejectReason: undefined },
       ...match.participants
         .filter((participant) => participant.userId !== match.host.id)
         .map((participant) => ({
@@ -149,6 +182,8 @@ const MatchDetail: React.FC = () => {
           role: participant.role === 'host' ? 'Người tổ chức' : 'Thành viên',
           avatar: participant.avatarUrl,
           badges: participant.badges || [],
+          status: participant.status,
+          rejectReason: participant.rejectReason,
         })),
     ];
 
@@ -161,11 +196,51 @@ const MatchDetail: React.FC = () => {
     };
   }, [match]);
 
+  const myParticipant = useMemo(() => {
+    return match?.participants.find(p => p.userId === user?.id);
+  }, [match, user]);
+
+  const [showRejectModal, setShowRejectModal] = useState<{ show: boolean, participantId: number | null }>({ show: false, participantId: null });
+  const [rejectReason, setRejectReason] = useState('');
+
+  const handleApprove = async (participantId: number) => {
+    if (!match) return;
+    setActionLoading(true);
+    try {
+      setMatch(await matchService.approveParticipant(match.id, participantId));
+      setPopup({ type: 'success', message: 'Đã duyệt người chơi thành công.' });
+    } catch (e) {
+      setPopup({ type: 'error', message: e instanceof Error ? e.message : 'Không thể duyệt người chơi' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const submitReject = async () => {
+    if (!match || !showRejectModal.participantId) return;
+    setActionLoading(true);
+    try {
+      setMatch(await matchService.rejectParticipant(match.id, showRejectModal.participantId, rejectReason));
+      setShowRejectModal({ show: false, participantId: null });
+      setRejectReason('');
+      setPopup({ type: 'success', message: 'Đã từ chối người chơi.' });
+    } catch (e) {
+      setPopup({ type: 'error', message: e instanceof Error ? e.message : 'Không thể từ chối người chơi' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleJoin = async () => {
     if (!match) return;
     setActionLoading(true);
     try {
       setMatch(await matchService.join(match.id));
+      if (match.isApprovalRequired) {
+        setPopup({ type: 'success', message: 'Đã gửi yêu cầu tham gia. Vui lòng chờ Host phê duyệt.' });
+      } else {
+        setPopup({ type: 'success', message: 'Tham gia thành công!' });
+      }
     } catch (e) {
       setPopup({ type: 'error', message: e instanceof Error ? e.message : 'Không thể tham gia' });
     } finally {
@@ -273,16 +348,18 @@ const MatchDetail: React.FC = () => {
           <h1 className="fw-bolder mb-4 match-title">{title}</h1>
           <div className="d-flex align-items-center justify-content-between">
             <div className="d-flex align-items-center">
-              <img
-                src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
-                alt={match.host.fullName}
-                className="rounded-circle me-3 border"
-                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-              />
+              <Link to={`/profile/${match.host.id}`}>
+                <img
+                  src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
+                  alt={match.host.fullName}
+                  className="rounded-circle me-3 border"
+                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                />
+              </Link>
               <div>
                 <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
                 <h6 className="fw-bold mb-0 d-flex align-items-center flex-wrap gap-1">
-                  {match.host.fullName}
+                  <Link to={`/profile/${match.host.id}`} className="text-decoration-none text-dark">{match.host.fullName}</Link>
                   {match.host.badges && match.host.badges.map(badge => (
                     <span key={badge} className={`badge rounded-pill fw-normal ms-1 ${badge === 'Tân binh' ? 'bg-secondary' : badge === 'Tích cực' ? 'bg-info' : badge === 'Thân thiện' ? 'bg-success' : badge === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '10px' }}>
                       {badge === 'Cảnh báo uy tín' && <i className="fa-solid fa-triangle-exclamation me-1"></i>}
@@ -315,8 +392,18 @@ const MatchDetail: React.FC = () => {
         </div>
       </div>
 
-      <div className="container py-4">
-        <div className="row position-relative">
+      <div className="container md-main-container">
+        {myParticipant?.status === 'rejected' && (
+          <div className="alert alert-danger d-flex align-items-center mb-4 shadow-sm border-0" role="alert" style={{ borderRadius: '12px', backgroundColor: '#fff5f5' }}>
+            <i className="fa-solid fa-circle-xmark fs-3 text-danger me-3"></i>
+            <div>
+              <h6 className="alert-heading fw-bold mb-1">Yêu cầu tham gia bị từ chối</h6>
+              <p className="mb-0 text-dark">Lý do: <span className="fw-semibold">{myParticipant.rejectReason || 'Không có lý do cụ thể'}</span></p>
+            </div>
+          </div>
+        )}
+
+        <div className="row g-4 position-relative">
           <div className="col-lg-8 pe-lg-5 mb-5">
             <div className="md-cover-wrap shadow-sm mb-5">
               <img src={derived.heroImage} alt={title} className="w-100 object-fit-cover md-cover-img" />
@@ -354,14 +441,16 @@ const MatchDetail: React.FC = () => {
             </div>
 
             <div className="d-flex flex-wrap gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm">
-              {derived.attendees.map((attendee) => (
+              {derived.attendees.filter(a => a.status === 'joined' || !a.status).map((attendee) => (
                 <div key={attendee.id} className="text-center attendee-item position-relative">
-                  <img
-                    src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
-                    alt={attendee.name}
-                    className="rounded-circle mb-2 border"
-                    style={{ width: '64px', height: '64px', objectFit: 'cover' }}
-                  />
+                  <Link to={`/profile/${attendee.id}`}>
+                    <img
+                      src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
+                      alt={attendee.name}
+                      className="rounded-circle mb-2 border"
+                      style={{ width: '64px', height: '64px', objectFit: 'cover' }}
+                    />
+                  </Link>
                   {attendee.badges && attendee.badges.length > 0 && (
                     <div className="position-absolute top-0 start-100 translate-middle" style={{ zIndex: 5, marginTop: '10px', marginLeft: '-15px' }}>
                        <span className={`badge rounded-pill border border-white ${attendee.badges[0] === 'Tân binh' ? 'bg-secondary' : attendee.badges[0] === 'Tích cực' ? 'bg-info' : attendee.badges[0] === 'Thân thiện' ? 'bg-success' : attendee.badges[0] === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '9px', padding: '0.25em 0.4em' }}>
@@ -370,11 +459,51 @@ const MatchDetail: React.FC = () => {
                        </span>
                     </div>
                   )}
-                  <p className="fw-bold mb-0 small text-truncate mx-auto" style={{ maxWidth: '80px' }}>{attendee.name.split(' ')[0]}</p>
+                  <p className="fw-bold mb-0 small text-truncate mx-auto" style={{ maxWidth: '80px' }}>
+                    <Link to={`/profile/${attendee.id}`} className="text-decoration-none text-dark">{attendee.name.split(' ')[0]}</Link>
+                  </p>
                   <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>{attendee.role}</p>
                 </div>
               ))}
             </div>
+
+            {isHost && derived.attendees.some(a => a.status === 'pending') && (
+              <div className="mb-5 p-4 bg-white rounded-4 shadow-sm border border-warning border-opacity-50">
+                <h5 className="fw-bold mb-3 text-warning"><i className="fa-solid fa-user-clock me-2"></i>Chờ duyệt tham gia</h5>
+                <div className="d-flex flex-column gap-3">
+                  {derived.attendees.filter(a => a.status === 'pending').map(attendee => (
+                    <div key={attendee.id} className="d-flex align-items-center justify-content-between p-3 border rounded bg-light">
+                      <div className="d-flex align-items-center">
+                        <Link to={`/profile/${attendee.id}`}>
+                          <img
+                            src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
+                            alt={attendee.name}
+                            className="rounded-circle me-3 border"
+                            style={{ width: '48px', height: '48px', objectFit: 'cover' }}
+                          />
+                        </Link>
+                        <div>
+                          <p className="fw-bold mb-0">
+                            <Link to={`/profile/${attendee.id}`} className="text-decoration-none text-dark">{attendee.name}</Link>
+                          </p>
+                          {attendee.badges && attendee.badges.length > 0 && (
+                            <span className="badge bg-secondary rounded-pill mt-1" style={{ fontSize: '10px' }}>{attendee.badges[0]}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="d-flex gap-2">
+                        <button className="btn btn-success btn-sm fw-bold rounded-pill px-3" onClick={() => handleApprove(attendee.id)} disabled={actionLoading || match.status !== 'open' || derived.spotsLeft === 0}>
+                          Duyệt
+                        </button>
+                        <button className="btn btn-outline-danger btn-sm fw-bold rounded-pill px-3" onClick={() => setShowRejectModal({ show: true, participantId: attendee.id })} disabled={actionLoading}>
+                          Từ chối
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <MatchComments matchId={match.id} />
           </div>
@@ -457,19 +586,55 @@ const MatchDetail: React.FC = () => {
                 <button className="btn btn-secondary rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" disabled>
                   {match.status === 'cancelled' ? 'Host đã ngừng hoạt động trận này' : 'Trận đã kết thúc'}
                 </button>
+              ) : myParticipant?.status === 'rejected' ? (
+                <button className="btn btn-outline-danger rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleJoin} disabled={actionLoading || isLocked}>
+                  {actionLoading ? '...' : 'Bị từ chối - Gửi lại'}
+                </button>
+              ) : myParticipant?.status === 'pending' ? (
+                <button className="btn btn-warning rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleLeave} disabled={actionLoading || isLocked}>
+                  {actionLoading ? '...' : 'Hủy xin tham gia'}
+                </button>
               ) : match.joined ? (
                 <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleLeave} disabled={actionLoading || isLocked}>
                   {actionLoading ? '...' : 'Rời trận'}
                 </button>
               ) : (
                 <button className="btn btn-dark rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleJoin} disabled={actionLoading || derived.spotsLeft === 0 || isLocked}>
-                  {actionLoading ? '...' : 'Tham gia'}
+                  {actionLoading ? '...' : (match.isApprovalRequired ? 'Xin tham gia' : 'Tham gia')}
                 </button>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {showRejectModal.show && (
+        <div className="md-popup-overlay" onClick={() => !actionLoading && setShowRejectModal({ show: false, participantId: null })}>
+          <div className="md-popup-card" onClick={(event) => event.stopPropagation()}>
+            <h5 className="md-popup-title text-danger">Từ chối người chơi</h5>
+            <p className="md-popup-message text-start">Vui lòng nhập lý do từ chối (người chơi sẽ thấy lý do này):</p>
+            <textarea
+              className="form-control mb-3"
+              rows={3}
+              placeholder="VD: Trình độ chưa phù hợp, Đội hình đã đủ..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+            <div className="md-popup-actions">
+              <button className="btn btn-outline-secondary rounded-pill px-4" onClick={() => setShowRejectModal({ show: false, participantId: null })} disabled={actionLoading}>
+                Hủy
+              </button>
+              <button
+                className="btn btn-danger rounded-pill px-4"
+                onClick={submitReject}
+                disabled={actionLoading || !rejectReason.trim()}
+              >
+                {actionLoading ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmAction && (
         <div className="md-popup-overlay" onClick={() => !actionLoading && setConfirmAction(null)}>

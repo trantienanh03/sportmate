@@ -48,4 +48,7 @@ public class CreateMatchRequest {
     private Integer fee;
 
     private String imageUrl;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("isApprovalRequired")
+    private Boolean isApprovalRequired;
 }
