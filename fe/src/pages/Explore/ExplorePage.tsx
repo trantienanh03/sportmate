@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import ExploreFilterSidebar from '../../components/ExploreFilterSidebar/ExploreFilterSidebar';

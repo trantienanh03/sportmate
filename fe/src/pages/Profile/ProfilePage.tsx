@@ -1,15 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
-import { useParams, Link } from 'react-router-dom';
 import { useAuth, type SportCard, type AvailabilitySlot } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { authService } from '../../services/authService';
 import { useProfileQuery, useUserReviewsQuery } from '../../hooks/useProfileQueries';
 import ProfilePageSkeleton from '../../components/Skeletons/ProfilePageSkeleton';
 import ReviewCardSkeleton from '../../components/Skeletons/ReviewCardSkeleton';
-import { ratingService, type UserReviewDto } from '../../services/ratingService';
 import { friendshipService, type FriendDto, type FriendshipStatusDto } from '../../services/friendshipService';
 import './ProfilePage.css';
 
@@ -79,7 +77,6 @@ const ProfilePage: React.FC = () => {
   const isOtherUser = !!id && id !== String(currentUser?.id);
   const targetUserId = isOtherUser ? Number(id) : currentUser?.id;
 
-  const [displayedUser, setDisplayedUser] = useState<any>(currentUser);
   const [friendStatus, setFriendStatus] = useState<FriendshipStatusDto>({ status: 'NONE' });
   const [friendsList, setFriendsList] = useState<FriendDto[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendDto[]>([]);
@@ -93,7 +90,7 @@ const ProfilePage: React.FC = () => {
   const profileData = isOwnProfile ? user : otherProfile;
   const isProfileLoading = isOwnProfile ? !user : isOtherProfileLoading;
 
-  const targetUserId = isOwnProfile ? user?.id : Number(id);
+  const displayedUser = profileData;
   const { data: reviews = [], isLoading: isReviewsLoading } = useUserReviewsQuery(Number(targetUserId), !!targetUserId);
   
   // Independent Edit States
@@ -138,13 +135,11 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (isOtherUser && id) {
-      authService.getOtherProfile(Number(id)).then(setDisplayedUser).catch(console.error);
       friendshipService.getFriendshipStatus(Number(id)).then(setFriendStatus).catch(console.error);
       friendshipService.getUserFriends(Number(id))
         .then(setFriendsList)
         .catch(() => setFriendsList([]));
     } else if (currentUser) {
-      setDisplayedUser(currentUser);
       friendshipService.getMyFriends().then(setFriendsList).catch(console.error);
       friendshipService.getPendingRequests().then(setPendingRequests).catch(console.error);
     }
@@ -185,30 +180,7 @@ const ProfilePage: React.FC = () => {
     return () => window.removeEventListener('friendship_update_event', handleFriendUpdate);
   }, [isOtherUser, id]);
 
-  // Sync data from user
-  useEffect(() => {
-    if (!displayedUser) return;
-
-    setFormData({
-      fullName: displayedUser.fullName ?? '',
-      avatarUrl: displayedUser.avatarUrl ?? '',
-      bio: displayedUser.bio ?? '',
-      district: displayedUser.district ?? '',
-      lat: toInputValue(displayedUser.lat),
-      lng: toInputValue(displayedUser.lng),
-    });
-
-    if (displayedUser.sports && displayedUser.sports.length > 0) {
-      setSportCards(displayedUser.sports);
-    }
-    if (displayedUser.availability && displayedUser.availability.length > 0) {
-      setAvailabilitySlots(displayedUser.availability);
-    }
-
-    // Fetch reviews
-    ratingService.getUserReviews(displayedUser.id).then(setReviews).catch(console.error);
-  }, [displayedUser]);
->>>>>>> 73c02976e4aaea244eb38afb0864282ee7c20ba8
+  // Sync handled via profileData above
 
   // Messages timeout
   useEffect(() => {
