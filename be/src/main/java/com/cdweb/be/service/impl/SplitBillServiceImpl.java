@@ -8,11 +8,14 @@ import com.cdweb.be.entity.*;
 import com.cdweb.be.enums.BillStatus;
 import com.cdweb.be.enums.MemberRole;
 import com.cdweb.be.enums.MessageType;
+import com.cdweb.be.enums.NotificationType;
 import com.cdweb.be.enums.PaymentStatus;
 import com.cdweb.be.exception.AppException;
 import com.cdweb.be.repository.*;
+import com.cdweb.be.service.NotificationService;
 import com.cdweb.be.service.SplitBillService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SplitBillServiceImpl implements SplitBillService {
 
     private final SplitBillRepository splitBillRepository;
@@ -37,6 +41,7 @@ public class SplitBillServiceImpl implements SplitBillService {
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -115,6 +120,24 @@ public class SplitBillServiceImpl implements SplitBillService {
         savedBill.setMessageId(savedMsg.getId());
         splitBillRepository.save(savedBill);
 
+        // Gửi thông báo đến tất cả thành viên khác trong phòng chat
+        try {
+            for (RoomMember member : activeMembers) {
+                if (!member.getUserId().equals(hostId)) {
+                    notificationService.sendNotification(
+                            member.getUserId(),
+                            hostId,
+                            "hóa đơn chia tiền mới",
+                            "Host đã tạo hóa đơn \"" + req.getTitle() + "\".",
+                            NotificationType.BILL_CREATED,
+                            room.getId()
+                    );
+                }
+            }
+        } catch (Exception e) {
+            log.error("Lỗi gửi thông báo hóa đơn mới: ", e);
+        }
+
         // Gửi WebSocket SAU KHI transaction commit để tránh race condition:
         // Nếu gửi trong transaction, FE có thể gọi GET /split-bills/{id} khi DB chưa commit -> 404
         User sender = userRepository.findById(hostId)
@@ -190,6 +213,22 @@ public class SplitBillServiceImpl implements SplitBillService {
         payment.setScannedAt(LocalDateTime.now());
         billPaymentRepository.save(payment);
 
+        // Gửi thông báo báo thanh toán tới Host (người tạo hóa đơn)
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy thông tin người dùng"));
+            notificationService.sendNotification(
+                    bill.getCreatedBy(),
+                    userId,
+                    "đã báo thanh toán hóa đơn",
+                    user.getFullName() + " đã báo chuyển khoản cho hóa đơn \"" + bill.getTitle() + "\".",
+                    NotificationType.BILL_PAID,
+                    bill.getRoomId()
+            );
+        } catch (Exception e) {
+            log.error("Lỗi gửi thông báo báo thanh toán hóa đơn: ", e);
+        }
+
         List<BillPayment> payments = billPaymentRepository.findByBillId(billId);
         return mapToSplitBillDto(bill, payments);
     }
@@ -229,6 +268,20 @@ public class SplitBillServiceImpl implements SplitBillService {
             payment.setScannedAt(LocalDateTime.now());
         }
         billPaymentRepository.save(payment);
+
+        // Gửi thông báo xác nhận thanh toán thành công tới thành viên
+        try {
+            notificationService.sendNotification(
+                    targetUserId,
+                    hostId,
+                    "xác nhận thanh toán thành công",
+                    "Host đã xác nhận bạn hoàn thành thanh toán cho hóa đơn \"" + bill.getTitle() + "\".",
+                    NotificationType.BILL_CONFIRMED,
+                    bill.getRoomId()
+            );
+        } catch (Exception e) {
+            log.error("Lỗi gửi thông báo xác nhận thanh toán hóa đơn: ", e);
+        }
 
         List<BillPayment> allPayments = billPaymentRepository.findByBillId(billId);
 

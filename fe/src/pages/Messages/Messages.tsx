@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import LoggedInNavbar from "../../components/LoggedInNavbar/LoggedInNavbar";
@@ -13,16 +13,15 @@ import SplitBillCard from "../../components/SplitBillCard/SplitBillCard";
 import BillDetailPanel from "../../components/BillDetailPanel/BillDetailPanel";
 import RoomSidebar from "../../components/RoomSidebar/RoomSidebar";
 import type { SplitBillDto } from "../../services/splitBillService";
-
-interface ExtendedRoom extends RoomSummaryDto {
-  messages: MessageDto[];
-  hasUnread: boolean;
-}
+import { useQueryClient } from "@tanstack/react-query";
+import { useChatRoomsQuery, useChatMessagesQuery, chatKeys } from "../../hooks/useChatQueries";
+import ChatListSkeleton from "../../components/Skeletons/ChatListSkeleton";
+import { useNotifications } from "../../context/NotificationContext";
 
 const Messages: React.FC = () => {
 
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [conversations, setConversations] = useState<ExtendedRoom[]>([]);
   const [activeTab, setActiveTab] = useState<"GROUP" | "DIRECT">("GROUP");
   const [selectedConvoId, setSelectedConvoId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -37,26 +36,75 @@ const Messages: React.FC = () => {
   const [completedBills, setCompletedBills] = useState<Record<number, boolean>>({});
   const [showRoomSidebar, setShowRoomSidebar] = useState<boolean>(false);
 
+  const { notifications, markAsRead } = useNotifications();
+
+  // Quản lý trạng thái chưa đọc thủ công khi có tin nhắn mới qua WebSocket
+  const [unreadRooms, setUnreadRooms] = useState<Record<number, boolean>>({});
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 1. Tải danh sách phòng chat sử dụng React Query hook
+  const { data: rooms = [], isLoading: isRoomsLoading } = useChatRoomsQuery();
+
+  // 2. Tải lịch sử tin nhắn phòng đang chọn sử dụng React Query hook
+  const { data: activeRoomMessages = [] } = useChatMessagesQuery(
+    selectedConvoId || 0,
+    !!selectedConvoId
+  );
 
   useEffect(() => {
     authService.getProfile()
       .then(user => setUserId(user.id))
       .catch(err => console.error("Không thể lấy thông tin người dùng:", err));
-
-    chatService.getRooms()
-      .then(rooms => {
-        const extendedRooms: ExtendedRoom[] = rooms.map(r => ({
-          ...r,
-          messages: [],
-          hasUnread: false
-        }));
-        setConversations(extendedRooms);
-      })
-      .catch(err => console.error("Không thể tải danh sách phòng chat:", err));
   }, []);
 
-  // Dùng useCallback để giữ nguyên tham chiếu của callback, tránh làm useWebSocket bị kích hoạt kết nối lại (reconnect) liên tục.
+  // Khởi tạo trạng thái chấm đỏ chưa đọc từ danh sách thông báo đã lưu
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const unreadMap: Record<number, boolean> = {};
+      notifications.forEach((notif) => {
+        if (notif.type === "NEW_MESSAGE" && !notif.isRead && notif.relatedEntityId) {
+          unreadMap[notif.relatedEntityId] = true;
+        }
+      });
+      setUnreadRooms((prev) => ({ ...unreadMap, ...prev }));
+    }
+  }, [notifications]);
+
+  // Đồng bộ hóa chấm đỏ chưa đọc và đẩy phòng chat lên đầu khi có tin nhắn mới
+  useEffect(() => {
+    const latestNotif = notifications[0];
+    if (latestNotif && latestNotif.type === "NEW_MESSAGE" && !latestNotif.isRead) {
+      const roomId = latestNotif.relatedEntityId;
+      if (roomId && roomId !== selectedConvoId) {
+        setUnreadRooms((prev) => ({ ...prev, [roomId]: true }));
+
+        // Cập nhật cache để đẩy phòng chat lên đầu danh sách phòng
+        queryClient.setQueryData<RoomSummaryDto[]>(chatKeys.rooms(), (oldRooms) => {
+          if (!oldRooms) return oldRooms;
+          return oldRooms.map((r) => {
+            if (r.id === roomId) {
+              return { ...r, lastMessageAt: latestNotif.createdAt };
+            }
+            return r;
+          });
+        });
+      }
+    }
+  }, [notifications, selectedConvoId, queryClient]);
+
+  // Tự động đánh dấu đã đọc các thông báo tin nhắn của phòng đang xem
+  useEffect(() => {
+    if (selectedConvoId && notifications.length > 0) {
+      notifications.forEach((notif) => {
+        if (notif.type === "NEW_MESSAGE" && notif.relatedEntityId === selectedConvoId && !notif.isRead) {
+          markAsRead(notif.id);
+        }
+      });
+    }
+  }, [selectedConvoId, notifications, markAsRead]);
+
+  // Xử lý sự kiện nhận tin nhắn mới từ WebSocket
   const handleNewMessage = useCallback((newMsg: MessageDto) => {
     if (newMsg.type === "FEE_SPLIT" && newMsg.metadata) {
       try {
@@ -69,32 +117,50 @@ const Messages: React.FC = () => {
       }
     }
 
-    setConversations(prev => prev.map(c => {
-      if (c.id === newMsg.roomId) {
-        const exists = c.messages.find(m => m.id === newMsg.id);
-        if (exists) return c;
-        return {
-          ...c,
-          messages: [...c.messages, newMsg],
-          lastMessageAt: newMsg.createdAt
-        };
-      }
-      return c;
-    }));
+    // Cập nhật cache React Query cho danh sách tin nhắn của phòng
+    queryClient.setQueryData<MessageDto[]>(chatKeys.messages(newMsg.roomId), (oldMessages) => {
+      // Đọc fallback từ local cache của service nếu query cache chưa có
+      const fallbackMsgs = oldMessages || chatService.getCachedRoomMessages(newMsg.roomId) || [];
+      const exists = fallbackMsgs.some(m => m.id === newMsg.id);
+      if (exists) return fallbackMsgs;
+      return [...fallbackMsgs, newMsg];
+    });
 
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  }, []);
+    // Cập nhật cache React Query cho danh sách phòng chat (cập nhật thời gian tin nhắn mới nhất)
+    queryClient.setQueryData<RoomSummaryDto[]>(chatKeys.rooms(), (oldRooms) => {
+      const fallbackRooms = oldRooms || rooms;
+      return fallbackRooms.map(r => {
+        if (r.id === newMsg.roomId) {
+          return {
+            ...r,
+            lastMessageAt: newMsg.createdAt
+          };
+        }
+        return r;
+      });
+    });
+
+    // Đánh dấu chưa đọc nếu tin nhắn thuộc về phòng khác
+    if (newMsg.roomId !== selectedConvoId) {
+      setUnreadRooms(prev => ({ ...prev, [newMsg.roomId]: true }));
+    }
+
+    if (newMsg.roomId === selectedConvoId) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, [selectedConvoId, queryClient, rooms]);
 
   const { sendMessage, isConnected } = useWebSocket(selectedConvoId, handleNewMessage);
 
+  // Sync selectedConvoId từ URL query param
   useEffect(() => {
     const roomIdParam = searchParams.get("roomId");
-    if (roomIdParam && conversations.length > 0) {
+    if (roomIdParam && rooms.length > 0) {
       const parsedId = parseInt(roomIdParam);
       if (selectedConvoId !== parsedId) {
-        const exists = conversations.find((c) => c.id === parsedId);
+        const exists = rooms.find((c) => c.id === parsedId);
         if (exists) {
           setSelectedConvoId(parsedId);
           setActiveTab(exists.type as any);
@@ -102,51 +168,69 @@ const Messages: React.FC = () => {
         }
       }
     }
-  }, [searchParams, conversations, selectedConvoId]);
-  useEffect(() => {
-    if (selectedConvoId) {
-      chatService.getMessages(selectedConvoId)
-        .then(fetchedMessages => {
-          const sorted = [...fetchedMessages].reverse();
-          setConversations(prev => prev.map(c => {
-            if (c.id !== selectedConvoId) return c;
-            const existingIds = new Set(sorted.map(m => m.id));
-            const newFromWs = c.messages.filter(m => !existingIds.has(m.id));
-            const merged = [...sorted, ...newFromWs].sort((a, b) => a.id - b.id);
-            return { ...c, messages: merged };
-          }));
-          setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-          }, 100);
-        })
-        .catch(err => console.error("Không thể tải tin nhắn:", err));
-    }
-  }, [selectedConvoId]);
+  }, [searchParams, rooms, selectedConvoId]);
 
-  const activeConvo = conversations.find((c) => c.id === selectedConvoId);
+  // Cuộn xuống cuối khi chuyển phòng chat hoặc nhận tin nhắn mới trong hook
+  useEffect(() => {
+    if (selectedConvoId && activeRoomMessages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, [selectedConvoId, activeRoomMessages]);
+
+  const activeConvo = useMemo(() => {
+    if (!selectedConvoId) return null;
+    const room = rooms.find(r => r.id === selectedConvoId);
+    if (!room) return null;
+
+    const cachedMsgs = queryClient.getQueryData<MessageDto[]>(chatKeys.messages(selectedConvoId)) 
+      || chatService.getCachedRoomMessages(selectedConvoId) 
+      || [];
+
+    return {
+      ...room,
+      messages: cachedMsgs,
+      hasUnread: !!unreadRooms[selectedConvoId]
+    };
+  }, [rooms, selectedConvoId, unreadRooms, queryClient, activeRoomMessages]);
+
   const isHost = activeConvo && userId !== null && activeConvo.createdBy === userId;
 
-  const filteredConversations = conversations
-    .filter((convo) => {
-      const matchesTab = convo.type === activeTab;
-      const matchesSearch =
-        convo.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesTab && matchesSearch;
-    })
-    .sort((a, b) => {
-      const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
-      const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
-      return timeB - timeA;
-    });
+  const filteredConversations = useMemo(() => {
+    return rooms
+      .filter((convo) => {
+        const matchesTab = convo.type === activeTab;
+        const matchesSearch =
+          convo.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesTab && matchesSearch;
+      })
+      .map((convo) => {
+        const cachedMsgs = queryClient.getQueryData<MessageDto[]>(chatKeys.messages(convo.id)) 
+          || chatService.getCachedRoomMessages(convo.id) 
+          || [];
+        return {
+          ...convo,
+          messages: cachedMsgs,
+          hasUnread: !!unreadRooms[convo.id]
+        };
+      })
+      .sort((a, b) => {
+        const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        return timeB - timeA;
+      });
+  }, [rooms, activeTab, searchQuery, unreadRooms, queryClient, activeRoomMessages]);
 
   const handleSelectConvo = (id: number) => {
     setSelectedConvoId(id);
     setIsMobileChatActive(true);
     setShowRoomSidebar(false);
-    setConversations((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, hasUnread: false } : c))
-    );
-    const selected = conversations.find((c) => c.id === id);
+    
+    // Đánh dấu đã đọc cho phòng này
+    setUnreadRooms((prev) => ({ ...prev, [id]: false }));
+
+    const selected = rooms.find((c) => c.id === id);
     if (selected && selected.type === "GROUP") {
       setSearchParams({ roomId: id.toString() });
     } else {
@@ -244,7 +328,9 @@ const Messages: React.FC = () => {
             </div>
 
             <div className="conversations-scroll-area">
-              {filteredConversations.length === 0 ? (
+              {isRoomsLoading ? (
+                <ChatListSkeleton />
+              ) : filteredConversations.length === 0 ? (
                 <div className="text-center py-5 text-muted small">
                   Không tìm thấy hội thoại nào.
                 </div>

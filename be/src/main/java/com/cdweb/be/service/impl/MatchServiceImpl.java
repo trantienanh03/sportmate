@@ -57,15 +57,23 @@ public class MatchServiceImpl implements MatchService {
 
     // ── Get All Matches ──────────────────────────────────────────────
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MatchDetailDto> getMatches(Integer currentUserId) {
-        return buildDtos(matchRepository.findAllByOrderByCreatedAtDesc(), currentUserId);
+        // Tự động quét và cập nhật trạng thái các trận đấu đã quá giờ bắt đầu sang completed
+        checkAndCompleteExpiredMatches();
+
+        // Chỉ hiển thị các trận đấu chưa bắt đầu (startTime > hiện tại) và đang ở trạng thái tuyển người (open/full) trên trang chủ
+        List<Match> upcomingMatches = matchRepository.findUpcomingMatches(LocalDateTime.now());
+        return buildDtos(upcomingMatches, currentUserId);
     }
 
     // ── Match Detail ─────────────────────────────────────────────────
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public MatchDetailDto getMatchDetail(Integer matchId, Integer currentUserId) {
+        // Trước khi lấy chi tiết, tự động cập nhật trạng thái nếu trận đấu đã quá giờ bắt đầu
+        checkAndCompleteExpiredMatches();
+
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Match not found"));
         return buildDto(match, currentUserId);
@@ -524,13 +532,35 @@ public class MatchServiceImpl implements MatchService {
         match.setStatus(status);
         matchRepository.save(match);
 
+        if (status == MatchStatus.completed) {
+            try {
+                List<MatchParticipant> participants = matchParticipantRepository.findByMatch_Id(matchId);
+                for (MatchParticipant participant : participants) {
+                    if (!participant.getUser().getId().equals(hostId)) {
+                        notificationService.sendNotification(
+                                participant.getUser().getId(),
+                                hostId,
+                                "yêu cầu đánh giá đồng đội",
+                                "Trận đấu \"" + match.getTitle() + "\" đã kết thúc. Hãy gửi đánh giá cho những người chơi khác.",
+                                NotificationType.MATCH_REVIEW_REQUEST,
+                                matchId
+                        );
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Lỗi gửi thông báo yêu cầu đánh giá trận đấu: ", e);
+            }
+        }
+
         return buildDto(match, hostId);
     }
 
     // ── Explore Matches ──────────────────────────────────────────────
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MatchDetailDto> exploreMatches(ExploreMatchRequest request, Integer currentUserId) {
+        // Tự động quét và cập nhật trạng thái các trận đấu đã quá giờ bắt đầu trước khi tìm kiếm
+        checkAndCompleteExpiredMatches();
         Double radiusKm = request.getRadiusKm();
         if (radiusKm == null && request.getLat() != null && request.getLng() != null) {
             radiusKm = 10.0; // default 10km when location is provided
@@ -715,6 +745,30 @@ public class MatchServiceImpl implements MatchService {
                     return buildDtoWithStats(match, participants, joined, globalUserStatMap, globalReportCountMap);
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Tự động quét các trận đấu đã quá giờ bắt đầu (startTime < hiện tại) 
+     * nhưng vẫn ở trạng thái open/full để cập nhật sang completed.
+     */
+    private void checkAndCompleteExpiredMatches() {
+        try {
+            int updatedCount = matchRepository.autoCompleteExpiredMatches(LocalDateTime.now());
+            if (updatedCount > 0) {
+                log.info("Auto-completed {} expired matches successfully.", updatedCount);
+            }
+        } catch (Exception e) {
+            log.error("Failed to auto-complete expired matches", e);
+        }
+    }
+
+    // Lấy lịch trình của người dùng. Trước đó thực hiện tự động hoàn thành các trận đã qua giờ.
+    @Override
+    @Transactional
+    public List<MatchDetailDto> getUserSchedule(Integer userId) {
+        checkAndCompleteExpiredMatches();
+        List<Match> scheduleMatches = matchRepository.findUserSchedule(userId, LocalDateTime.now());
+        return buildDtos(scheduleMatches, userId);
     }
 
     private void refreshStatusByCapacity(Match match) {

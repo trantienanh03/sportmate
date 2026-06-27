@@ -13,10 +13,30 @@ import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.cdweb.be.enums.MatchStatus;
 
 public interface MatchRepository extends JpaRepository<Match, Integer> {
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE matches SET status = 'completed'::match_status WHERE start_time < :now AND status IN ('open'::match_status, 'full'::match_status)", nativeQuery = true)
+    int autoCompleteExpiredMatches(@Param("now") LocalDateTime now);
+
+    @Query(value = "SELECT m.* FROM matches m WHERE m.status IN ('open'::match_status, 'full'::match_status) AND m.start_time > :now ORDER BY m.start_time ASC", nativeQuery = true)
+    List<Match> findUpcomingMatches(@Param("now") LocalDateTime now);
+    
+    // Truy vấn native lấy các trận đấu chưa kết thúc (open/full) mà user làm host hoặc đã tham gia thành công (joined)
+    // Sắp xếp theo thứ tự start_time tăng dần (gần nhất đến xa nhất)
+    @Query(value = "SELECT DISTINCT m.* FROM matches m " +
+                   "LEFT JOIN match_participants mp ON m.id = mp.match_id " +
+                   "WHERE (m.host_id = :userId OR (mp.user_id = :userId AND mp.status = 'joined')) " +
+                   "AND m.status IN ('open'::match_status, 'full'::match_status) " +
+                   "AND m.start_time > :now " +
+                   "ORDER BY m.start_time ASC", nativeQuery = true)
+    List<Match> findUserSchedule(@Param("userId") Integer userId, @Param("now") LocalDateTime now);
+
     List<Match> findByHostIdOrderByStartTimeDesc(Integer hostId);
 
     List<Match> findAllByOrderByCreatedAtDesc();

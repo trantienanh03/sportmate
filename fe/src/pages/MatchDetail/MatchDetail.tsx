@@ -5,6 +5,10 @@ import SockJS from 'sockjs-client';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import { useAuth } from '../../context/AuthContext';
 import { matchService, type MatchDetail as MatchDetailType } from '../../services/matchService';
+import { authService } from '../../services/authService';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useMatchDetailQuery, matchKeys } from '../../hooks/useMatchQueries';
+import MatchDetailSkeleton from '../../components/Skeletons/MatchDetailSkeleton';
 import MatchComments from '../../components/MatchComments/MatchComments';
 import ReportModal from '../../components/ReportModal/ReportModal';
 import RatingModal from '../../components/RatingModal/RatingModal';
@@ -60,11 +64,12 @@ const formatTime = (start: string, end?: string | null) => {
 const MatchDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const [match, setMatch] = useState<MatchDetailType | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<'cancel' | 'resume' | null>(null);
+  
+  const queryClient = useQueryClient();
+  const { data: match, isLoading: loading, error: matchError } = useMatchDetailQuery(Number(id));
+  const error = matchError ? (matchError as Error).message : null;
+
+  const [confirmAction, setConfirmAction] = useState<'cancel' | 'resume' | 'complete' | null>(null);
   const [popup, setPopup] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportPopup, setReportPopup] = useState<{ show: boolean; reportId: number | null }>({ show: false, reportId: null });
@@ -73,18 +78,197 @@ const MatchDetail: React.FC = () => {
   const [rateableParticipants, setRateableParticipants] = useState<any[]>([]);
   const [showRatingModal, setShowRatingModal] = useState(false);
 
+  // Mutation tham gia trận đấu có tích hợp Optimistic Update
+  const joinMutation = useMutation({
+    mutationFn: () => matchService.join(Number(id)),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: matchKeys.detail(Number(id)) });
+      const previousMatch = queryClient.getQueryData<MatchDetailType>(matchKeys.detail(Number(id)));
+      if (previousMatch) {
+        queryClient.setQueryData<MatchDetailType>(matchKeys.detail(Number(id)), {
+          ...previousMatch,
+          joined: true,
+          currentPlayers: previousMatch.currentPlayers + 1,
+          participants: [
+            ...previousMatch.participants,
+            {
+              userId: user?.id || 0,
+              fullName: user?.fullName || '',
+              avatarUrl: user?.avatarUrl || '',
+              role: 'player',
+              status: 'joined',
+            }
+          ]
+        });
+      }
+      return { previousMatch };
+    },
+    onSuccess: () => {
+      if (match?.isApprovalRequired) {
+        setPopup({ type: 'success', message: 'Đã gửi yêu cầu tham gia. Vui lòng chờ Host phê duyệt.' });
+      } else {
+        setPopup({ type: 'success', message: 'Tham gia thành công!' });
+      }
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousMatch) {
+        queryClient.setQueryData(matchKeys.detail(Number(id)), context.previousMatch);
+      }
+      setPopup({ type: 'error', message: err instanceof Error ? err.message : 'Không thể tham gia' });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
+    }
+  });
+
+  // Mutation rời trận đấu có tích hợp Optimistic Update
+  const leaveMutation = useMutation({
+    mutationFn: () => matchService.leave(Number(id)),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: matchKeys.detail(Number(id)) });
+      const previousMatch = queryClient.getQueryData<MatchDetailType>(matchKeys.detail(Number(id)));
+      if (previousMatch) {
+        queryClient.setQueryData<MatchDetailType>(matchKeys.detail(Number(id)), {
+          ...previousMatch,
+          joined: false,
+          currentPlayers: Math.max(previousMatch.currentPlayers - 1, 0),
+          participants: previousMatch.participants.filter(p => p.userId !== user?.id)
+        });
+      }
+      return { previousMatch };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousMatch) {
+        queryClient.setQueryData(matchKeys.detail(Number(id)), context.previousMatch);
+      }
+      setPopup({ type: 'error', message: err instanceof Error ? err.message : 'Không thể rời trận' });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
+    }
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: () => matchService.cancelMatch(Number(id)),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: matchKeys.detail(Number(id)) });
+      const previousMatch = queryClient.getQueryData<MatchDetailType>(matchKeys.detail(Number(id)));
+      if (previousMatch) {
+        queryClient.setQueryData<MatchDetailType>(matchKeys.detail(Number(id)), {
+          ...previousMatch,
+          status: 'cancelled'
+        });
+      }
+      return { previousMatch };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousMatch) {
+        queryClient.setQueryData(matchKeys.detail(Number(id)), context.previousMatch);
+      }
+      setPopup({ type: 'error', message: err instanceof Error ? err.message : 'Không thể hủy trận đấu' });
+    },
+    onSettled: (data) => {
+      if (data) {
+        setPopup({ type: 'success', message: 'Trận đấu đã được hủy.' });
+      }
+      queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
+    }
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: () => matchService.resumeMatch(Number(id)),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: matchKeys.detail(Number(id)) });
+      const previousMatch = queryClient.getQueryData<MatchDetailType>(matchKeys.detail(Number(id)));
+      if (previousMatch) {
+        queryClient.setQueryData<MatchDetailType>(matchKeys.detail(Number(id)), {
+          ...previousMatch,
+          status: 'upcoming'
+        });
+      }
+      return { previousMatch };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousMatch) {
+        queryClient.setQueryData(matchKeys.detail(Number(id)), context.previousMatch);
+      }
+      setPopup({ type: 'error', message: err instanceof Error ? err.message : 'Không thể khôi phục trận đấu' });
+    },
+    onSettled: (data) => {
+      if (data) {
+        setPopup({ type: 'success', message: 'Trận đấu đã được khôi phục.' });
+      }
+      queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
+    }
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: () => matchService.updateMatchStatus(Number(id), 'completed'),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: matchKeys.detail(Number(id)) });
+      const previousMatch = queryClient.getQueryData<MatchDetailType>(matchKeys.detail(Number(id)));
+      if (previousMatch) {
+        queryClient.setQueryData<MatchDetailType>(matchKeys.detail(Number(id)), {
+          ...previousMatch,
+          status: 'completed'
+        });
+      }
+      return { previousMatch };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousMatch) {
+        queryClient.setQueryData(matchKeys.detail(Number(id)), context.previousMatch);
+      }
+      setPopup({ type: 'error', message: err instanceof Error ? err.message : 'Không thể hoàn thành trận đấu' });
+    },
+    onSettled: (data) => {
+      if (data) {
+        setPopup({ type: 'success', message: 'Trận đấu đã được xác nhận hoàn thành.' });
+      }
+      queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
+    }
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: (participantUserId: number) => matchService.approveParticipant(Number(id), participantUserId),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
+    },
+    onSuccess: () => {
+      setPopup({ type: 'success', message: 'Đã duyệt người chơi thành công.' });
+    },
+    onError: (err) => {
+      setPopup({ type: 'error', message: err instanceof Error ? err.message : 'Không thể duyệt người chơi' });
+    }
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ participantUserId, reason }: { participantUserId: number; reason: string }) =>
+      matchService.rejectParticipant(Number(id), participantUserId, reason),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
+    },
+    onSuccess: () => {
+      setPopup({ type: 'success', message: 'Đã từ chối người chơi.' });
+      setShowRejectModal({ show: false, participantId: null });
+      setRejectReason('');
+    },
+    onError: (err) => {
+      setPopup({ type: 'error', message: err instanceof Error ? err.message : 'Không thể từ chối người chơi' });
+    }
+  });
+
+  const actionLoading = joinMutation.isPending || leaveMutation.isPending || cancelMutation.isPending || resumeMutation.isPending || completeMutation.isPending || approveMutation.isPending || rejectMutation.isPending;
+
   const clientRef = useRef<Client | null>(null);
 
   useEffect(() => {
     if (!id) return;
-
-    setLoading(true);
-    setError(null);
-    matchService
-      .getMatch(Number(id))
-      .then(setMatch)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
 
     // WebSocket Connection
     const client = new Client({
@@ -97,7 +281,7 @@ const MatchDetail: React.FC = () => {
     client.onConnect = () => {
       client.subscribe(`/topic/matches/${id}`, (message) => {
         if (message.body) {
-          matchService.getMatch(Number(id)).then(setMatch).catch(console.error);
+          queryClient.invalidateQueries({ queryKey: matchKeys.detail(Number(id)) });
         }
       });
     };
@@ -114,7 +298,7 @@ const MatchDetail: React.FC = () => {
         clientRef.current.deactivate();
       }
     };
-  }, [id]);
+  }, [id, queryClient]);
 
   useEffect(() => {
     const checkReportStatus = async () => {
@@ -203,61 +387,21 @@ const MatchDetail: React.FC = () => {
   const [showRejectModal, setShowRejectModal] = useState<{ show: boolean, participantId: number | null }>({ show: false, participantId: null });
   const [rejectReason, setRejectReason] = useState('');
 
-  const handleApprove = async (participantId: number) => {
-    if (!match) return;
-    setActionLoading(true);
-    try {
-      setMatch(await matchService.approveParticipant(match.id, participantId));
-      setPopup({ type: 'success', message: 'Đã duyệt người chơi thành công.' });
-    } catch (e) {
-      setPopup({ type: 'error', message: e instanceof Error ? e.message : 'Không thể duyệt người chơi' });
-    } finally {
-      setActionLoading(false);
-    }
+  const handleApprove = (participantId: number) => {
+    approveMutation.mutate(participantId);
   };
 
-  const submitReject = async () => {
-    if (!match || !showRejectModal.participantId) return;
-    setActionLoading(true);
-    try {
-      setMatch(await matchService.rejectParticipant(match.id, showRejectModal.participantId, rejectReason));
-      setShowRejectModal({ show: false, participantId: null });
-      setRejectReason('');
-      setPopup({ type: 'success', message: 'Đã từ chối người chơi.' });
-    } catch (e) {
-      setPopup({ type: 'error', message: e instanceof Error ? e.message : 'Không thể từ chối người chơi' });
-    } finally {
-      setActionLoading(false);
-    }
+  const submitReject = () => {
+    if (!showRejectModal.participantId) return;
+    rejectMutation.mutate({ participantUserId: showRejectModal.participantId, reason: rejectReason });
   };
 
-  const handleJoin = async () => {
-    if (!match) return;
-    setActionLoading(true);
-    try {
-      setMatch(await matchService.join(match.id));
-      if (match.isApprovalRequired) {
-        setPopup({ type: 'success', message: 'Đã gửi yêu cầu tham gia. Vui lòng chờ Host phê duyệt.' });
-      } else {
-        setPopup({ type: 'success', message: 'Tham gia thành công!' });
-      }
-    } catch (e) {
-      setPopup({ type: 'error', message: e instanceof Error ? e.message : 'Không thể tham gia' });
-    } finally {
-      setActionLoading(false);
-    }
+  const handleJoin = () => {
+    joinMutation.mutate();
   };
 
-  const handleLeave = async () => {
-    if (!match) return;
-    setActionLoading(true);
-    try {
-      setMatch(await matchService.leave(match.id));
-    } catch (e) {
-      setPopup({ type: 'error', message: e instanceof Error ? e.message : 'Không thể rời trận' });
-    } finally {
-      setActionLoading(false);
-    }
+  const handleLeave = () => {
+    leaveMutation.mutate();
   };
 
   const handleCancelMatch = async () => {
@@ -268,27 +412,22 @@ const MatchDetail: React.FC = () => {
     setConfirmAction('resume');
   };
 
+  const handleCompleteMatch = async () => {
+    setConfirmAction('complete');
+  };
+
+  // Xác nhận hành động (hủy, khôi phục hoặc hoàn thành) và thực hiện gọi API tương ứng
   const handleConfirmAction = async () => {
     if (!match || !confirmAction) return;
 
-    const isCancel = confirmAction === 'cancel';
-    setActionLoading(true);
-    try {
-      const updated = isCancel ? await matchService.cancelMatch(match.id) : await matchService.resumeMatch(match.id);
-      setMatch(updated);
-      setPopup({
-        type: 'success',
-        message: isCancel ? 'Trận đấu đã được hủy.' : 'Trận đấu đã được khôi phục.',
-      });
-      setConfirmAction(null);
-    } catch (e) {
-      setPopup({
-        type: 'error',
-        message: e instanceof Error ? e.message : isCancel ? 'Không thể hủy trận đấu' : 'Không thể khôi phục trận đấu',
-      });
-    } finally {
-      setConfirmAction(null);
+    if (confirmAction === 'cancel') {
+      cancelMutation.mutate();
+    } else if (confirmAction === 'complete') {
+      completeMutation.mutate();
+    } else {
+      resumeMutation.mutate();
     }
+    setConfirmAction(null);
   };
 
   const handleUndoReport = async (reportId: number) => {
@@ -302,22 +441,15 @@ const MatchDetail: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="match-detail-page bg-light min-vh-100">
-        <LoggedInNavbar />
-        <div className="md-center-state">
-          <div className="spinner-border text-primary" role="status" />
-        </div>
-      </div>
-    );
+  if (loading || !match || !derived) {
+    return <MatchDetailSkeleton />;
   }
 
-  if (error || !match || !derived) {
+  if (error) {
     return (
       <div className="match-detail-page bg-light min-vh-100">
         <LoggedInNavbar />
-        <div className="md-center-state md-error-text">{error ?? 'Match not found'}</div>
+        <div className="md-center-state md-error-text">{error}</div>
       </div>
     );
   }
@@ -331,10 +463,18 @@ const MatchDetail: React.FC = () => {
   const title = match.title;
   const address = match.venue?.address || match.locationText || 'Chưa có địa điểm';
   const venueName = match.venue?.name || match.locationText || 'TBD';
-  const confirmTitle = confirmAction === 'cancel' ? 'Xác nhận hủy trận' : 'Khôi phục trận đấu';
+  const confirmTitle = 
+    confirmAction === 'cancel' 
+      ? 'Xác nhận hủy trận' 
+      : confirmAction === 'complete'
+      ? 'Xác nhận hoàn thành trận'
+      : 'Khôi phục trận đấu';
+
   const confirmMessage =
     confirmAction === 'cancel'
       ? 'Bạn có chắc muốn hủy trận đấu này không?'
+      : confirmAction === 'complete'
+      ? 'Bạn có chắc chắn muốn xác nhận trận đấu này đã hoàn thành không?'
       : 'Khôi phục trận đấu để tiếp tục tuyển người?';
   const popupTitle =
     popup?.type === 'success' ? 'Thành công' : popup?.type === 'error' ? 'Có lỗi xảy ra' : 'Thông báo';
@@ -347,15 +487,21 @@ const MatchDetail: React.FC = () => {
         <div className="container">
           <h1 className="fw-bolder mb-4 match-title">{title}</h1>
           <div className="d-flex align-items-center justify-content-between">
-            <div className="d-flex align-items-center">
-              <Link to={`/profile/${match.host.id}`}>
-                <img
-                  src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
-                  alt={match.host.fullName}
-                  className="rounded-circle me-3 border"
-                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-                />
-              </Link>
+            <Link 
+              to={`/profile/${match.host.id}`} 
+              className="text-decoration-none text-dark d-flex align-items-center"
+              onMouseEnter={() => {
+                if (!authService.hasCachedProfile(match.host.id)) {
+                  authService.getOtherProfile(match.host.id).catch(() => {});
+                }
+              }}
+            >
+              <img
+                src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
+                alt={match.host.fullName}
+                className="rounded-circle me-3 border"
+                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+              />
               <div>
                 <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
                 <h6 className="fw-bold mb-0 d-flex align-items-center flex-wrap gap-1">
@@ -368,7 +514,7 @@ const MatchDetail: React.FC = () => {
                   ))}
                 </h6>
               </div>
-            </div>
+            </Link>
             {user && match.host.id !== user.id && (
               myReportId ? (
                 <button 
@@ -442,15 +588,22 @@ const MatchDetail: React.FC = () => {
 
             <div className="d-flex flex-wrap gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm">
               {derived.attendees.filter(a => a.status === 'joined' || !a.status).map((attendee) => (
-                <div key={attendee.id} className="text-center attendee-item position-relative">
-                  <Link to={`/profile/${attendee.id}`}>
-                    <img
-                      src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
-                      alt={attendee.name}
-                      className="rounded-circle mb-2 border"
-                      style={{ width: '64px', height: '64px', objectFit: 'cover' }}
-                    />
-                  </Link>
+                <Link 
+                  key={attendee.id} 
+                  to={`/profile/${attendee.id}`} 
+                  className="text-center attendee-item position-relative text-decoration-none text-dark d-block"
+                  onMouseEnter={() => {
+                    if (!authService.hasCachedProfile(attendee.id)) {
+                      authService.getOtherProfile(attendee.id).catch(() => {});
+                    }
+                  }}
+                >
+                  <img
+                    src={attendee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&background=eff6ff&color=2563eb`}
+                    alt={attendee.name}
+                    className="rounded-circle mb-2 border"
+                    style={{ width: '64px', height: '64px', objectFit: 'cover' }}
+                  />
                   {attendee.badges && attendee.badges.length > 0 && (
                     <div className="position-absolute top-0 start-100 translate-middle" style={{ zIndex: 5, marginTop: '10px', marginLeft: '-15px' }}>
                        <span className={`badge rounded-pill border border-white ${attendee.badges[0] === 'Tân binh' ? 'bg-secondary' : attendee.badges[0] === 'Tích cực' ? 'bg-info' : attendee.badges[0] === 'Thân thiện' ? 'bg-success' : attendee.badges[0] === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '9px', padding: '0.25em 0.4em' }}>
@@ -463,7 +616,7 @@ const MatchDetail: React.FC = () => {
                     <Link to={`/profile/${attendee.id}`} className="text-decoration-none text-dark">{attendee.name.split(' ')[0]}</Link>
                   </p>
                   <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>{attendee.role}</p>
-                </div>
+                </Link>
               ))}
             </div>
 
@@ -571,9 +724,14 @@ const MatchDetail: React.FC = () => {
               </button>
 
               {canHostCancel ? (
-                <button className="btn btn-danger rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleCancelMatch} disabled={actionLoading}>
-                  {actionLoading ? '...' : 'Hủy trận đấu'}
-                </button>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-outline-danger rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleCancelMatch} disabled={actionLoading}>
+                    {actionLoading ? '...' : 'Hủy trận đấu'}
+                  </button>
+                  <button className="btn btn-success rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleCompleteMatch} disabled={actionLoading}>
+                    {actionLoading ? '...' : 'Hoàn thành trận'}
+                  </button>
+                </div>
               ) : canHostResume ? (
                 <button className="btn btn-success rounded-pill px-4 px-md-5 py-2 fw-bold fs-6 shadow-sm" onClick={handleResumeMatch} disabled={actionLoading}>
                   {actionLoading ? '...' : 'Ngừng hủy & tiếp tục'}

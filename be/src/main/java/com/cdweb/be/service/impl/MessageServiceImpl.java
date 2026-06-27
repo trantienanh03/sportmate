@@ -6,13 +6,16 @@ import com.cdweb.be.entity.Message;
 import com.cdweb.be.entity.Room;
 import com.cdweb.be.entity.User;
 import com.cdweb.be.enums.MessageType;
+import com.cdweb.be.enums.NotificationType;
 import com.cdweb.be.exception.AppException;
 import com.cdweb.be.repository.MessageRepository;
 import com.cdweb.be.repository.RoomMemberRepository;
 import com.cdweb.be.repository.RoomRepository;
 import com.cdweb.be.repository.UserRepository;
 import com.cdweb.be.service.MessageService;
+import com.cdweb.be.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -25,12 +28,14 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MessageServiceImpl implements MessageService {
 
         private final MessageRepository messageRepository;
         private final RoomRepository roomRepository;
         private final RoomMemberRepository roomMemberRepository;
         private final UserRepository userRepository;
+        private final NotificationService notificationService;
 
         @Override
         @Transactional
@@ -59,6 +64,35 @@ public class MessageServiceImpl implements MessageService {
                 // Cập nhật lastMessageAt để đẩy phòng chat lên đầu danh sách
                 room.setLastMessageAt(LocalDateTime.now());
                 roomRepository.save(room);
+
+                // Gửi thông báo đến tất cả thành viên khác trong phòng
+                try {
+                        String previewContent;
+                        if (savedMessage.getType() == MessageType.IMAGE) {
+                                previewContent = "[Hình ảnh]";
+                        } else if (savedMessage.getType() == MessageType.FEE_SPLIT) {
+                                previewContent = "[Hóa đơn chia tiền]";
+                        } else {
+                                previewContent = savedMessage.getContent();
+                        }
+
+                        List<com.cdweb.be.entity.RoomMember> members = roomMemberRepository.findByRoomIdAndLeftAtIsNull(room.getId());
+                        for (com.cdweb.be.entity.RoomMember member : members) {
+                                if (!member.getUserId().equals(senderId)) {
+                                        notificationService.sendNotification(
+                                                        member.getUserId(),
+                                                        senderId,
+                                                        room.getName(),
+                                                        previewContent,
+                                                        NotificationType.NEW_MESSAGE,
+                                                        room.getId()
+                                        );
+                                }
+                        }
+                } catch (Exception e) {
+                        // Không ném exception để tránh rollback giao dịch gửi tin nhắn nếu gửi thông báo lỗi
+                        log.error("Lỗi gửi thông báo tin nhắn mới: ", e);
+                }
 
                 // Trả về DTO chứa thông tin để broadcast cho client
                 return MessageDto.builder()
@@ -92,7 +126,7 @@ public class MessageServiceImpl implements MessageService {
                                         beforeId, pageable);
                 }
 
-                return messages.stream().map(msg -> {
+                List<MessageDto> dtos = messages.stream().map(msg -> {
                         User sender = userRepository.findById(msg.getSenderId()).orElse(null);
                         return MessageDto.builder()
                                         .id(msg.getId())
@@ -106,5 +140,9 @@ public class MessageServiceImpl implements MessageService {
                                         .createdAt(msg.getCreatedAt())
                                         .build();
                 }).collect(Collectors.toList());
+
+                // Đảo ngược danh sách để trả về thứ tự thời gian tăng dần (cũ trước, mới sau)
+                java.util.Collections.reverse(dtos);
+                return dtos;
         }
 }

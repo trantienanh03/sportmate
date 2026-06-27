@@ -107,9 +107,10 @@ public class AuthController {
         return ResponseEntity.ok(authService.getProfile(userId));
     }
 
-    @GetMapping("/profile/{userId}")
-    public ResponseEntity<AuthResponseDto> getOtherUserProfile(@PathVariable Integer userId) {
-        return ResponseEntity.ok(authService.getProfile(userId));
+    // API lấy thông tin profile của người dùng khác bằng ID
+    @GetMapping("/profile/{id}")
+    public ResponseEntity<AuthResponseDto> getOtherUserProfile(@PathVariable Integer id) {
+        return ResponseEntity.ok(authService.getProfile(id));
     }
 
     @PutMapping("/profile")

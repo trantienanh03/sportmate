@@ -1,56 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import ExploreFilterSidebar from '../../components/ExploreFilterSidebar/ExploreFilterSidebar';
 import Footer from '../../components/Footer/Footer';
-import { matchService, type MatchDetail, type ExploreParams } from '../../services/matchService';
+import { type ExploreParams } from '../../services/matchService';
+import { useExploreQuery } from '../../hooks/useMatchQueries';
+import MatchCardSkeleton from '../../components/Skeletons/MatchCardSkeleton';
+import PrefetchMatchLink from '../../components/PrefetchMatchLink/PrefetchMatchLink';
 import './ExplorePage.css';
 
 const ExplorePage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [matches, setMatches] = useState<MatchDetail[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const search = location.search;
 
-  const [hasLocation, setHasLocation] = useState(false);
+  // Phân tích tham số tìm kiếm từ URL query string
+  const { exploreParams, hasLocation } = useMemo(() => {
+    const params = new URLSearchParams(search);
+    const exploreParams: ExploreParams = {};
+    if (params.has('keyword')) exploreParams.keyword = params.get('keyword') as string;
+    if (params.has('sport')) exploreParams.sport = params.get('sport') as string;
+    if (params.has('skillLevel')) exploreParams.skillLevel = params.get('skillLevel') as string;
+    if (params.has('feeType')) exploreParams.feeType = params.get('feeType') as string;
+    
+    let hasLoc = false;
+    if (params.has('lat') && params.has('lng')) {
+      exploreParams.lat = parseFloat(params.get('lat') as string);
+      exploreParams.lng = parseFloat(params.get('lng') as string);
+      hasLoc = true;
+    }
+    if (params.has('radiusKm')) {
+      exploreParams.radiusKm = parseFloat(params.get('radiusKm') as string);
+    }
+    return { exploreParams, hasLocation: hasLoc };
+  }, [search]);
 
-  useEffect(() => {
-    const fetchMatches = async () => {
-      setIsLoading(true);
-      setError('');
-      try {
-        const params = new URLSearchParams(location.search);
-        
-        const exploreParams: ExploreParams = {};
-        if (params.has('keyword')) exploreParams.keyword = params.get('keyword') as string;
-        if (params.has('sport')) exploreParams.sport = params.get('sport') as string;
-        if (params.has('skillLevel')) exploreParams.skillLevel = params.get('skillLevel') as string;
-        if (params.has('feeType')) exploreParams.feeType = params.get('feeType') as string;
-        
-        if (params.has('lat') && params.has('lng')) {
-          exploreParams.lat = parseFloat(params.get('lat') as string);
-          exploreParams.lng = parseFloat(params.get('lng') as string);
-          setHasLocation(true);
-        } else {
-          setHasLocation(false);
-        }
-
-        if (params.has('radiusKm')) {
-          exploreParams.radiusKm = parseFloat(params.get('radiusKm') as string);
-        }
-
-        const data = await matchService.exploreMatches(exploreParams);
-        setMatches(data);
-      } catch (err: any) {
-        setError(err.message || 'Lỗi khi tìm kiếm trận đấu');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMatches();
-  }, [location.search]);
+  // Sử dụng React Query để tự động gọi API và cache theo query string
+  const { data: matches = [], isLoading, error: queryError } = useExploreQuery(exploreParams, search);
+  const error = queryError ? (queryError as Error).message || 'Lỗi khi tìm kiếm trận đấu' : '';
 
   const getSportImage = (sport: string) => {
     if (!sport) return '/hero_football.png';
@@ -109,11 +96,12 @@ const ExplorePage: React.FC = () => {
               {error && <div className="alert alert-danger">{error}</div>}
 
               {isLoading ? (
-                <div className="text-center py-5 my-5">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Đang tải...</span>
-                  </div>
-                  <p className="mt-3 text-muted">Đang quét các trận đấu gần bạn...</p>
+                <div className="row g-4">
+                  {Array(6).fill(0).map((_, i) => (
+                    <div className="col-xl-4 col-md-6" key={`skeleton-${i}`}>
+                      <MatchCardSkeleton />
+                    </div>
+                  ))}
                 </div>
               ) : matches.length === 0 ? (
                 <div className="empty-explore-state text-center py-5 my-5">
@@ -130,7 +118,11 @@ const ExplorePage: React.FC = () => {
                 <div className="row g-4">
                   {matches.map((match) => (
                     <div className="col-xl-4 col-md-6" key={match.id}>
-                  <Link to={`/matches/${match.id}`} className="text-decoration-none text-dark">
+                  <PrefetchMatchLink 
+                    matchId={match.id}
+                    to={`/matches/${match.id}`} 
+                    className="text-decoration-none text-dark"
+                  >
                     <div className="explore-event-card h-100">
                       <div className="event-img-wrapper">
                         <img src={match.imageUrl || getSportImage(match.sport)} alt={match.title} className="event-img" />
@@ -197,7 +189,7 @@ const ExplorePage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  </Link>
+                  </PrefetchMatchLink>
                     </div>
                   ))}
                 </div>

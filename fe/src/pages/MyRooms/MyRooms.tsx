@@ -4,40 +4,21 @@ import gsap from "gsap";
 import LoggedInNavbar from "../../components/LoggedInNavbar/LoggedInNavbar";
 import Footer from "../../components/Footer/Footer";
 import { matchService, type MatchDetail } from "../../services/matchService";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useMyRoomsQuery, matchKeys } from "../../hooks/useMatchQueries";
+import MatchCardSkeleton from "../../components/Skeletons/MatchCardSkeleton";
+import PrefetchMatchLink from "../../components/PrefetchMatchLink/PrefetchMatchLink";
 import "./MyRooms.css";
 
 const MyRooms: React.FC = () => {
   const navigate = useNavigate();
-  const [matches, setMatches] = useState<MatchDetail[]>(() => {
-    return matchService.getCachedMyRooms() || [];
-  });
-  const [isLoading, setIsLoading] = useState<boolean>(() => {
-    return !matchService.hasCachedMyRooms();
-  });
-  const [error, setError] = useState<string>("");
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"Active" | "Past" | "Cancelled">("Active");
   const cardsContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const fetchMyRooms = async () => {
-      try {
-        if (!matchService.hasCachedMyRooms()) {
-          setIsLoading(true);
-        }
-        setError("");
-        const data = await matchService.getMyRooms();
-        setMatches(data);
-      } catch (err: any) {
-        if (!matchService.hasCachedMyRooms()) {
-          setError(err.message || "Không thể tải danh sách trận đấu của bạn");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMyRooms();
-  }, []);
+  // Sử dụng React Query để tự động nạp cache, đồng bộ và hiển thị dữ liệu tức thì
+  const { data: matches = [], isLoading, error: queryError } = useMyRoomsQuery();
+  const error = queryError ? (queryError as Error).message || "Không thể tải danh sách trận đấu của bạn" : "";
 
   useEffect(() => {
     if (!isLoading && cardsContainerRef.current) {
@@ -112,48 +93,69 @@ const MyRooms: React.FC = () => {
     }
   };
 
-  const handleCancelMatch = async (id: number, title: string) => {
+  const cancelMutation = useMutation({
+    mutationFn: ({ id }: { id: number; title: string }) => matchService.cancelMatch(id),
+    onSuccess: (updated, variables) => {
+      queryClient.setQueryData<MatchDetail[]>(matchKeys.myRooms(), (old) => {
+        if (!old) return [];
+        return old.map((m) => (m.id === variables.id ? updated : m));
+      });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
+      alert(`Đã hủy thành công trận đấu "${variables.title}".`);
+    },
+    onError: (err: any) => {
+      alert(err.message || "Không thể hủy trận đấu");
+    }
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: ({ id }: { id: number; title: string }) => matchService.updateMatchStatus(id, "completed"),
+    onSuccess: (updated, variables) => {
+      queryClient.setQueryData<MatchDetail[]>(matchKeys.myRooms(), (old) => {
+        if (!old) return [];
+        return old.map((m) => (m.id === variables.id ? updated : m));
+      });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
+      alert(`Trận đấu "${variables.title}" đã được bắt đầu.`);
+    },
+    onError: (err: any) => {
+      alert(err.message || "Không thể bắt đầu trận đấu");
+    }
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: ({ id }: { id: number; title: string }) => matchService.resumeMatch(id),
+    onSuccess: (updated, variables) => {
+      queryClient.setQueryData<MatchDetail[]>(matchKeys.myRooms(), (old) => {
+        if (!old) return [];
+        return old.map((m) => (m.id === variables.id ? updated : m));
+      });
+      queryClient.invalidateQueries({ queryKey: matchKeys.list() });
+      alert(`Đã khôi phục trận đấu "${variables.title}".`);
+    },
+    onError: (err: any) => {
+      alert(err.message || "Không thể khôi phục trận đấu");
+    }
+  });
+
+  const handleCancelMatch = (id: number, title: string) => {
     const confirmCancel = window.confirm(`Bạn có chắc chắn muốn hủy trận đấu "${title}" không?`);
     if (confirmCancel) {
-      try {
-        const updated = await matchService.cancelMatch(id);
-        setMatches((prev) =>
-          prev.map((match) => (match.id === id ? updated : match))
-        );
-        alert(`Đã hủy thành công trận đấu "${title}".`);
-      } catch (err: any) {
-        alert(err.message || "Không thể hủy trận đấu");
-      }
+      cancelMutation.mutate({ id, title });
     }
   };
 
-  const handleStartMatch = async (id: number, title: string) => {
+  const handleStartMatch = (id: number, title: string) => {
     const confirmStart = window.confirm(`Bắt đầu trận đấu "${title}" ngay bây giờ?`);
     if (confirmStart) {
-      try {
-        const updated = await matchService.updateMatchStatus(id, "completed");
-        setMatches((prev) =>
-          prev.map((match) => (match.id === id ? updated : match))
-        );
-        alert(`Trận đấu "${title}" đã được bắt đầu.`);
-      } catch (err: any) {
-        alert(err.message || "Không thể bắt đầu trận đấu");
-      }
+      completeMutation.mutate({ id, title });
     }
   };
 
-  const handleResumeMatch = async (id: number, title: string) => {
+  const handleResumeMatch = (id: number, title: string) => {
     const confirmResume = window.confirm(`Khôi phục trận đấu "${title}" để tiếp tục?`);
     if (confirmResume) {
-      try {
-        const updated = await matchService.resumeMatch(id);
-        setMatches((prev) =>
-          prev.map((match) => (match.id === id ? updated : match))
-        );
-        alert(`Đã khôi phục trận đấu "${title}".`);
-      } catch (err: any) {
-        alert(err.message || "Không thể khôi phục trận đấu");
-      }
+      resumeMutation.mutate({ id, title });
     }
   };
 
@@ -208,11 +210,12 @@ const MyRooms: React.FC = () => {
           {error && <div className="alert alert-danger mb-4">{error}</div>}
 
           {isLoading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Đang tải...</span>
-              </div>
-              <p className="mt-2 text-muted">Đang tải danh sách trận đấu của bạn...</p>
+            <div className="row g-4">
+              {Array(4).fill(0).map((_, i) => (
+                <div className="col-12 col-md-6" key={`skeleton-${i}`}>
+                  <MatchCardSkeleton />
+                </div>
+              ))}
             </div>
           ) : (
             <div className="row g-4" ref={cardsContainerRef}>
@@ -236,7 +239,8 @@ const MyRooms: React.FC = () => {
 
                   return (
                     <div className="col-12 col-md-6 room-card-anim" key={match.id} style={{ opacity: 0 }}>
-                      <Link
+                      <PrefetchMatchLink
+                        matchId={match.id}
                         to={`/matches/${match.id}`}
                         className="room-card-link text-decoration-none text-dark d-block h-100"
                       >
@@ -417,7 +421,7 @@ const MyRooms: React.FC = () => {
                             </div>
                           )}
                         </div>
-                      </Link>
+                      </PrefetchMatchLink>
                     </div>
                   );
                 })

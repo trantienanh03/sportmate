@@ -64,3 +64,32 @@ a {
   color: var(--text-secondary);
   font-weight: 400;
 }
+
+/* ================================================================
+   Skeleton Loading Shimmer Animation
+================================================================ */
+.skeleton-shimmer {
+  display: inline-block;
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 25%,
+    #e5e7eb 37%,
+    #f3f4f6 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+  border-radius: 4px;
+}
+
+.skeleton-circle {
+  border-radius: 50% !important;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}

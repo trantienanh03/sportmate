@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
-import { useParams, Link } from 'react-router-dom';
 import { useAuth, type SportCard, type AvailabilitySlot } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { authService } from '../../services/authService';
-import { ratingService, type UserReviewDto } from '../../services/ratingService';
+import { useProfileQuery, useUserReviewsQuery } from '../../hooks/useProfileQueries';
+import ProfilePageSkeleton from '../../components/Skeletons/ProfilePageSkeleton';
+import ReviewCardSkeleton from '../../components/Skeletons/ReviewCardSkeleton';
 import { friendshipService, type FriendDto, type FriendshipStatusDto } from '../../services/friendshipService';
 import './ProfilePage.css';
 
@@ -67,19 +69,29 @@ const DEFAULT_WEEK_SLOTS: AvailabilitySlot[] = [
 ];
 
 const ProfilePage: React.FC = () => {
-  const { user: currentUser, login } = useAuth();
+  const { user, login } = useAuth();
+  const currentUser = user;
   const { notifications } = useNotifications();
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id?: string }>();
+  const navigate = useNavigate();
   const isOtherUser = !!id && id !== String(currentUser?.id);
   const targetUserId = isOtherUser ? Number(id) : currentUser?.id;
 
-  const [displayedUser, setDisplayedUser] = useState<any>(currentUser);
   const [friendStatus, setFriendStatus] = useState<FriendshipStatusDto>({ status: 'NONE' });
   const [friendsList, setFriendsList] = useState<FriendDto[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendDto[]>([]);
   const [activeTab, setActiveTab] = useState<'info' | 'friends' | 'requests'>('info');
-
   const editorRef = useRef<HTMLElement | null>(null);
+  
+  // Xác định xem có phải là trang cá nhân của chính mình hay không
+  const isOwnProfile = !id || Number(id) === user?.id;
+
+  const { data: otherProfile, isLoading: isOtherProfileLoading } = useProfileQuery(Number(id), !isOwnProfile);
+  const profileData = isOwnProfile ? user : otherProfile;
+  const isProfileLoading = isOwnProfile ? !user : isOtherProfileLoading;
+
+  const displayedUser = profileData;
+  const { data: reviews = [], isLoading: isReviewsLoading } = useUserReviewsQuery(Number(targetUserId), !!targetUserId);
   
   // Independent Edit States
   const [isEditingBasic, setIsEditingBasic] = useState(false);
@@ -97,7 +109,6 @@ const ProfilePage: React.FC = () => {
   
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>(DEFAULT_WEEK_SLOTS);
   const [sportCards, setSportCards] = useState<SportCard[]>(SPORT_CARDS);
-  const [reviews, setReviews] = useState<UserReviewDto[]>([]);
   const [formData, setFormData] = useState<ProfileFormState>({
     fullName: '',
     avatarUrl: '',
@@ -107,15 +118,28 @@ const ProfilePage: React.FC = () => {
     lng: '',
   });
 
+  // Tự động đồng bộ các state chỉnh sửa khi dữ liệu profileData thay đổi (từ cache hoặc API)
+  useEffect(() => {
+    if (!profileData) return;
+    setFormData({
+      fullName: profileData.fullName ?? '',
+      avatarUrl: profileData.avatarUrl ?? '',
+      bio: profileData.bio ?? '',
+      district: profileData.district ?? '',
+      lat: toInputValue(profileData.lat),
+      lng: toInputValue(profileData.lng),
+    });
+    setSportCards(profileData.sports && profileData.sports.length > 0 ? profileData.sports : SPORT_CARDS);
+    setAvailabilitySlots(profileData.availability && profileData.availability.length > 0 ? profileData.availability : DEFAULT_WEEK_SLOTS);
+  }, [profileData]);
+
   useEffect(() => {
     if (isOtherUser && id) {
-      authService.getOtherProfile(Number(id)).then(setDisplayedUser).catch(console.error);
       friendshipService.getFriendshipStatus(Number(id)).then(setFriendStatus).catch(console.error);
       friendshipService.getUserFriends(Number(id))
         .then(setFriendsList)
-        .catch(() => setFriendsList([])); // Might be forbidden
+        .catch(() => setFriendsList([]));
     } else if (currentUser) {
-      setDisplayedUser(currentUser);
       friendshipService.getMyFriends().then(setFriendsList).catch(console.error);
       friendshipService.getPendingRequests().then(setPendingRequests).catch(console.error);
     }
@@ -156,29 +180,7 @@ const ProfilePage: React.FC = () => {
     return () => window.removeEventListener('friendship_update_event', handleFriendUpdate);
   }, [isOtherUser, id]);
 
-  // Sync data from user
-  useEffect(() => {
-    if (!displayedUser) return;
-
-    setFormData({
-      fullName: displayedUser.fullName ?? '',
-      avatarUrl: displayedUser.avatarUrl ?? '',
-      bio: displayedUser.bio ?? '',
-      district: displayedUser.district ?? '',
-      lat: toInputValue(displayedUser.lat),
-      lng: toInputValue(displayedUser.lng),
-    });
-
-    if (displayedUser.sports && displayedUser.sports.length > 0) {
-      setSportCards(displayedUser.sports);
-    }
-    if (displayedUser.availability && displayedUser.availability.length > 0) {
-      setAvailabilitySlots(displayedUser.availability);
-    }
-
-    // Fetch reviews
-    ratingService.getUserReviews(displayedUser.id).then(setReviews).catch(console.error);
-  }, [displayedUser]);
+  // Sync handled via profileData above
 
   // Messages timeout
   useEffect(() => {
@@ -201,22 +203,22 @@ const ProfilePage: React.FC = () => {
     };
   }, [isEditingBasic]);
 
-  const profileInitial = displayedUser?.fullName?.trim()?.charAt(0).toUpperCase() || 'U';
+  const profileInitial = profileData?.fullName?.trim()?.charAt(0).toUpperCase() || 'U';
   
   // Calculate combined rating if both exist, or use whichever exists, or default to 0
   let combinedRating: number | string = 0;
-  if (displayedUser?.avgAttitudeScore != null && displayedUser?.avgSkillScore != null) {
-    combinedRating = ((displayedUser.avgAttitudeScore + displayedUser.avgSkillScore) / 2).toFixed(1);
-  } else if (displayedUser?.avgAttitudeScore != null) {
-    combinedRating = displayedUser.avgAttitudeScore.toFixed(1);
-  } else if (displayedUser?.avgSkillScore != null) {
-    combinedRating = displayedUser.avgSkillScore.toFixed(1);
+  if (profileData?.avgAttitudeScore != null && profileData?.avgSkillScore != null) {
+    combinedRating = ((profileData.avgAttitudeScore + profileData.avgSkillScore) / 2).toFixed(1);
+  } else if (profileData?.avgAttitudeScore != null) {
+    combinedRating = profileData.avgAttitudeScore.toFixed(1);
+  } else if (profileData?.avgSkillScore != null) {
+    combinedRating = profileData.avgSkillScore.toFixed(1);
   } else {
     combinedRating = 'Chưa có';
   }
 
-  const memberSince = displayedUser?.createdAt ? formatMonthYear(displayedUser.createdAt) : '—';
-  const matchCountText = displayedUser?.completedMatches ? `${displayedUser.completedMatches} trận` : '0 trận';
+  const memberSince = profileData?.createdAt ? formatMonthYear(profileData.createdAt) : '—';
+  const matchCountText = profileData?.completedMatches ? `${profileData.completedMatches} trận` : '0 trận';
 
   const handleFriendAction = async () => {
     if (!targetUserId) return;
@@ -231,7 +233,7 @@ const ProfilePage: React.FC = () => {
         await friendshipService.acceptFriendRequest(targetUserId);
         setFriendStatus({ status: 'FRIENDS' });
       } else if (friendStatus.status === 'FRIENDS') {
-        setUnfriendConfirm({ show: true, userId: targetUserId, name: displayedUser?.fullName || 'Người này' });
+        setUnfriendConfirm({ show: true, userId: targetUserId, name: profileData?.fullName || 'Người này' });
       }
     } catch (e: any) {
       setErrorMessage(e.message || 'Có lỗi xảy ra');
@@ -388,8 +390,11 @@ const ProfilePage: React.FC = () => {
       <LoggedInNavbar />
 
       <main className="profile-main-area">
-        <div className="container profile-container">
-          <div className="profile-grid-layout">
+        {isProfileLoading || !profileData ? (
+          <ProfilePageSkeleton />
+        ) : (
+          <div className="container profile-container">
+            <div className="profile-grid-layout">
             
             {/* LEFT SIDEBAR */}
             <div className="profile-sidebar-stack">
@@ -397,15 +402,15 @@ const ProfilePage: React.FC = () => {
                 <div className="profile-side-cover" />
                 <div className="profile-side-body">
                   <div className="profile-side-avatar">
-                    {displayedUser?.avatarUrl ? <img src={displayedUser.avatarUrl} alt={displayedUser.fullName} /> : <span>{profileInitial}</span>}
+                    {profileData?.avatarUrl ? <img src={profileData.avatarUrl} alt={profileData.fullName} /> : <span>{profileInitial}</span>}
                   </div>
 
-                  <div className="profile-side-name">{displayedUser?.fullName || 'Unknown user'}</div>
+                  <div className="profile-side-name">{profileData?.fullName || 'Unknown user'}</div>
                   
                   {/* BADGES RENDER HERE */}
-                  {displayedUser?.badges && displayedUser.badges.length > 0 && (
+                  {profileData?.badges && profileData.badges.length > 0 && (
                     <div className="profile-side-badges mt-2 mb-1 d-flex flex-wrap justify-content-center gap-1">
-                      {displayedUser.badges.map((badge: string) => (
+                      {profileData.badges.map((badge: string) => (
                         <span key={badge} className={`badge rounded-pill fw-normal ${badge === 'Tân binh' ? 'bg-secondary' : badge === 'Tích cực' ? 'bg-info' : badge === 'Thân thiện' ? 'bg-success' : badge === 'Cảnh báo uy tín' ? 'bg-danger' : 'bg-primary'}`} style={{ fontSize: '11px' }}>
                           {badge === 'Cảnh báo uy tín' && <i className="fa-solid fa-triangle-exclamation me-1"></i>}
                           {badge}
@@ -416,15 +421,15 @@ const ProfilePage: React.FC = () => {
 
                   <div className="profile-side-sub mt-2">
                     <i className="fa-solid fa-location-dot me-2" />
-                    {displayedUser?.district || 'Chưa cập nhật'}
+                    {profileData?.district || 'Chưa cập nhật'}
                   </div>
 
                   <div className="profile-side-bio">
-                    {displayedUser?.bio || 'Tạo hồ sơ thật gọn, rõ và dễ nhìn để những người khác nắm được phong cách chơi của bạn.'}
+                    {profileData?.bio || 'Tạo hồ sơ thật gọn, rõ và dễ nhìn để những người khác nắm được phong cách chơi của bạn.'}
                   </div>
 
                   <div className="profile-side-actions">
-                    {!isOtherUser ? (
+                    {isOwnProfile ? (
                       <button
                         type="button"
                         className="btn btn-primary profile-main-btn w-100"
@@ -462,12 +467,16 @@ const ProfilePage: React.FC = () => {
                             <i className="fa-solid fa-xmark me-2" />Từ chối
                           </button>
                         )}
+                        <button 
+                          type="button" 
+                          className="btn btn-outline-secondary profile-secondary-btn w-100"
+                          onClick={() => navigate('/messages')}
+                        >
+                          <i className="fa-regular fa-paper-plane me-2" />
+                          Nhắn tin
+                        </button>
                       </>
                     )}
-                    <button type="button" className="btn btn-outline-secondary profile-secondary-btn w-100">
-                      <i className="fa-regular fa-paper-plane me-2" />
-                      Nhắn tin
-                    </button>
                   </div>
                 </div>
               </aside>
@@ -540,7 +549,7 @@ const ProfilePage: React.FC = () => {
                     <div>
                       <h2 className="profile-card-title">Phong cách chơi</h2>
                     </div>
-                    {(!isEditingSports && !isOtherUser) && (
+                    {!isEditingSports && isOwnProfile && (
                       <button className="btn btn-sm btn-light text-primary border-0 fw-semibold" onClick={() => setIsEditingSports(true)}>
                         <i className="fa-regular fa-pen-to-square me-1" /> Sửa
                       </button>
@@ -648,7 +657,7 @@ const ProfilePage: React.FC = () => {
                     <div>
                       <h2 className="profile-card-title">Thời gian ghép trận</h2>
                     </div>
-                    {(!isEditingAvailability && !isOtherUser) && (
+                    {!isEditingAvailability && isOwnProfile && (
                       <button className="btn btn-sm btn-light text-primary border-0 fw-semibold" onClick={() => setIsEditingAvailability(true)}>
                         <i className="fa-regular fa-pen-to-square me-1" /> Sửa
                       </button>
@@ -735,7 +744,12 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 <div className="review-list">
-                  {reviews.length > 0 ? reviews.map((review, index) => (
+                  {isReviewsLoading ? (
+                    <div>
+                      <ReviewCardSkeleton />
+                      <ReviewCardSkeleton />
+                    </div>
+                  ) : reviews.length > 0 ? reviews.map((review, index) => (
                     <article className="review-card-new" key={index}>
                       <div className="review-card-header">
                         <div className="review-avatar">
@@ -833,8 +847,9 @@ const ProfilePage: React.FC = () => {
               )}
 
             </section>
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* BASIC INFO EDITOR MODAL */}

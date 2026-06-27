@@ -2,6 +2,9 @@ const API_URL = "http://localhost:8080/api";
 
 let cachedMatches: MatchDetail[] | null = null;
 let cachedMyRooms: MatchDetail[] | null = null;
+let cachedSchedule: MatchDetail[] | null = null;
+let cachedMatchDetails: Record<number, MatchDetail> = {};
+let cachedExploreResults: Record<string, MatchDetail[]> = {};
 
 export interface MatchHost {
   id: number;
@@ -95,7 +98,9 @@ export const matchService = {
     const response = await fetch(`${API_URL}/matches/${id}`, {
       credentials: "include",
     });
-    return handleResponse<MatchDetail>(response);
+    const data = await handleResponse<MatchDetail>(response);
+    cachedMatchDetails[id] = data;
+    return data;
   },
 
   join: async (id: number): Promise<MatchDetail> => {
@@ -214,10 +219,14 @@ export const matchService = {
     });
     const data = await handleResponse<MatchDetail[]>(response);
     cachedMatches = data;
+    // Tự động phân tách và nạp trước vào cache chi tiết của từng trận đấu để tránh trễ trang detail
+    data.forEach((m) => {
+      cachedMatchDetails[m.id] = m;
+    });
     return data;
   },
 
-  exploreMatches: async (params: ExploreParams): Promise<MatchDetail[]> => {
+  exploreMatches: async (params: ExploreParams, cacheKey?: string): Promise<MatchDetail[]> => {
     const queryParams = new URLSearchParams();
     if (params.keyword) queryParams.append("keyword", params.keyword);
     if (params.sport) queryParams.append("sport", params.sport);
@@ -232,7 +241,15 @@ export const matchService = {
       headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
-    return handleResponse<MatchDetail[]>(response);
+    const data = await handleResponse<MatchDetail[]>(response);
+    if (cacheKey) {
+      cachedExploreResults[cacheKey] = data;
+    }
+    // Pre-populate cache chi tiết trận đấu
+    data.forEach((m) => {
+      cachedMatchDetails[m.id] = m;
+    });
+    return data;
   },
 
   getMyRooms: async (): Promise<MatchDetail[]> => {
@@ -243,6 +260,26 @@ export const matchService = {
     });
     const data = await handleResponse<MatchDetail[]>(response);
     cachedMyRooms = data;
+    // Pre-populate cache chi tiết trận đấu
+    data.forEach((m) => {
+      cachedMatchDetails[m.id] = m;
+    });
+    return data;
+  },
+
+  // Gọi API lấy lịch trình cá nhân của người dùng hiện tại
+  getSchedule: async (): Promise<MatchDetail[]> => {
+    const response = await fetch(`${API_URL}/matches/schedule`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    const data = await handleResponse<MatchDetail[]>(response);
+    cachedSchedule = data;
+    // Pre-populate cache chi tiết trận đấu cho lịch trình
+    data.forEach((m) => {
+      cachedMatchDetails[m.id] = m;
+    });
     return data;
   },
 
@@ -306,4 +343,10 @@ export const matchService = {
   hasCachedMatches: (): boolean => cachedMatches !== null,
   getCachedMyRooms: (): MatchDetail[] | null => cachedMyRooms,
   hasCachedMyRooms: (): boolean => cachedMyRooms !== null,
+  getCachedSchedule: (): MatchDetail[] | null => cachedSchedule,
+  hasCachedSchedule: (): boolean => cachedSchedule !== null,
+  getCachedMatchDetail: (id: number): MatchDetail | undefined => cachedMatchDetails[id],
+  hasCachedMatchDetail: (id: number): boolean => cachedMatchDetails[id] !== undefined,
+  getCachedExplore: (key: string): MatchDetail[] | undefined => cachedExploreResults[key],
+  hasCachedExplore: (key: string): boolean => cachedExploreResults[key] !== undefined,
 };

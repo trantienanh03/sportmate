@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { sportService, type SportItem } from "../../services/sportService";
 import { matchService, type MatchDetail } from "../../services/matchService";
 import { useNotifications } from "../../context/NotificationContext";
+import { useSportsQuery } from "../../hooks/useSportQueries";
 import "./LoggedInNavbar.css";
 
 const LoggedInNavbar: React.FC = () => {
@@ -12,6 +12,10 @@ const LoggedInNavbar: React.FC = () => {
   const location = useLocation();
 
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+
+  const unreadMessageCount = notifications.filter(n => n.type === "NEW_MESSAGE" && !n.isRead).length;
+  const unreadGeneralCount = Math.max(0, unreadCount - unreadMessageCount);
+  const generalNotifications = notifications.filter(n => n.type !== "NEW_MESSAGE");
 
   const handleMarkAllAsRead = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -22,7 +26,14 @@ const LoggedInNavbar: React.FC = () => {
   const handleNotificationClick = (notif: any) => {
     markAsRead(notif.id);
     if (notif.relatedEntityId) {
-      if (notif.type === 'FRIEND_REQUEST' || notif.type === 'FRIEND_ACCEPTED') {
+      if (
+        notif.type === "NEW_MESSAGE" ||
+        notif.type === "BILL_CREATED" ||
+        notif.type === "BILL_PAID" ||
+        notif.type === "BILL_CONFIRMED"
+      ) {
+        navigate(`/messages?roomId=${notif.relatedEntityId}`);
+      } else if (notif.type === 'FRIEND_REQUEST' || notif.type === 'FRIEND_ACCEPTED') {
         navigate(`/profile/${notif.relatedEntityId}`);
       } else {
         navigate(`/matches/${notif.relatedEntityId}`);
@@ -49,7 +60,9 @@ const LoggedInNavbar: React.FC = () => {
 
   const [keyword, setKeyword] = useState("");
   const [showFilter, setShowFilter] = useState(false);
-  const [sports, setSports] = useState<SportItem[]>([]);
+
+  // Sử dụng React Query để tự động cache danh mục thể thao toàn cục (staleTime 24h)
+  const { data: sports = [] } = useSportsQuery();
 
   const [selectedSport, setSelectedSport] = useState("");
   const [skillLevel, setSkillLevel] = useState("");
@@ -69,18 +82,6 @@ const LoggedInNavbar: React.FC = () => {
   const isSyncingRef = useRef(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const liveSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const fetchSports = async () => {
-      try {
-        const data = await sportService.getSports();
-        setSports(data);
-      } catch (err) {
-        console.error("Error fetching sports:", err);
-      }
-    };
-    fetchSports();
-  }, []);
 
   useEffect(() => {
     if (location.pathname === "/explore") {
@@ -465,8 +466,8 @@ const LoggedInNavbar: React.FC = () => {
                 aria-expanded="false"
               >
                 <i className="fa-regular fa-bell"></i>
-                {unreadCount > 0 && (
-                  <span className="notification-badge">{unreadCount}</span>
+                {unreadGeneralCount > 0 && (
+                  <span className="notification-badge">{unreadGeneralCount}</span>
                 )}
               </a>
               <div className="dropdown-menu dropdown-menu-end notification-dropdown shadow-lg border-0">
@@ -482,14 +483,14 @@ const LoggedInNavbar: React.FC = () => {
                   )}
                 </div>
                 <div className="notification-body">
-                  {notifications.length === 0 ? (
+                  {generalNotifications.length === 0 ? (
                     <div className="notification-empty py-4 text-center text-muted">
                       <i className="fa-regular fa-bell-slash fs-3 mb-2 d-block text-muted"></i>
                       Không có thông báo mới
                     </div>
                   ) : (
                     <div className="notification-list">
-                      {notifications.map((notif) => (
+                      {generalNotifications.map((notif) => (
                         <button
                           key={notif.id}
                           className={`notification-item d-flex gap-3 text-start border-0 w-100 ${
@@ -512,6 +513,18 @@ const LoggedInNavbar: React.FC = () => {
                           </div>
                           <div className="notification-content-wrapper flex-grow-1">
                             <p className="notification-title mb-1 text-wrap">
+                              {notif.type === "BILL_CREATED" && (
+                                <i className="fa-solid fa-file-invoice-dollar me-1 text-success"></i>
+                              )}
+                              {notif.type === "BILL_PAID" && (
+                                <i className="fa-solid fa-receipt me-1 text-warning"></i>
+                              )}
+                              {notif.type === "BILL_CONFIRMED" && (
+                                <i className="fa-solid fa-circle-check me-1 text-success"></i>
+                              )}
+                              {notif.type === "MATCH_REVIEW_REQUEST" && (
+                                <i className="fa-solid fa-star me-1 text-warning"></i>
+                              )}
                               <strong>{notif.senderName}</strong> {notif.title}
                             </p>
                             <p className="notification-desc mb-1 text-wrap">
@@ -540,8 +553,11 @@ const LoggedInNavbar: React.FC = () => {
               </div>
             </li>
             <li className="nav-item mx-2">
-              <Link className="nav-link nav-icon-link" to="/messages">
+              <Link className="nav-link nav-icon-link position-relative" to="/messages">
                 <i className="fa-regular fa-message"></i>
+                {unreadMessageCount > 0 && (
+                  <span className="notification-badge">{unreadMessageCount}</span>
+                )}
               </Link>
             </li>
             <li className="nav-item mx-2">
