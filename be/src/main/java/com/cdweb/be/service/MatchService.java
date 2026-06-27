@@ -19,4 +19,6 @@ public interface MatchService {
     MatchDetailDto updateMatchStatus(Integer matchId, com.cdweb.be.enums.MatchStatus status, Integer hostId);
     List<MatchDetailDto> exploreMatches(ExploreMatchRequest request, Integer currentUserId);
     List<MatchDetailDto> getUserSchedule(Integer userId);
+    MatchDetailDto approveParticipant(Integer matchId, Integer participantUserId, Integer hostId);
+    MatchDetailDto rejectParticipant(Integer matchId, Integer participantUserId, Integer hostId, String reason);
 }

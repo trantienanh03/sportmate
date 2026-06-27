@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import ExploreFilterSidebar from '../../components/ExploreFilterSidebar/ExploreFilterSidebar';
 import Footer from '../../components/Footer/Footer';
@@ -11,6 +11,7 @@ import './ExplorePage.css';
 
 const ExplorePage: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const search = location.search;
 
   // Phân tích tham số tìm kiếm từ URL query string
@@ -160,7 +161,7 @@ const ExplorePage: React.FC = () => {
                         
                         <div className="d-flex align-items-center justify-content-between pt-3 border-top">
                           <div className="d-flex align-items-center">
-                            <div className="host-avatar me-2 position-relative">
+                            <div className="host-avatar me-2 position-relative" style={{ cursor: 'pointer' }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (match.host?.id) navigate(`/profile/${match.host.id}`); }}>
                               {match.host?.avatarUrl ? (
                                 <img src={match.host.avatarUrl} alt={match.host.fullName} />
                               ) : (
@@ -172,7 +173,7 @@ const ExplorePage: React.FC = () => {
                                 </div>
                               )}
                             </div>
-                            <span className="small text-muted fw-medium text-truncate" style={{ maxWidth: '80px' }}>
+                            <span className="small text-muted fw-medium text-truncate" style={{ maxWidth: '80px', cursor: 'pointer' }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (match.host?.id) navigate(`/profile/${match.host.id}`); }}>
                               {match.host?.fullName}
                             </span>
                           </div>

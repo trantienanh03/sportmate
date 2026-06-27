@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import "./BillDetailPanel.css";
 import { splitBillService } from "../../services/splitBillService";
 import type { SplitBillDto } from "../../services/splitBillService";
@@ -287,21 +288,23 @@ const BillDetailPanel: React.FC<BillDetailPanelProps> = ({
                       const isTargetUser = p.userId === currentUserId;
                       return (
                         <li key={p.id} className={`member-item ${isTargetUser ? "current-user" : ""}`}>
-                          <div className="member-avatar-wrapper">
-                            {p.userAvatar ? (
-                              <img src={p.userAvatar} alt={p.userName} className="member-avatar" />
-                            ) : (
-                              <div className="member-avatar-fallback">
-                                {p.userName.charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                          <div className="member-info">
-                            <span className="member-name">
-                              {p.userName} {isTargetUser && <span className="user-self-label">(Bạn)</span>}
-                            </span>
-                            <span className="member-amount">{formatVnd(p.amount)}</span>
-                          </div>
+                          <Link to={`/profile/${p.userId}`} className="text-decoration-none text-dark d-flex align-items-center flex-grow-1">
+                            <div className="member-avatar-wrapper">
+                              {p.userAvatar ? (
+                                <img src={p.userAvatar} alt={p.userName} className="member-avatar" />
+                              ) : (
+                                <div className="member-avatar-fallback">
+                                  {p.userName.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <div className="member-info">
+                              <span className="member-name">
+                                {p.userName} {isTargetUser && <span className="user-self-label">(Bạn)</span>}
+                              </span>
+                              <span className="member-amount">{formatVnd(p.amount)}</span>
+                            </div>
+                          </Link>
 
                           <div className="member-action-status">
                             {p.status === "PAID" && (

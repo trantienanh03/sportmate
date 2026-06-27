@@ -25,15 +25,19 @@ const LoggedInNavbar: React.FC = () => {
 
   const handleNotificationClick = (notif: any) => {
     markAsRead(notif.id);
-    if (
-      notif.type === "NEW_MESSAGE" ||
-      notif.type === "BILL_CREATED" ||
-      notif.type === "BILL_PAID" ||
-      notif.type === "BILL_CONFIRMED"
-    ) {
-      navigate(`/messages?roomId=${notif.relatedEntityId}`);
-    } else if (notif.relatedEntityId) {
-      navigate(`/matches/${notif.relatedEntityId}`);
+    if (notif.relatedEntityId) {
+      if (
+        notif.type === "NEW_MESSAGE" ||
+        notif.type === "BILL_CREATED" ||
+        notif.type === "BILL_PAID" ||
+        notif.type === "BILL_CONFIRMED"
+      ) {
+        navigate(`/messages?roomId=${notif.relatedEntityId}`);
+      } else if (notif.type === 'FRIEND_REQUEST' || notif.type === 'FRIEND_ACCEPTED') {
+        navigate(`/profile/${notif.relatedEntityId}`);
+      } else {
+        navigate(`/matches/${notif.relatedEntityId}`);
+      }
     }
   };
 

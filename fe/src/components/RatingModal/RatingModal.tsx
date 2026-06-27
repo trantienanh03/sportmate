@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { type RatingItemRequest, ratingService } from '../../services/ratingService';
+import { Link } from 'react-router-dom';
 import './RatingModal.css';
 
 interface Ratee {
@@ -145,15 +146,19 @@ const RatingModal: React.FC<RatingModalProps> = ({ matchId, ratees, onClose, onS
             {ratees.map((ratee) => (
               <div key={ratee.id} className="ratee-card mb-4 p-3 border rounded-3 bg-light">
                 <div className="d-flex align-items-center mb-3">
-                  <img
-                    src={ratee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(ratee.name)}&background=e2e8f0&color=475569`}
-                    alt={ratee.name}
-                    className="rounded-circle me-3"
-                    style={{ width: '48px', height: '48px', objectFit: 'cover' }}
-                  />
+                  <Link to={`/profile/${ratee.id}`} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={ratee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(ratee.name)}&background=e2e8f0&color=475569`}
+                      alt={ratee.name}
+                      className="rounded-circle me-3"
+                      style={{ width: '48px', height: '48px', objectFit: 'cover' }}
+                    />
+                  </Link>
                   <div>
                     <h6 className="mb-0 fw-bold">
-                      {ratee.name}
+                      <Link to={`/profile/${ratee.id}`} target="_blank" rel="noopener noreferrer" className="text-dark text-decoration-none">
+                        {ratee.name}
+                      </Link>
                       {ratee.isHost && <span className="badge bg-warning text-dark ms-2">Host</span>}
                     </h6>
                   </div>

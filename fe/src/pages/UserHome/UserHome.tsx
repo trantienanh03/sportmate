@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
 import { useAuth } from '../../context/AuthContext';
@@ -33,6 +33,7 @@ const getSportIcon = (sport?: string) => {
 
 const UserHome: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { data: matches = [], isLoading: isMatchesLoading, error: matchesError } = useMatchesQuery();
   const { data: scheduleMatches = [], isLoading: isScheduleLoading } = useScheduleQuery(!!user);
   const error = matchesError ? (matchesError as Error).message || "Không thể tải danh sách trận đấu" : "";
@@ -239,7 +240,17 @@ const UserHome: React.FC = () => {
                                     {formatMatchTime(match.startTime)}
                                   </p>
                                   <p className="event-group text-muted small mb-1 text-truncate">
-                                    bởi {match.host?.fullName || 'Người dùng'} 
+                                    bởi <span 
+                                      onClick={(e) => { 
+                                        e.preventDefault(); 
+                                        e.stopPropagation(); 
+                                        if (match.host?.id) navigate(`/profile/${match.host.id}`); 
+                                      }} 
+                                      className="fw-bold" 
+                                      style={{ cursor: 'pointer', color: '#1a1a1a' }}
+                                    >
+                                      {match.host?.fullName || 'Người dùng'}
+                                    </span> 
                                     {match.host?.badges?.includes('Cảnh báo uy tín') && <i className="fa-solid fa-triangle-exclamation text-danger ms-1" title="Cảnh báo uy tín"></i>}
                                     <span className="mx-1">•</span> <span className="badge bg-light text-dark border">{translateSkillLevel(match.skillLevel)}</span>
                                   </p>
@@ -296,7 +307,17 @@ const UserHome: React.FC = () => {
                                     {formatMatchTime(match.startTime)}
                                   </p>
                                   <p className="event-group text-muted small mb-1 text-truncate">
-                                    bởi {match.host?.fullName || 'Người dùng'} 
+                                    bởi <span 
+                                      onClick={(e) => { 
+                                        e.preventDefault(); 
+                                        e.stopPropagation(); 
+                                        if (match.host?.id) navigate(`/profile/${match.host.id}`); 
+                                      }} 
+                                      className="fw-bold" 
+                                      style={{ cursor: 'pointer', color: '#1a1a1a' }}
+                                    >
+                                      {match.host?.fullName || 'Người dùng'}
+                                    </span> 
                                     {match.host?.badges?.includes('Cảnh báo uy tín') && <i className="fa-solid fa-triangle-exclamation text-danger ms-1" title="Cảnh báo uy tín"></i>}
                                     <span className="mx-1">•</span> <span className="badge bg-light text-dark border">{translateSkillLevel(match.skillLevel)}</span>
                                   </p>

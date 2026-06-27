@@ -172,6 +172,12 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
           }
         }
       });
+
+      client.subscribe(`/topic/friends/${user.id}`, (message) => {
+        if (message.body.includes('FRIEND_REJECTED') || message.body.includes('FRIEND_REMOVED')) {
+          window.dispatchEvent(new CustomEvent('friendship_update_event', { detail: message.body }));
+        }
+      });
     };
 
     client.onStompError = (frame) => {

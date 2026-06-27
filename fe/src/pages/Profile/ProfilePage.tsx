@@ -2,11 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import Footer from '../../components/Footer/Footer';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth, type SportCard, type AvailabilitySlot } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import { authService } from '../../services/authService';
 import { useProfileQuery, useUserReviewsQuery } from '../../hooks/useProfileQueries';
 import ProfilePageSkeleton from '../../components/Skeletons/ProfilePageSkeleton';
 import ReviewCardSkeleton from '../../components/Skeletons/ReviewCardSkeleton';
+import { ratingService, type UserReviewDto } from '../../services/ratingService';
+import { friendshipService, type FriendDto, type FriendshipStatusDto } from '../../services/friendshipService';
 import './ProfilePage.css';
 
 type ProfileFormState = {
@@ -68,8 +72,18 @@ const DEFAULT_WEEK_SLOTS: AvailabilitySlot[] = [
 
 const ProfilePage: React.FC = () => {
   const { user, login } = useAuth();
+  const currentUser = user;
+  const { notifications } = useNotifications();
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const isOtherUser = !!id && id !== String(currentUser?.id);
+  const targetUserId = isOtherUser ? Number(id) : currentUser?.id;
+
+  const [displayedUser, setDisplayedUser] = useState<any>(currentUser);
+  const [friendStatus, setFriendStatus] = useState<FriendshipStatusDto>({ status: 'NONE' });
+  const [friendsList, setFriendsList] = useState<FriendDto[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<FriendDto[]>([]);
+  const [activeTab, setActiveTab] = useState<'info' | 'friends' | 'requests'>('info');
   const editorRef = useRef<HTMLElement | null>(null);
   
   // Xác định xem có phải là trang cá nhân của chính mình hay không
@@ -89,6 +103,7 @@ const ProfilePage: React.FC = () => {
   
   // Custom Confirmation Modal State
   const [confirmAction, setConfirmAction] = useState<{ type: 'cancel' | 'save'; section: 'basic' | 'sports' | 'availability' } | null>(null);
+  const [unfriendConfirm, setUnfriendConfirm] = useState<{ show: boolean, userId: number | null, name: string }>({ show: false, userId: null, name: '' });
   
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -120,6 +135,80 @@ const ProfilePage: React.FC = () => {
     setSportCards(profileData.sports && profileData.sports.length > 0 ? profileData.sports : SPORT_CARDS);
     setAvailabilitySlots(profileData.availability && profileData.availability.length > 0 ? profileData.availability : DEFAULT_WEEK_SLOTS);
   }, [profileData]);
+
+  useEffect(() => {
+    if (isOtherUser && id) {
+      authService.getOtherProfile(Number(id)).then(setDisplayedUser).catch(console.error);
+      friendshipService.getFriendshipStatus(Number(id)).then(setFriendStatus).catch(console.error);
+      friendshipService.getUserFriends(Number(id))
+        .then(setFriendsList)
+        .catch(() => setFriendsList([]));
+    } else if (currentUser) {
+      setDisplayedUser(currentUser);
+      friendshipService.getMyFriends().then(setFriendsList).catch(console.error);
+      friendshipService.getPendingRequests().then(setPendingRequests).catch(console.error);
+    }
+  }, [id, currentUser, isOtherUser]);
+
+  const lastProcessedNotifRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const latest = notifications[0];
+      if (latest.id !== lastProcessedNotifRef.current) {
+        lastProcessedNotifRef.current = latest.id;
+        if (latest.type === 'FRIEND_REQUEST' || latest.type === 'FRIEND_ACCEPTED') {
+          if (isOtherUser && id) {
+            friendshipService.getFriendshipStatus(Number(id)).then(setFriendStatus).catch(console.error);
+            friendshipService.getUserFriends(Number(id)).then(setFriendsList).catch(() => setFriendsList([]));
+          } else if (currentUser) {
+            friendshipService.getMyFriends().then(setFriendsList).catch(console.error);
+            friendshipService.getPendingRequests().then(setPendingRequests).catch(console.error);
+          }
+        }
+      }
+    }
+  }, [notifications, isOtherUser, id, currentUser]);
+
+  useEffect(() => {
+    const handleFriendUpdate = () => {
+      if (isOtherUser && id) {
+        friendshipService.getFriendshipStatus(Number(id)).then(setFriendStatus).catch(console.error);
+        friendshipService.getUserFriends(Number(id)).then(setFriendsList).catch(() => setFriendsList([]));
+      } else {
+        friendshipService.getMyFriends().then(setFriendsList).catch(console.error);
+        friendshipService.getPendingRequests().then(setPendingRequests).catch(console.error);
+      }
+    };
+
+    window.addEventListener('friendship_update_event', handleFriendUpdate);
+    return () => window.removeEventListener('friendship_update_event', handleFriendUpdate);
+  }, [isOtherUser, id]);
+
+  // Sync data from user
+  useEffect(() => {
+    if (!displayedUser) return;
+
+    setFormData({
+      fullName: displayedUser.fullName ?? '',
+      avatarUrl: displayedUser.avatarUrl ?? '',
+      bio: displayedUser.bio ?? '',
+      district: displayedUser.district ?? '',
+      lat: toInputValue(displayedUser.lat),
+      lng: toInputValue(displayedUser.lng),
+    });
+
+    if (displayedUser.sports && displayedUser.sports.length > 0) {
+      setSportCards(displayedUser.sports);
+    }
+    if (displayedUser.availability && displayedUser.availability.length > 0) {
+      setAvailabilitySlots(displayedUser.availability);
+    }
+
+    // Fetch reviews
+    ratingService.getUserReviews(displayedUser.id).then(setReviews).catch(console.error);
+  }, [displayedUser]);
+>>>>>>> 73c02976e4aaea244eb38afb0864282ee7c20ba8
 
   // Messages timeout
   useEffect(() => {
@@ -158,6 +247,26 @@ const ProfilePage: React.FC = () => {
 
   const memberSince = profileData?.createdAt ? formatMonthYear(profileData.createdAt) : '—';
   const matchCountText = profileData?.completedMatches ? `${profileData.completedMatches} trận` : '0 trận';
+
+  const handleFriendAction = async () => {
+    if (!targetUserId) return;
+    try {
+      if (friendStatus.status === 'NONE') {
+        await friendshipService.sendFriendRequest(targetUserId);
+        setFriendStatus({ status: 'PENDING_SENT' });
+      } else if (friendStatus.status === 'PENDING_SENT') {
+        await friendshipService.unfriend(targetUserId);
+        setFriendStatus({ status: 'NONE' });
+      } else if (friendStatus.status === 'PENDING_RECEIVED') {
+        await friendshipService.acceptFriendRequest(targetUserId);
+        setFriendStatus({ status: 'FRIENDS' });
+      } else if (friendStatus.status === 'FRIENDS') {
+        setUnfriendConfirm({ show: true, userId: targetUserId, name: profileData?.fullName || 'Người này' });
+      }
+    } catch (e: any) {
+      setErrorMessage(e.message || 'Có lỗi xảy ra');
+    }
+  };
 
   // Basic info handlers
   const handleChange =
@@ -203,22 +312,22 @@ const ProfilePage: React.FC = () => {
     if (type === 'cancel') {
       if (section === 'basic') {
         setIsEditingBasic(false);
-        if (user) {
+        if (displayedUser) {
           setFormData({
-            fullName: user.fullName ?? '',
-            avatarUrl: user.avatarUrl ?? '',
-            bio: user.bio ?? '',
-            district: user.district ?? '',
-            lat: toInputValue(user.lat),
-            lng: toInputValue(user.lng),
+            fullName: displayedUser.fullName ?? '',
+            avatarUrl: displayedUser.avatarUrl ?? '',
+            bio: displayedUser.bio ?? '',
+            district: displayedUser.district ?? '',
+            lat: toInputValue(displayedUser.lat),
+            lng: toInputValue(displayedUser.lng),
           });
         }
       } else if (section === 'sports') {
         setIsEditingSports(false);
-        setSportCards(user?.sports && user.sports.length > 0 ? user.sports : SPORT_CARDS);
+        setSportCards(displayedUser?.sports && displayedUser.sports.length > 0 ? displayedUser.sports : SPORT_CARDS);
       } else if (section === 'availability') {
         setIsEditingAvailability(false);
-        setAvailabilitySlots(user?.availability && user.availability.length > 0 ? user.availability : DEFAULT_WEEK_SLOTS);
+        setAvailabilitySlots(displayedUser?.availability && displayedUser.availability.length > 0 ? displayedUser.availability : DEFAULT_WEEK_SLOTS);
       }
       setConfirmAction(null);
     } else if (type === 'save') {
@@ -274,18 +383,18 @@ const ProfilePage: React.FC = () => {
 
     try {
       const payload = {
-        fullName: (section === 'basic' ? formData.fullName : (user?.fullName || '')).trim(),
-        avatarUrl: (section === 'basic' ? formData.avatarUrl : (user?.avatarUrl || '')).trim() || null,
-        bio: (section === 'basic' ? formData.bio : (user?.bio || '')).trim() || null,
-        district: (section === 'basic' ? formData.district : (user?.district || '')).trim() || null,
+        fullName: (section === 'basic' ? formData.fullName : (currentUser?.fullName || '')).trim(),
+        avatarUrl: (section === 'basic' ? formData.avatarUrl : (currentUser?.avatarUrl || '')).trim() || null,
+        bio: (section === 'basic' ? formData.bio : (currentUser?.bio || '')).trim() || null,
+        district: (section === 'basic' ? formData.district : (currentUser?.district || '')).trim() || null,
         lat: section === 'basic' 
           ? (formData.lat.trim() ? Number(formData.lat) : null) 
-          : (user?.lat ?? null),
+          : (currentUser?.lat ?? null),
         lng: section === 'basic' 
           ? (formData.lng.trim() ? Number(formData.lng) : null) 
-          : (user?.lng ?? null),
-        sports: section === 'sports' ? sportCards : (user?.sports || []),
-        availability: section === 'availability' ? availabilitySlots : (user?.availability || DEFAULT_WEEK_SLOTS),
+          : (currentUser?.lng ?? null),
+        sports: section === 'sports' ? sportCards : (currentUser?.sports || []),
+        availability: section === 'availability' ? availabilitySlots : (currentUser?.availability || DEFAULT_WEEK_SLOTS),
       };
 
       const updatedProfile = await authService.updateProfile(payload);
@@ -358,14 +467,43 @@ const ProfilePage: React.FC = () => {
                         Chỉnh sửa thông tin cơ bản
                       </button>
                     ) : (
-                      <button 
-                        type="button" 
-                        className="btn btn-outline-secondary profile-secondary-btn w-100"
-                        onClick={() => navigate('/messages')}
-                      >
-                        <i className="fa-regular fa-paper-plane me-2" />
-                        Nhắn tin
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          className={`btn w-100 mb-2 ${
+                            friendStatus.status === 'NONE' ? 'btn-primary' :
+                            friendStatus.status === 'PENDING_SENT' ? 'btn-outline-warning' :
+                            friendStatus.status === 'PENDING_RECEIVED' ? 'btn-success' : 'btn-dark'
+                          }`}
+                          onClick={handleFriendAction}
+                        >
+                          {friendStatus.status === 'NONE' && <><i className="fa-solid fa-user-plus me-2" />Kết bạn</>}
+                          {friendStatus.status === 'PENDING_SENT' && <><i className="fa-solid fa-clock me-2" />Hủy yêu cầu</>}
+                          {friendStatus.status === 'PENDING_RECEIVED' && <><i className="fa-solid fa-check me-2" />Chấp nhận kết bạn</>}
+                          {friendStatus.status === 'FRIENDS' && <><i className="fa-solid fa-user-check me-2" />Hủy kết bạn</>}
+                        </button>
+                        {friendStatus.status === 'PENDING_RECEIVED' && (
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger w-100 mb-2"
+                            onClick={async () => {
+                               if (!targetUserId) return;
+                               await friendshipService.rejectFriendRequest(targetUserId);
+                               setFriendStatus({ status: 'NONE' });
+                            }}
+                          >
+                            <i className="fa-solid fa-xmark me-2" />Từ chối
+                          </button>
+                        )}
+                        <button 
+                          type="button" 
+                          className="btn btn-outline-secondary profile-secondary-btn w-100"
+                          onClick={() => navigate('/messages')}
+                        >
+                          <i className="fa-regular fa-paper-plane me-2" />
+                          Nhắn tin
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -396,7 +534,42 @@ const ProfilePage: React.FC = () => {
 
             {/* MAIN CONTENT COLUMN */}
             <section className="profile-main-column">
-              <div className="profile-dual-grid">
+              <div className="profile-tabs mb-4 border-bottom d-flex gap-4">
+                <div 
+                  className={`profile-tab-item pb-2 ${activeTab === 'info' ? 'active fw-bold border-bottom border-primary border-3 text-primary' : 'text-muted'}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setActiveTab('info')}
+                >
+                  Thông tin
+                </div>
+                {(!isOtherUser || friendStatus.status === 'FRIENDS') && (
+                  <div 
+                    className={`profile-tab-item pb-2 ${activeTab === 'friends' ? 'active fw-bold border-bottom border-primary border-3 text-primary' : 'text-muted'}`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setActiveTab('friends')}
+                  >
+                    Bạn bè ({friendsList.length})
+                  </div>
+                )}
+                {!isOtherUser && (
+                  <div 
+                    className={`profile-tab-item pb-2 ${activeTab === 'requests' ? 'active fw-bold border-bottom border-primary border-3 text-primary' : 'text-muted'}`}
+                    style={{ cursor: 'pointer', position: 'relative' }}
+                    onClick={() => setActiveTab('requests')}
+                  >
+                    Lời mời kết bạn
+                    {pendingRequests.length > 0 && (
+                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.6rem' }}>
+                        {pendingRequests.length}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {activeTab === 'info' && (
+                <>
+                  <div className="profile-dual-grid">
                 
                 {/* SPORT CARDS SECTION */}
                 <div className="profile-card card-shell">
@@ -633,6 +806,74 @@ const ProfilePage: React.FC = () => {
                   )}
                 </div>
               </div>
+              </>
+              )}
+
+              {activeTab === 'friends' && (
+                <div className="profile-card card-shell p-4">
+                  <h3 className="mb-4">Danh sách bạn bè</h3>
+                  {friendsList.length === 0 ? (
+                    <p className="text-muted text-center py-5">Chưa có bạn bè nào.</p>
+                  ) : (
+                    <div className="row g-3">
+                      {friendsList.map(friend => (
+                        <div className="col-12 col-md-6" key={friend.userId}>
+                          <div className="d-flex align-items-center p-3 border rounded shadow-sm">
+                            <img src={friend.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.fullName)}&background=eff6ff&color=2563eb`} alt={friend.fullName} className="rounded-circle me-3" style={{ width: '50px', height: '50px', objectFit: 'cover' }} />
+                            <div className="flex-grow-1">
+                              <Link to={`/profile/${friend.userId}`} className="text-decoration-none fw-bold text-dark">{friend.fullName}</Link>
+                              <div className="d-flex gap-1 mt-1">
+                                {friend.badges?.map(b => <span key={b} className="badge bg-light text-dark border" style={{ fontSize: '10px' }}>{b}</span>)}
+                              </div>
+                            </div>
+                            {!isOtherUser && (
+                              <button className="btn btn-sm btn-outline-danger ms-2" onClick={() => {
+                                setUnfriendConfirm({ show: true, userId: friend.userId, name: friend.fullName });
+                              }}>
+                                Hủy kết bạn
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'requests' && !isOtherUser && (
+                <div className="profile-card card-shell p-4">
+                  <h3 className="mb-4">Lời mời kết bạn</h3>
+                  {pendingRequests.length === 0 ? (
+                    <p className="text-muted text-center py-5">Không có lời mời nào.</p>
+                  ) : (
+                    <div className="row g-3">
+                      {pendingRequests.map(req => (
+                        <div className="col-12 col-md-6" key={req.userId}>
+                          <div className="d-flex align-items-center p-3 border rounded shadow-sm">
+                            <img src={req.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(req.fullName)}&background=eff6ff&color=2563eb`} alt={req.fullName} className="rounded-circle me-3" style={{ width: '50px', height: '50px', objectFit: 'cover' }} />
+                            <div className="flex-grow-1">
+                              <Link to={`/profile/${req.userId}`} className="text-decoration-none fw-bold text-dark">{req.fullName}</Link>
+                            </div>
+                            <div className="d-flex gap-2 ms-2">
+                              <button className="btn btn-sm btn-success" onClick={async () => {
+                                await friendshipService.acceptFriendRequest(req.userId);
+                                setPendingRequests(prev => prev.filter(r => r.userId !== req.userId));
+                                setFriendsList(prev => [...prev, { ...req, status: 'ACCEPTED' }]);
+                              }}>Chấp nhận</button>
+                              <button className="btn btn-sm btn-outline-danger" onClick={async () => {
+                                await friendshipService.rejectFriendRequest(req.userId);
+                                setPendingRequests(prev => prev.filter(r => r.userId !== req.userId));
+                              }}>Từ chối</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
             </section>
             </div>
           </div>
@@ -676,11 +917,11 @@ const ProfilePage: React.FC = () => {
               <div className="profile-editor-summary-row">
                 <div className="profile-editor-summary-item">
                   <span className="profile-editor-summary-label">Tên hiển thị</span>
-                  <strong>{user?.fullName || 'Chưa cập nhật'}</strong>
+                  <strong>{currentUser?.fullName || 'Chưa cập nhật'}</strong>
                 </div>
                 <div className="profile-editor-summary-item">
                   <span className="profile-editor-summary-label">Khu vực</span>
-                  <strong>{user?.district || 'Chưa cập nhật'}</strong>
+                  <strong>{currentUser?.district || 'Chưa cập nhật'}</strong>
                 </div>
                 <div className="profile-editor-summary-item">
                   <span className="profile-editor-summary-label">Thành viên từ</span>
@@ -826,6 +1067,43 @@ const ProfilePage: React.FC = () => {
           {successMessage}
         </div>
       )}
+
+      {/* UNFRIEND CONFIRM MODAL */}
+      {unfriendConfirm.show && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">Xác nhận hủy kết bạn</h5>
+                <button type="button" className="btn-close" onClick={() => setUnfriendConfirm({ show: false, userId: null, name: '' })}></button>
+              </div>
+              <div className="modal-body text-center py-4">
+                <p className="mb-0">Bạn có chắc chắn muốn hủy kết bạn với <span className="fw-bold">{unfriendConfirm.name}</span>?</p>
+              </div>
+              <div className="modal-footer border-0 d-flex justify-content-center gap-2">
+                <button type="button" className="btn btn-outline-secondary px-4 rounded-pill" onClick={() => setUnfriendConfirm({ show: false, userId: null, name: '' })}>Hủy</button>
+                <button type="button" className="btn btn-danger px-4 rounded-pill" onClick={async () => {
+                  if (unfriendConfirm.userId) {
+                    try {
+                      await friendshipService.unfriend(unfriendConfirm.userId);
+                      if (isOtherUser && targetUserId === unfriendConfirm.userId) {
+                        setFriendStatus({ status: 'NONE' });
+                        setActiveTab('info');
+                      } else {
+                        setFriendsList(prev => prev.filter(f => f.userId !== unfriendConfirm.userId));
+                      }
+                      setUnfriendConfirm({ show: false, userId: null, name: '' });
+                    } catch (e: any) {
+                      setErrorMessage(e.message || 'Không thể hủy kết bạn');
+                    }
+                  }
+                }}>Đồng ý</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
