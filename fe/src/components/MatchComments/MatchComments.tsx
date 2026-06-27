@@ -266,14 +266,16 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId }) => {
                     Trả lời
                   </button>
                 )}
-                {user && user.id === comment.userId && (
+                {user && (user.id === comment.userId || user.role === 'admin') && (
                   <>
-                    <button 
-                      className="comment-action-btn text-primary"
-                      onClick={() => handleEditStart(comment)}
-                    >
-                      Sửa
-                    </button>
+                    {user.id === comment.userId && (
+                      <button 
+                        className="comment-action-btn text-primary"
+                        onClick={() => handleEditStart(comment)}
+                      >
+                        Sửa
+                      </button>
+                    )}
                     <button 
                       className="comment-action-btn text-danger"
                       onClick={() => handleDelete(comment.id)}

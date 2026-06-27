@@ -487,21 +487,23 @@ const MatchDetail: React.FC = () => {
         <div className="container">
           <h1 className="fw-bolder mb-4 match-title">{title}</h1>
           <div className="d-flex align-items-center justify-content-between">
-            <Link 
-              to={`/profile/${match.host.id}`} 
-              className="text-decoration-none text-dark d-flex align-items-center"
-              onMouseEnter={() => {
-                if (!authService.hasCachedProfile(match.host.id)) {
-                  authService.getOtherProfile(match.host.id).catch(() => {});
-                }
-              }}
-            >
-              <img
-                src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
-                alt={match.host.fullName}
-                className="rounded-circle me-3 border"
-                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-              />
+            <div className="d-flex align-items-center">
+              <Link 
+                to={`/profile/${match.host.id}`} 
+                className="text-decoration-none text-dark d-flex align-items-center"
+                onMouseEnter={() => {
+                  if (!authService.hasCachedProfile(match.host.id)) {
+                    authService.getOtherProfile(match.host.id).catch(() => {});
+                  }
+                }}
+              >
+                <img
+                  src={match.host.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.host.fullName)}&background=3b82f6&color=fff`}
+                  alt={match.host.fullName}
+                  className="rounded-circle me-3 border"
+                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                />
+              </Link>
               <div>
                 <p className="mb-0 text-muted small fw-medium">Tổ chức bởi</p>
                 <h6 className="fw-bold mb-0 d-flex align-items-center flex-wrap gap-1">
@@ -514,7 +516,7 @@ const MatchDetail: React.FC = () => {
                   ))}
                 </h6>
               </div>
-            </Link>
+            </div>
             {user && match.host.id !== user.id && (
               myReportId ? (
                 <button 
@@ -612,8 +614,8 @@ const MatchDetail: React.FC = () => {
                        </span>
                     </div>
                   )}
-                  <p className="fw-bold mb-0 small text-truncate mx-auto" style={{ maxWidth: '80px' }}>
-                    <Link to={`/profile/${attendee.id}`} className="text-decoration-none text-dark">{attendee.name.split(' ')[0]}</Link>
+                  <p className="fw-bold mb-0 small text-truncate mx-auto text-decoration-none text-dark" style={{ maxWidth: '80px' }}>
+                    {attendee.name.split(' ')[0]}
                   </p>
                   <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>{attendee.role}</p>
                 </Link>

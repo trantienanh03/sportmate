@@ -84,4 +84,29 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
             @Param("lng") Double lng,
             @Param("radiusKm") Double radiusKm
     );
+    @Query(value = "SELECT COUNT(*) FROM matches WHERE DATE(created_at) = CURRENT_DATE", nativeQuery = true)
+    long countMatchesCreatedToday();
+
+    @Query(value = "SELECT AVG(CAST(joined_count AS FLOAT) / NULLIF(max_players, 0)) FROM (" +
+                   "  SELECT m.max_players, COUNT(mp.id) as joined_count " +
+                   "  FROM matches m " +
+                   "  LEFT JOIN match_participants mp ON m.id = mp.match_id AND mp.status = 'joined' " +
+                   "  GROUP BY m.id, m.max_players" +
+                   ") subquery", nativeQuery = true)
+    Double getAverageFillRate();
+    @Query("SELECT m FROM Match m WHERE " +
+           "(CAST(:keyword AS string) IS NULL OR LOWER(m.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))) AND " +
+           "(CAST(:status AS string) IS NULL OR CAST(m.status AS string) = CAST(:status AS string))")
+    Page<Match> searchMatchesAdmin(@Param("keyword") String keyword, @Param("status") String status, Pageable pageable);
+
+    @Query(value = "SELECT TO_CHAR(m.created_at, 'MM/YYYY') as month, COUNT(m.id) FROM matches m GROUP BY TO_CHAR(m.created_at, 'MM/YYYY'), EXTRACT(YEAR FROM m.created_at), EXTRACT(MONTH FROM m.created_at) ORDER BY EXTRACT(YEAR FROM m.created_at), EXTRACT(MONTH FROM m.created_at)", nativeQuery = true)
+    List<Object[]> countMatchesByMonth();
+
+    @Query(value = "SELECT m.sport, COUNT(m.id) FROM matches m GROUP BY m.sport ORDER BY COUNT(m.id) DESC", nativeQuery = true)
+    List<Object[]> countMatchesBySport();
+
+    List<Match> findTop5ByOrderByCreatedAtDesc();
+
+    @Query(value = "SELECT COUNT(*) FROM matches WHERE status = 'completed'::match_status AND DATE(start_time) = CURRENT_DATE", nativeQuery = true)
+    long countCompletedMatchesToday();
 }
