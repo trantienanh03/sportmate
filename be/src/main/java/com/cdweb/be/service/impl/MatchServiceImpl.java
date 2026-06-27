@@ -23,6 +23,8 @@ import com.cdweb.be.service.NotificationService;
 import com.cdweb.be.enums.NotificationType;
 import com.cdweb.be.util.BadgeUtil;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,6 +34,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -728,8 +731,8 @@ public class MatchServiceImpl implements MatchService {
     }
 
     private void sendMatchUpdateEvent(Integer matchId) {
-        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
-            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization() {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     doSendMatchUpdateEvent(matchId);
@@ -742,7 +745,7 @@ public class MatchServiceImpl implements MatchService {
 
     private void doSendMatchUpdateEvent(Integer matchId) {
         try {
-            messagingTemplate.convertAndSend("/topic/matches/" + matchId, (Object) java.util.Map.of("type", "MATCH_UPDATED"));
+            messagingTemplate.convertAndSend("/topic/matches/" + matchId, (Object) Map.of("type", "MATCH_UPDATED"));
         } catch (Exception e) {
             log.error("Failed to send socket match update for match {}", matchId, e);
         }

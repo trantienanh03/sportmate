@@ -777,7 +777,7 @@ const ProfilePage: React.FC = () => {
                       {friendsList.map(friend => (
                         <div className="col-12 col-md-6" key={friend.userId}>
                           <div className="d-flex align-items-center p-3 border rounded shadow-sm">
-                            <img src={friend.avatarUrl || 'https://via.placeholder.com/50'} alt={friend.fullName} className="rounded-circle me-3" style={{ width: '50px', height: '50px', objectFit: 'cover' }} />
+                            <img src={friend.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.fullName)}&background=eff6ff&color=2563eb`} alt={friend.fullName} className="rounded-circle me-3" style={{ width: '50px', height: '50px', objectFit: 'cover' }} />
                             <div className="flex-grow-1">
                               <Link to={`/profile/${friend.userId}`} className="text-decoration-none fw-bold text-dark">{friend.fullName}</Link>
                               <div className="d-flex gap-1 mt-1">
@@ -809,7 +809,7 @@ const ProfilePage: React.FC = () => {
                       {pendingRequests.map(req => (
                         <div className="col-12 col-md-6" key={req.userId}>
                           <div className="d-flex align-items-center p-3 border rounded shadow-sm">
-                            <img src={req.avatarUrl || 'https://via.placeholder.com/50'} alt={req.fullName} className="rounded-circle me-3" style={{ width: '50px', height: '50px', objectFit: 'cover' }} />
+                            <img src={req.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(req.fullName)}&background=eff6ff&color=2563eb`} alt={req.fullName} className="rounded-circle me-3" style={{ width: '50px', height: '50px', objectFit: 'cover' }} />
                             <div className="flex-grow-1">
                               <Link to={`/profile/${req.userId}`} className="text-decoration-none fw-bold text-dark">{req.fullName}</Link>
                             </div>
