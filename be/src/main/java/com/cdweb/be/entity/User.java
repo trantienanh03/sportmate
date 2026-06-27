@@ -57,6 +57,9 @@ public class User {
     @Column(name = "district", length = 60)
     private String district;
 
+    @Column(name = "phone", length = 20)
+    private String phone;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
@@ -64,6 +67,9 @@ public class User {
     @Column(name = "is_banned", nullable = false)
     @Builder.Default
     private Boolean isBanned = false;
+
+    @Column(name = "banned_until")
+    private LocalDateTime bannedUntil;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "sports_json", columnDefinition = "jsonb")

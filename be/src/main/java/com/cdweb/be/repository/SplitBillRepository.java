@@ -16,4 +16,8 @@ public interface SplitBillRepository extends JpaRepository<SplitBill, Integer> {
     Optional<SplitBill> findByRoomIdAndStatus(Integer roomId, BillStatus status);
 
     boolean existsByRoomIdAndStatus(Integer roomId, BillStatus status);
+
+    org.springframework.data.domain.Page<SplitBill> findAll(org.springframework.data.domain.Pageable pageable);
+
+    org.springframework.data.domain.Page<SplitBill> findByStatus(BillStatus status, org.springframework.data.domain.Pageable pageable);
 }

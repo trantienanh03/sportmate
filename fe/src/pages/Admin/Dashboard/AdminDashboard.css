@@ -1,0 +1,73 @@
+.stat-card {
+  border-radius: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+  z-index: 1050;
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.bg-primary-subtle { background-color: #e6f0ff !important; }
+.bg-success-subtle { background-color: #e6f9ed !important; }
+.bg-info-subtle { background-color: #e6f6f8 !important; }
+.bg-danger-subtle { background-color: #fbe7e9 !important; }
+
+/* Custom Scrollbar cho table */
+.table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+.activity-icon-wrapper i {
+  font-size: 1.1rem;
+}
+
+.recharts-tooltip-cursor {
+  fill: #f8fafc;
+}
+
+/* Custom Tooltip for Stat Cards */
+[data-custom-tooltip] {
+  position: relative;
+}
+[data-custom-tooltip]::after {
+  content: attr(data-custom-tooltip);
+  position: absolute;
+  top: 105%; /* Hiển thị ngay phía dưới card */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffffff;
+  color: #333;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, top 0.3s ease;
+  pointer-events: none;
+}
+[data-custom-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+  top: 110%; /* Trượt xuống một chút khi hover */
+}
