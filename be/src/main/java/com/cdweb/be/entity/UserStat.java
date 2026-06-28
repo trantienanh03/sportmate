@@ -38,6 +38,14 @@ public class UserStat {
     @Builder.Default
     private Integer completedMatches = 0;
 
+    @Column(name = "no_shows")
+    @Builder.Default
+    private Integer noShows = 0;
+
+    @Column(name = "reputation_score")
+    @Builder.Default
+    private Integer reputationScore = 100;
+
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

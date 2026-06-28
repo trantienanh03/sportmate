@@ -11,6 +11,7 @@ import com.cdweb.be.repository.ReportRepository;
 import com.cdweb.be.repository.UserRepository;
 import com.cdweb.be.service.ReportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class ReportServiceImpl implements ReportService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
     private final MatchRepository matchRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional(readOnly = true)
@@ -63,7 +65,7 @@ public class ReportServiceImpl implements ReportService {
 
         Report savedReport = reportRepository.save(reportBuilder.build());
 
-        return ReportDto.builder()
+        ReportDto responseDto = ReportDto.builder()
                 .id(savedReport.getId())
                 .reporterId(savedReport.getReporter().getId())
                 .reporterName(savedReport.getReporter().getFullName())
@@ -74,6 +76,10 @@ public class ReportServiceImpl implements ReportService {
                 .status(savedReport.getStatus())
                 .createdAt(savedReport.getCreatedAt())
                 .build();
+                
+        messagingTemplate.convertAndSend("/topic/admin/reports", responseDto);
+        
+        return responseDto;
     }
 
     @Override

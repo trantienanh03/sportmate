@@ -27,7 +27,7 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-const WS_URL = "http://localhost:8080/ws";
+const WS_URL = "/ws";
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -280,3 +280,4 @@ export const useNotifications = () => {
   }
   return context;
 };
+

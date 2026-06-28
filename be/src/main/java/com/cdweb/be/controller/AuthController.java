@@ -47,6 +47,7 @@ public class AuthController {
 
         HttpSession session = httpRequest.getSession();
         session.setAttribute("userId", response.getId());
+        session.setAttribute("role", response.getRole());
 
         if (Boolean.TRUE.equals(request.getKeepLoggedIn())) {
             String token = UUID.randomUUID().toString();

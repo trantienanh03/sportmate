@@ -100,6 +100,12 @@ public class MatchServiceImpl implements MatchService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
 
+        // Kiểm tra điểm uy tín
+        com.cdweb.be.entity.UserStat userStat = userStatRepository.findByUserId(userId).orElse(null);
+        if (userStat != null && userStat.getReputationScore() != null && userStat.getReputationScore() < 50) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Điểm uy tín của bạn quá thấp (< 50) để tham gia trận đấu. Vui lòng cải thiện đánh giá từ cộng đồng.");
+        }
+
         Optional<MatchParticipant> existingOpt = matchParticipantRepository.findByMatch_IdAndUser_Id(matchId, userId);
         if (existingOpt.isPresent()) {
             MatchParticipant existing = existingOpt.get();
@@ -417,6 +423,12 @@ public class MatchServiceImpl implements MatchService {
     public Match createMatch(CreateMatchRequest request, Integer hostId) {
         User host = userRepository.findById(hostId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
+
+        // Kiểm tra điểm uy tín
+        com.cdweb.be.entity.UserStat userStat = userStatRepository.findByUserId(hostId).orElse(null);
+        if (userStat != null && userStat.getReputationScore() != null && userStat.getReputationScore() < 50) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Điểm uy tín của bạn quá thấp (< 50) để tạo trận đấu mới. Vui lòng cải thiện đánh giá từ cộng đồng.");
+        }
 
         // Validate & resolve sport → String
         String sportValue = request.getSport();

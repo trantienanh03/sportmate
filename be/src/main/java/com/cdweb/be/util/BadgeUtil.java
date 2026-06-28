@@ -16,6 +16,9 @@ public class BadgeUtil {
         if (stat != null && stat.getAvgAttitudeScore() != null && stat.getAvgAttitudeScore() > 0 && stat.getAvgAttitudeScore() < 3.0) {
             hasWarning = true;
         }
+        if (stat != null && stat.getReputationScore() != null && stat.getReputationScore() < 50) {
+            hasWarning = true;
+        }
         
         if (hasWarning) {
             badges.add("Cảnh báo uy tín");
