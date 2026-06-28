@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { adminDashboardService } from "../../../services/adminService";
 import "./AdminDashboard.css";
 
 interface ChartData {
@@ -50,20 +51,7 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/admin/dashboard", {
-          credentials: "include",
-        });
-
-        if (response.status === 401 || response.status === 403) {
-          setError("Bạn không có quyền truy cập trang quản trị.");
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error("Lỗi khi tải dữ liệu dashboard");
-        }
-
-        const result = await response.json();
+        const result = await adminDashboardService.getStats();
         setData(result);
       } catch (err: any) {
         setError(err.message || "Đã xảy ra lỗi");

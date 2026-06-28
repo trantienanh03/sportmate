@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { adminUserService } from '../../../services/adminService';
 
 interface AdminUserDetailModalProps {
   userId: number;
@@ -23,8 +24,7 @@ const AdminUserDetailModal: React.FC<AdminUserDetailModalProps> = ({ userId, isO
   const fetchDetails = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8080/api/admin/users/${userId}/details`, { credentials: 'include' });
-      const result = await res.json();
+      const result = await adminUserService.getDetails(userId);
       setData(result);
       setRepScore(result.stats?.reputationScore || 100);
     } catch (err) {
@@ -43,7 +43,7 @@ const AdminUserDetailModal: React.FC<AdminUserDetailModalProps> = ({ userId, isO
   const executeUpdateRole = async () => {
     if (!confirmRole) return;
     try {
-      await fetch(`http://localhost:8080/api/admin/users/${userId}/role?role=${confirmRole}`, { method: 'PUT', credentials: 'include' });
+      await adminUserService.updateRole(userId, confirmRole);
       fetchDetails();
     } catch (err) {
       alert("Lỗi cấp quyền");
@@ -54,11 +54,10 @@ const AdminUserDetailModal: React.FC<AdminUserDetailModalProps> = ({ userId, isO
 
   const handleUpdateReputation = async () => {
     try {
-      await fetch(`http://localhost:8080/api/admin/users/${userId}/reputation?score=${repScore}`, { method: 'PUT', credentials: 'include' });
-      alert("Đã cập nhật uy tín");
+      await adminUserService.updateReputation(userId, repScore);
       fetchDetails();
-    } catch (err) {
-      alert("Lỗi cập nhật uy tín");
+    } catch (err: any) {
+      alert(err.message || "Lỗi cập nhật uy tín");
     }
   };
 
@@ -112,9 +111,9 @@ const AdminUserDetailModal: React.FC<AdminUserDetailModalProps> = ({ userId, isO
                             <hr />
                             <h6 className="fw-bold mb-3">Phân quyền</h6>
                             {data.profile.role === 'admin' ? (
-                              <button className="btn btn-outline-secondary" onClick={() => handleUpdateRoleClick('user')}>Hạ cấp thành User</button>
+                              <button className="btn btn-outline-secondary" onClick={() => handleUpdateRoleClick('user')}>Đặt làm Thành viên</button>
                             ) : (
-                              <button className="btn btn-outline-danger" onClick={() => handleUpdateRoleClick('admin')}>Nâng cấp thành Admin</button>
+                              <button className="btn btn-outline-danger" onClick={() => handleUpdateRoleClick('admin')}>Đặt làm Quản trị viên</button>
                             )}
                           </div>
                         </div>
@@ -136,7 +135,7 @@ const AdminUserDetailModal: React.FC<AdminUserDetailModalProps> = ({ userId, isO
                         <div className="card border-0 shadow-sm h-100 bg-light">
                           <div className="card-body text-center py-4">
                             <h2 className="display-4 fw-bold text-danger mb-0">{data.stats.noShows || 0}</h2>
-                            <p className="text-muted mb-0">Trận bùng kèo</p>
+                            <p className="text-muted mb-0">Số lần vắng mặt</p>
                           </div>
                         </div>
                       </div>
@@ -220,3 +219,4 @@ const AdminUserDetailModal: React.FC<AdminUserDetailModalProps> = ({ userId, isO
 };
 
 export default AdminUserDetailModal;
+

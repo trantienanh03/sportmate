@@ -6,7 +6,7 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import './MatchComments.css';
 
-const WS_URL = "http://localhost:8080/ws";
+const WS_URL = "/ws";
 
 interface MatchCommentsProps {
   matchId: number;
@@ -420,3 +420,4 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId }) => {
 };
 
 export default MatchComments;
+

@@ -23,7 +23,7 @@ const AdminLayout: React.FC = () => {
     if (!user || user.role?.toLowerCase() !== 'admin') return;
 
     const client = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS("/ws"),
       connectHeaders: {},
       debug: () => {},
       reconnectDelay: 5000,

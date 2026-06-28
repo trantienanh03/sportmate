@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { adminReportService } from "../../../services/adminService";
 
 interface AdminReport {
   id: number;
@@ -39,12 +40,7 @@ const AdminReports: React.FC = () => {
       if (keyword) params.append("keyword", keyword);
       if (statusFilter) params.append("status", statusFilter);
 
-      const response = await fetch(`http://localhost:8080/api/admin/reports?${params.toString()}`, {
-        credentials: "include"
-      });
-      if (!response.ok) throw new Error("Lỗi tải danh sách báo cáo");
-      
-      const data: PageData = await response.json();
+      const data: PageData = await adminReportService.getList(params);
       setReports(data.content);
       setTotalPages(data.totalPages);
     } catch (err) {
@@ -82,20 +78,11 @@ const AdminReports: React.FC = () => {
     if (!selectedReportId) return;
 
     try {
-      let url = `http://localhost:8080/api/admin/reports/${selectedReportId}/action?action=${selectedAction}`;
-      if (selectedAction === "PENALTY") {
-        url += `&penaltyScore=${penaltyScore}`;
-      }
-
-      const response = await fetch(url, {
-        method: "PUT",
-        credentials: "include"
-      });
-      
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Cập nhật thất bại");
-      }
+      await adminReportService.handleAction(
+        selectedReportId,
+        selectedAction,
+        selectedAction === "PENALTY" ? penaltyScore : undefined
+      );
       
       const newStatus = selectedAction === "DISMISS" ? "DISMISSED" : "RESOLVED";
       // Nếu đang lọc theo PENDING, xóa dòng khỏi bảng ngay (không cần đợi reload)
@@ -117,7 +104,7 @@ const AdminReports: React.FC = () => {
     switch(status) {
       case 'PENDING': return <span className="badge bg-warning text-dark">Chờ Xử Lý</span>;
       case 'RESOLVED': return <span className="badge bg-success">Đã Giải Quyết</span>;
-      case 'DISMISSED': return <span className="badge bg-secondary">Bỏ Qua</span>;
+      case 'DISMISSED': return <span className="badge bg-secondary">Đã Bác Bỏ</span>;
       default: return <span className="badge bg-secondary">{status}</span>;
     }
   };

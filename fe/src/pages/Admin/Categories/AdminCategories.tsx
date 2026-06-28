@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { adminCategoryService } from "../../../services/adminService";
 
 interface Sport {
   id: number;
@@ -43,9 +44,7 @@ const AdminCategories: React.FC = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8080/api/admin/categories", { credentials: "include" });
-      if (!response.ok) throw new Error("Lỗi tải danh mục");
-      const data = await response.json();
+      const data = await adminCategoryService.getAll();
       setSports(data.sports || []);
       setVenues(data.venues || []);
     } catch (err) {
@@ -67,17 +66,9 @@ const AdminCategories: React.FC = () => {
     setSportSaving(true);
     try {
       const isEdit = !!editingSport.id;
-      const url = isEdit
-        ? `http://localhost:8080/api/admin/categories/sports/${editingSport.id}`
-        : "http://localhost:8080/api/admin/categories/sports";
-      const response = await fetch(url, {
-        method: isEdit ? "PUT" : "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingSport),
-      });
-      if (!response.ok) { const t = await response.text(); throw new Error(t); }
-      const saved: Sport = await response.json();
+      const saved: Sport = isEdit
+        ? await adminCategoryService.updateSport(editingSport.id!, editingSport)
+        : await adminCategoryService.createSport(editingSport);
       if (isEdit) {
         setSports(sports.map(s => s.id === saved.id ? saved : s));
       } else {
@@ -101,17 +92,9 @@ const AdminCategories: React.FC = () => {
     setVenueSaving(true);
     try {
       const isEdit = !!editingVenue.id;
-      const url = isEdit
-        ? `http://localhost:8080/api/admin/categories/venues/${editingVenue.id}`
-        : "http://localhost:8080/api/admin/categories/venues";
-      const response = await fetch(url, {
-        method: isEdit ? "PUT" : "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingVenue),
-      });
-      if (!response.ok) { const t = await response.text(); throw new Error(t); }
-      const saved: Venue = await response.json();
+      const saved: Venue = isEdit
+        ? await adminCategoryService.updateVenue(editingVenue.id!, editingVenue)
+        : await adminCategoryService.createVenue(editingVenue);
       if (isEdit) {
         setVenues(venues.map(v => v.id === saved.id ? saved : v));
       } else {
@@ -127,11 +110,7 @@ const AdminCategories: React.FC = () => {
 
   const toggleVenueVisibility = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/categories/venues/${id}/toggle-visibility`, {
-        method: "PATCH",
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Cập nhật thất bại");
+      await adminCategoryService.toggleVenueVisibility(id);
       setVenues(venues.map(v => v.id === id ? { ...v, verified: !v.verified } : v));
     } catch (err: any) {
       alert(err.message || "Đã xảy ra lỗi");
@@ -220,7 +199,7 @@ const AdminCategories: React.FC = () => {
                 <th>Địa Chỉ</th>
                 <th>Khu Vực</th>
                 <th>GPS</th>
-                <th>Lượt Dùng</th>
+                <th>Số Trận Đã Tổ Chức</th>
                 <th>Trạng Thái</th>
                 <th className="text-end">Thao Tác</th>
               </tr>

@@ -272,7 +272,7 @@ const MatchDetail: React.FC = () => {
 
     // WebSocket Connection
     const client = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS("/ws"),
       connectHeaders: {},
       debug: () => {}, 
       reconnectDelay: 5000,
@@ -876,3 +876,4 @@ const MatchDetail: React.FC = () => {
 };
 
 export default MatchDetail;
+

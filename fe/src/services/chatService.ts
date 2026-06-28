@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8080/api/rooms";
+const API_URL = "/api/rooms";
 
 let cachedRooms: RoomSummaryDto[] | null = null;
 let cachedRoomMessages: Record<number, MessageDto[]> = {};

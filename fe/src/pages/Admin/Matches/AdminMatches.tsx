@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { adminMatchService } from "../../../services/adminService";
 
 interface AdminMatch {
   id: number;
@@ -39,12 +40,7 @@ const AdminMatches: React.FC = () => {
       if (keyword) params.append("keyword", keyword);
       if (statusFilter) params.append("status", statusFilter);
 
-      const response = await fetch(`http://localhost:8080/api/admin/matches?${params.toString()}`, {
-        credentials: "include"
-      });
-      if (!response.ok) throw new Error("Lỗi tải danh sách trận đấu");
-      
-      const data: PageData = await response.json();
+      const data: PageData = await adminMatchService.getList(params);
       setMatches(data.content);
       setTotalPages(data.totalPages);
     } catch (err) {
@@ -70,16 +66,7 @@ const AdminMatches: React.FC = () => {
     if (!confirmCancelId) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/matches/${confirmCancelId}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
-      
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Hủy trận thất bại");
-      }
-      
+      await adminMatchService.cancelMatch(confirmCancelId);
       setMatches(matches.map(m => m.id === confirmCancelId ? { ...m, status: "cancelled" } : m));
     } catch (err: any) {
       alert(err.message || "Đã xảy ra lỗi");
@@ -142,7 +129,7 @@ const AdminMatches: React.FC = () => {
               <th>ID</th>
               <th>Tiêu Đề</th>
               <th>Môn Thể Thao</th>
-              <th>Host (Chủ sân)</th>
+              <th>Người Tổ Chức</th>
               <th>Thời Gian</th>
               <th>Thành Viên</th>
               <th>Trạng Thái</th>

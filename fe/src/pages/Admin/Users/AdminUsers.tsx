@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AdminUserDetailModal from "./AdminUserDetailModal";
+import { adminUserService } from "../../../services/adminService";
 
 interface AdminUser {
   id: number;
@@ -34,25 +35,16 @@ const AdminUsers: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: "10",
-      });
+      const params = new URLSearchParams({ page: page.toString(), size: "10" });
       if (keyword) params.append("keyword", keyword);
       if (statusFilter) params.append("status", statusFilter);
       if (roleFilter) params.append("role", roleFilter);
 
-      const response = await fetch(`http://localhost:8080/api/admin/users?${params.toString()}`, {
-        credentials: "include"
-      });
-      if (!response.ok) throw new Error("Lỗi tải danh sách người dùng");
-      
-      const data: PageData = await response.json();
+      const data: PageData = await adminUserService.getList(params);
       setUsers(data.content);
       setTotalPages(data.totalPages);
       setError(null);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || "Đã xảy ra lỗi khi tải danh sách người dùng");
     } finally {
       setLoading(false);
@@ -84,18 +76,11 @@ const AdminUsers: React.FC = () => {
   const executeToggleBan = async () => {
     if (!confirmConfig) return;
     const { id, action } = confirmConfig;
-    
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/users/${id}/status?action=${action}`, {
-        method: "PUT",
-        credentials: "include"
-      });
-      
-      if (!response.ok) throw new Error("Cập nhật thất bại");
-      
+      await adminUserService.updateStatus(id, action);
       fetchUsers();
-    } catch (err) {
-      alert("Đã xảy ra lỗi");
+    } catch (err: any) {
+      alert(err.message || "Đã xảy ra lỗi");
     } finally {
       setConfirmConfig(null);
     }

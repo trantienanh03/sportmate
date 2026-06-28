@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { adminBillService } from "../../../services/adminService";
 
 interface PaymentDetail {
   id: number;
@@ -52,9 +53,7 @@ const AdminBills: React.FC = () => {
     try {
       const params = new URLSearchParams({ page: page.toString(), size: "10" });
       if (statusFilter) params.append("status", statusFilter);
-      const response = await fetch(`http://localhost:8080/api/admin/bills?${params}`, { credentials: "include" });
-      if (!response.ok) throw new Error("Lỗi tải danh sách hóa đơn");
-      const data: PageData = await response.json();
+      const data: PageData = await adminBillService.getList(params);
       setBills(data.content);
       setTotalPages(data.totalPages);
     } catch (err) {
@@ -71,11 +70,8 @@ const AdminBills: React.FC = () => {
     setPayments([]);
     setPaymentsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/bills/${bill.id}/payments`, { credentials: "include" });
-      if (response.ok) {
-        const data: PaymentDetail[] = await response.json();
-        setPayments(data);
-      }
+      const data = await adminBillService.getPayments(bill.id);
+      setPayments(data);
     } catch (err) {
       console.error(err);
     } finally {
