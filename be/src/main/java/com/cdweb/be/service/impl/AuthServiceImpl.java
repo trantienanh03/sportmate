@@ -74,8 +74,23 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(HttpStatus.UNAUTHORIZED, "Email or password incorrect");
         }
 
-        if (!user.getIsActive() || user.getIsBanned()) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Account has been banned or inactive");
+        // Kiểm tra tài khoản: hỗ trợ tự động mở khóa khi bannedUntil đã qua
+        if (!user.getIsActive()) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản đã bị vô hiệu hóa");
+        }
+
+        if (user.getIsBanned()) {
+            if (user.getBannedUntil() != null && user.getBannedUntil().isBefore(LocalDateTime.now())) {
+                // Thời gian khóa đã hết hạn → tự động mở khóa
+                user.setIsBanned(false);
+                user.setBannedUntil(null);
+                userRepository.save(user);
+            } else {
+                String msg = user.getBannedUntil() != null
+                    ? "Tài khoản bị khóa tạm thời đến " + user.getBannedUntil().toLocalDate()
+                    : "Tài khoản bị khóa vĩnh viễn";
+                throw new AppException(HttpStatus.FORBIDDEN, msg);
+            }
         }
 
         return toDto(user);

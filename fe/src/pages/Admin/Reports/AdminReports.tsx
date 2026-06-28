@@ -98,12 +98,18 @@ const AdminReports: React.FC = () => {
       }
       
       const newStatus = selectedAction === "DISMISS" ? "DISMISSED" : "RESOLVED";
-      setReports(reports.map(r => r.id === selectedReportId ? { ...r, status: newStatus } : r));
+      // Nếu đang lọc theo PENDING, xóa dòng khỏi bảng ngay (không cần đợi reload)
+      if (statusFilter === "PENDING") {
+        setReports(reports.filter(r => r.id !== selectedReportId));
+      } else {
+        setReports(reports.map(r => r.id === selectedReportId ? { ...r, status: newStatus } : r));
+      }
     } catch (err: any) {
       alert(err.message || "Đã xảy ra lỗi");
     } finally {
       setActionModalOpen(false);
       setSelectedReportId(null);
+      setSelectedReport(null);
     }
   };
 

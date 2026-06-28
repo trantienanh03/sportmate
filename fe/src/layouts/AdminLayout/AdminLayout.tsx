@@ -20,7 +20,7 @@ const AdminLayout: React.FC = () => {
   const clientRef = useRef<Client | null>(null);
 
   useEffect(() => {
-    if (!user || user.role !== 'ADMIN') return;
+    if (!user || user.role?.toLowerCase() !== 'admin') return;
 
     const client = new Client({
       webSocketFactory: () => new SockJS("http://localhost:8080/ws"),

@@ -145,16 +145,16 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Fill Rate */}
+        {/* Avg Participation */}
         <div className="col-12 col-sm-6 col-xl-3">
-          <div className="card stat-card shadow-sm border-0 h-100" data-custom-tooltip="Tỷ lệ trung bình thành viên tham gia trên mỗi trận đấu">
+          <div className="card stat-card shadow-sm border-0 h-100" data-custom-tooltip="Số thành viên tham gia trung bình trên mỗi trận đấu">
             <div className="card-body d-flex align-items-center">
               <div className="stat-icon bg-info-subtle text-info me-3">
-                <i className="fa-solid fa-chart-line"></i>
+                <i className="fa-solid fa-person-running"></i>
               </div>
               <div>
-                <h6 className="text-muted mb-1">Tỷ Lệ Lấp Đầy</h6>
-                <h3 className="mb-0 fw-bold">{(data?.fillRate || 0) * 100}%</h3>
+                <h6 className="text-muted mb-1">Tham Gia Trung Bình</h6>
+                <h3 className="mb-0 fw-bold">{((data?.fillRate || 0) * 100).toFixed(1)}<small className="fs-6 fw-normal text-muted ms-1">%/trận</small></h3>
               </div>
             </div>
           </div>
