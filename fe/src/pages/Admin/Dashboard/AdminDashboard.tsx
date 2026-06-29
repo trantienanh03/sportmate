@@ -35,6 +35,10 @@ interface DashboardData {
   matchesToday: number;
   fillRate: number;
   pendingReports: number;
+  newUsersToday: number;
+  newUsersThisWeek: number;
+  completedMatchesToday: number;
+  newReportsToday: number;
   userGrowthChart: ChartData[];
   matchGrowthChart: ChartData[];
   popularSportsChart: ChartData[];
@@ -209,7 +213,7 @@ const AdminDashboard: React.FC = () => {
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {data.popularSportsChart.map((entry, index) => (
+                      {data.popularSportsChart.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
