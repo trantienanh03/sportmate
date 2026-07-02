@@ -158,6 +158,10 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
             newNotif.type === "BILL_PAID" || 
             newNotif.type === "BILL_CONFIRMED";
 
+          if (newNotif.type === "ACCOUNT_BANNED") {
+            window.dispatchEvent(new CustomEvent("user_banned_event", { detail: newNotif }));
+          }
+
           if (isBillOrMsg && isViewingThisRoom) {
             // Tự động mark read trên backend nếu đang xem trực tiếp phòng này
             notificationService.markAsRead(newNotif.id).catch(err => console.error(err));

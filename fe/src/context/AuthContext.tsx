@@ -54,7 +54,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const checkAuth = async () => {
       try {
         const userData = await authService.getProfile();
-        setUser(userData);
+        if (userData.isBanned || userData.isActive === false) {
+          setUser(null);
+          await authService.logout().catch(() => {});
+        } else {
+          setUser(userData);
+        }
       } catch (error) {
         setUser(null);
       } finally {

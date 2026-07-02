@@ -23,15 +23,18 @@ public class AdminUserController extends AdminBaseController {
     private final com.cdweb.be.repository.UserStatRepository userStatRepository;
     private final com.cdweb.be.repository.MatchRepository matchRepository;
     private final com.cdweb.be.repository.FriendshipRepository friendshipRepository;
+    private final com.cdweb.be.service.NotificationService notificationService;
 
     public AdminUserController(UserRepository userRepository, 
                                com.cdweb.be.repository.UserStatRepository userStatRepository,
                                com.cdweb.be.repository.MatchRepository matchRepository,
-                               com.cdweb.be.repository.FriendshipRepository friendshipRepository) {
+                               com.cdweb.be.repository.FriendshipRepository friendshipRepository,
+                               com.cdweb.be.service.NotificationService notificationService) {
         super(userRepository);
         this.userStatRepository = userStatRepository;
         this.matchRepository = matchRepository;
         this.friendshipRepository = friendshipRepository;
+        this.notificationService = notificationService;
     }
 
     @GetMapping
@@ -77,20 +80,52 @@ public class AdminUserController extends AdminBaseController {
                 
         if ("BAN_7_DAYS".equalsIgnoreCase(action)) {
             user.setIsBanned(true);
+            user.setIsActive(false);
             user.setBannedUntil(java.time.LocalDateTime.now().plusDays(7));
             log.info("Admin banned user id: {} for 7 days", id);
+
+            notificationService.sendNotification(
+                user.getId(), null,
+                "Tài khoản của bạn đã bị khóa tạm thời!",
+                "Tài khoản của bạn đã bị khóa 7 ngày (đến ngày " + user.getBannedUntil().toLocalDate() + ") do vi phạm quy định cộng đồng. Bạn có thể gửi đơn kháng cáo nếu cho rằng đây là nhầm lẫn.",
+                com.cdweb.be.enums.NotificationType.ACCOUNT_BANNED, null
+            );
         } else if ("BAN_30_DAYS".equalsIgnoreCase(action)) {
             user.setIsBanned(true);
+            user.setIsActive(false);
             user.setBannedUntil(java.time.LocalDateTime.now().plusDays(30));
             log.info("Admin banned user id: {} for 30 days", id);
+
+            notificationService.sendNotification(
+                user.getId(), null,
+                "Tài khoản của bạn đã bị khóa tạm thời!",
+                "Tài khoản của bạn đã bị khóa 30 ngày (đến ngày " + user.getBannedUntil().toLocalDate() + ") do vi phạm quy định cộng đồng. Bạn có thể gửi đơn kháng cáo nếu cho rằng đây là nhầm lẫn.",
+                com.cdweb.be.enums.NotificationType.ACCOUNT_BANNED, null
+            );
         } else if ("BAN_PERMANENT".equalsIgnoreCase(action)) {
             user.setIsBanned(true);
+            user.setIsActive(false);
             user.setBannedUntil(null); // Vĩnh viễn
             log.info("Admin permanently banned user id: {}", id);
+
+            notificationService.sendNotification(
+                user.getId(), null,
+                "Tài khoản của bạn đã bị khóa vĩnh viễn!",
+                "Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm nghiêm trọng quy định cộng đồng.",
+                com.cdweb.be.enums.NotificationType.ACCOUNT_BANNED, null
+            );
         } else if ("UNBAN".equalsIgnoreCase(action)) {
             user.setIsBanned(false);
+            user.setIsActive(true);
             user.setBannedUntil(null);
             log.info("Admin unbanned user id: {}", id);
+
+            notificationService.sendNotification(
+                user.getId(), null,
+                "Tài khoản của bạn đã được mở khóa!",
+                "Tài khoản của bạn đã được Ban Quản Trị mở khóa. Bạn có thể tiếp tục sử dụng các dịch vụ của SportMate.",
+                com.cdweb.be.enums.NotificationType.ACCOUNT_UNBANNED, null
+            );
         } else {
             throw new AppException(HttpStatus.BAD_REQUEST, "Hành động không hợp lệ");
         }

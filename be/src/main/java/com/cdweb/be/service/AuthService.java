@@ -17,4 +17,5 @@ public interface AuthService {
     void clearRememberToken(String token);
     void requestForgotPassword(ForgotPasswordRequest request);
     void resetPassword(ResetPasswordRequest request);
+    void submitAppeal(String email, String title, String details);
 }

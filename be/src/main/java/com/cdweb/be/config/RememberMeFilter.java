@@ -18,6 +18,7 @@ import java.util.Arrays;
 public class RememberMeFilter implements Filter {
 
     private final UserRememberTokenRepository tokenRepository;
+    private final com.cdweb.be.repository.UserRepository userRepository;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -25,8 +26,24 @@ public class RememberMeFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpSession session = httpRequest.getSession(false);
 
-        // Tự động khôi phục session (auto-login) từ cookie remember_me nếu session RAM đã bị xoá
-        if (session == null || session.getAttribute("userId") == null) {
+        if (session != null && session.getAttribute("userId") != null) {
+            Integer userId = (Integer) session.getAttribute("userId");
+            userRepository.findById(userId).ifPresent(user -> {
+                if (Boolean.TRUE.equals(user.getIsBanned())) {
+                    if (user.getBannedUntil() != null && user.getBannedUntil().isBefore(LocalDateTime.now())) {
+                        user.setIsBanned(false);
+                        user.setIsActive(true);
+                        user.setBannedUntil(null);
+                        userRepository.save(user);
+                    } else {
+                        session.invalidate();
+                    }
+                } else if (!Boolean.TRUE.equals(user.getIsActive())) {
+                    session.invalidate();
+                }
+            });
+        } else {
+            // Tự động khôi phục session (auto-login) từ cookie remember_me nếu session RAM đã bị xoá
             Cookie[] cookies = httpRequest.getCookies();
             if (cookies != null) {
                 Arrays.stream(cookies)
@@ -35,7 +52,6 @@ public class RememberMeFilter implements Filter {
                         .ifPresent(cookie -> {
                             String token = cookie.getValue();
                             tokenRepository.findByToken(token).ifPresent(rememberToken -> {
-                                // Xác thực token chưa hết hạn và tài khoản vẫn đang hoạt động tốt
                                 if (rememberToken.getExpiry().isAfter(LocalDateTime.now())
                                         && Boolean.TRUE.equals(rememberToken.getUser().getIsActive())
                                         && !Boolean.TRUE.equals(rememberToken.getUser().getIsBanned())) {

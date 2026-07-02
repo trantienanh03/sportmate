@@ -25,6 +25,29 @@ const AdminReports = lazy(() => import('./pages/Admin/Reports/AdminReports'));
 const AdminCategories = lazy(() => import('./pages/Admin/Categories/AdminCategories'));
 const AdminBills = lazy(() => import('./pages/Admin/Bills/AdminBills'));
 
+import BanNotificationModal from './components/BanNotificationModal/BanNotificationModal';
+import { useState, useEffect } from 'react';
+
+const AccountBanned = lazy(() => import('./pages/AccountBanned/AccountBanned'));
+
+function GlobalBanModal() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState<string>('');
+
+  useEffect(() => {
+    const handleBannedEvent = (e: any) => {
+      const notif = e.detail;
+      setMessage(notif?.content || 'Tài khoản của bạn đã bị khóa bởi Ban Quản Trị.');
+      setIsOpen(true);
+    };
+
+    window.addEventListener('user_banned_event', handleBannedEvent);
+    return () => window.removeEventListener('user_banned_event', handleBannedEvent);
+  }, []);
+
+  return <BanNotificationModal isOpen={isOpen} message={message} onClose={() => setIsOpen(false)} />;
+}
+
 function PageLoader() {
   return (
     <div className="d-flex align-items-center justify-content-center vh-100" style={{ minHeight: '100vh', background: 'var(--bg-color, #f8f9fa)' }}>
@@ -40,11 +63,13 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <NotificationProvider>
+          <GlobalBanModal />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/account-banned" element={<AccountBanned />} />
               
               {/* User Routes */}
               <Route path="/home" element={<ProtectedRoute><UserHome /></ProtectedRoute>} />

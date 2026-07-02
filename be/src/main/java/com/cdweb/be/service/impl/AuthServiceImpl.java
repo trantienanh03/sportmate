@@ -97,10 +97,30 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponseDto getProfile(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (Boolean.TRUE.equals(user.getIsBanned())) {
+            if (user.getBannedUntil() != null && user.getBannedUntil().isBefore(LocalDateTime.now())) {
+                // Thời gian khóa đã hết hạn -> tự động mở khóa
+                user.setIsBanned(false);
+                user.setIsActive(true);
+                user.setBannedUntil(null);
+                userRepository.save(user);
+            } else {
+                String msg = user.getBannedUntil() != null
+                    ? "Tài khoản của bạn đã bị khóa tạm thời đến " + user.getBannedUntil().toLocalDate()
+                    : "Tài khoản của bạn đã bị khóa vĩnh viễn";
+                throw new AppException(HttpStatus.FORBIDDEN, msg);
+            }
+        }
+
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản đã bị vô hiệu hóa");
+        }
+
         return toDto(user);
     }
 
@@ -195,6 +215,23 @@ public class AuthServiceImpl implements AuthService {
 
         // Hủy bỏ token đã sử dụng
         passwordResetTokenRepository.delete(resetToken);
+    }
+
+    @Override
+    @Transactional
+    public void submitAppeal(String email, String title, String details) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản với email này"));
+
+        com.cdweb.be.entity.Report appeal = com.cdweb.be.entity.Report.builder()
+                .reporter(user)
+                .reportedUser(user)
+                .reason("KHÁNG CÁO: " + title)
+                .details("Email kháng cáo: " + email + "\nChi tiết kháng cáo:\n" + details)
+                .status("PENDING")
+                .build();
+
+        reportRepository.save(appeal);
     }
 
     private AuthResponseDto toDto(User user) {
