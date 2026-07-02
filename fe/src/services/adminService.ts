@@ -17,9 +17,18 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     const text = await response.text().catch(() => response.statusText);
     throw new Error(text || `HTTP ${response.status}`);
   }
-  // Trả về null-safe JSON (nếu 204 No Content thì trả null)
   if (response.status === 204) return null as T;
-  return response.json();
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response.json();
+  }
+  const text = await response.text();
+  if (!text) return null as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as unknown as T;
+  }
 }
 
 // ─── Dashboard ─────────────────────────────────────────────────────────────
