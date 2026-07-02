@@ -51,8 +51,11 @@ const AdminReports: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchReports();
-  }, [page, statusFilter]);
+    const timer = setTimeout(() => {
+      fetchReports();
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [keyword, page, statusFilter]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +137,10 @@ const AdminReports: React.FC = () => {
               className="form-control me-2" 
               placeholder="Tìm theo tên người report/bị report, tiêu đề trận..." 
               value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+              onChange={(e) => {
+                setKeyword(e.target.value);
+                setPage(0);
+              }}
             />
             <button className="btn btn-primary" type="submit">Tìm kiếm</button>
           </form>
@@ -211,12 +217,12 @@ const AdminReports: React.FC = () => {
                   <td>{new Date(r.createdAt).toLocaleDateString('vi-VN')}</td>
                   <td>{getStatusBadge(r.status)}</td>
                   <td className="text-end">
-                    <button className="btn btn-sm btn-outline-secondary me-2" title="Xem chi tiết lý do & bằng chứng" onClick={() => openDetailModal(r)}>
-                      <i className="fa-solid fa-eye me-1"></i> Chi tiết
+                    <button className="btn btn-sm btn-outline-secondary me-2 fw-medium" onClick={() => openDetailModal(r)}>
+                      Chi tiết
                     </button>
                     {r.status === 'PENDING' && (
                       <button className="btn btn-sm btn-primary fw-bold" onClick={() => openActionModal(r)}>
-                        <i className="fa-solid fa-gavel me-1"></i> Xử lý
+                        Xử lý
                       </button>
                     )}
                   </td>
@@ -263,7 +269,6 @@ const AdminReports: React.FC = () => {
                       {getStatusBadge(selectedDetailReport.status)}
                     </div>
                     <span className="text-muted small">
-                      <i className="fa-regular fa-clock me-1"></i>
                       {new Date(selectedDetailReport.createdAt).toLocaleString('vi-VN')}
                     </span>
                   </div>
@@ -313,7 +318,7 @@ const AdminReports: React.FC = () => {
                       setDetailModalOpen(false);
                       openActionModal(r);
                     }}>
-                      <i className="fa-solid fa-gavel me-1"></i> Xử lý ngay
+                      Xử lý ngay
                     </button>
                   )}
                 </div>

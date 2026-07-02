@@ -52,8 +52,11 @@ const AdminUsers: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, [page, statusFilter, roleFilter]);
+    const timer = setTimeout(() => {
+      fetchUsers();
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [keyword, page, statusFilter, roleFilter]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,8 +105,7 @@ const AdminUsers: React.FC = () => {
               setPage(0);
             }}
           >
-            <i className="fa-solid fa-users me-2"></i>
-            Người Dùng (Users)
+            Người Dùng
           </button>
         </li>
         <li className="nav-item">
@@ -114,8 +116,7 @@ const AdminUsers: React.FC = () => {
               setPage(0);
             }}
           >
-            <i className="fa-solid fa-user-shield me-2"></i>
-            Quản Trị Viên (Admins)
+            Quản Trị Viên
           </button>
         </li>
         <li className="nav-item">
@@ -126,15 +127,13 @@ const AdminUsers: React.FC = () => {
               setPage(0);
             }}
           >
-            <i className="fa-solid fa-list me-2"></i>
             Tất Cả
           </button>
         </li>
       </ul>
 
       {error && (
-        <div className="alert alert-danger d-flex align-items-center mb-3" role="alert">
-          <i className="fa-solid fa-circle-exclamation me-2"></i>
+        <div className="alert alert-danger mb-3" role="alert">
           {error}
         </div>
       )}
@@ -147,11 +146,12 @@ const AdminUsers: React.FC = () => {
               className="form-control me-2" 
               placeholder="Tìm theo tên, email, SĐT..." 
               value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+              onChange={(e) => {
+                setKeyword(e.target.value);
+                setPage(0);
+              }}
             />
-            <button className="btn btn-primary px-3" type="submit">
-              <i className="fa-solid fa-magnifying-glass me-1"></i> Tìm
-            </button>
+            <button className="btn btn-primary px-3" type="submit">Tìm kiếm</button>
           </form>
         </div>
         <div className="col-md-4 ms-auto">
@@ -211,13 +211,13 @@ const AdminUsers: React.FC = () => {
                   </td>
                   <td>
                     <div className="text-truncate" style={{maxWidth: '180px'}} title={u.email}>{u.email}</div>
-                    {u.phone && <div className="small text-muted"><i className="fa-solid fa-phone me-1"></i>{u.phone}</div>}
+                    {u.phone && <div className="small text-muted">SĐT: {u.phone}</div>}
                   </td>
                   <td>
                     {u.role === 'admin' ? (
-                      <span className="badge bg-danger">ADMIN</span>
+                      <span className="badge bg-danger">Quản trị viên</span>
                     ) : (
-                      <span className="badge bg-secondary">USER</span>
+                      <span className="badge bg-secondary">Người dùng</span>
                     )}
                   </td>
                   <td>
@@ -229,24 +229,23 @@ const AdminUsers: React.FC = () => {
                   </td>
                   <td>{new Date(u.createdAt).toLocaleDateString('vi-VN')}</td>
                   <td className="text-end">
-                    <button className="btn btn-sm btn-outline-primary me-2" title="Xem chi tiết" onClick={() => setSelectedUserId(u.id)}>
-                      <i className="fa-solid fa-eye"></i>
+                    <button className="btn btn-sm btn-outline-secondary me-2 fw-medium" onClick={() => setSelectedUserId(u.id)}>
+                      Xem chi tiết
                     </button>
                     {u.role !== 'admin' && (
                       <div className="btn-group dropdown">
-                        <button type="button" className={`btn btn-sm ${u.isBanned ? 'btn-success' : 'btn-danger'} dropdown-toggle`} data-bs-toggle="dropdown" aria-expanded="false" title={u.isBanned ? 'Mở khóa' : 'Khóa tài khoản'}>
-                          <i className={`fa-solid ${u.isBanned ? 'fa-unlock me-1' : 'fa-lock me-1'}`}></i>
+                        <button type="button" className={`btn btn-sm ${u.isBanned ? 'btn-success' : 'btn-danger'} dropdown-toggle fw-medium`} data-bs-toggle="dropdown" aria-expanded="false">
                           {u.isBanned ? 'Mở khóa' : 'Khóa'}
                         </button>
                         <ul className="dropdown-menu dropdown-menu-end shadow-lg border-0" style={{ zIndex: 1060 }}>
                           {u.isBanned ? (
-                            <li><button className="dropdown-item text-success fw-bold py-2" onClick={() => handleToggleBanClick(u.id, 'UNBAN')}><i className="fa-solid fa-unlock me-2"></i>Mở khóa ngay</button></li>
+                            <li><button className="dropdown-item text-success fw-bold py-2" onClick={() => handleToggleBanClick(u.id, 'UNBAN')}>Mở khóa ngay</button></li>
                           ) : (
                             <>
-                              <li><button className="dropdown-item py-2" onClick={() => handleToggleBanClick(u.id, 'BAN_7_DAYS')}><i className="fa-solid fa-calendar-week me-2"></i>Khóa 7 ngày</button></li>
-                              <li><button className="dropdown-item py-2" onClick={() => handleToggleBanClick(u.id, 'BAN_30_DAYS')}><i className="fa-solid fa-calendar-days me-2"></i>Khóa 30 ngày</button></li>
+                              <li><button className="dropdown-item py-2" onClick={() => handleToggleBanClick(u.id, 'BAN_7_DAYS')}>Khóa 7 ngày</button></li>
+                              <li><button className="dropdown-item py-2" onClick={() => handleToggleBanClick(u.id, 'BAN_30_DAYS')}>Khóa 30 ngày</button></li>
                               <li><hr className="dropdown-divider" /></li>
-                              <li><button className="dropdown-item text-danger fw-bold py-2" onClick={() => handleToggleBanClick(u.id, 'BAN_PERMANENT')}><i className="fa-solid fa-ban me-2"></i>Khóa vĩnh viễn</button></li>
+                              <li><button className="dropdown-item text-danger fw-bold py-2" onClick={() => handleToggleBanClick(u.id, 'BAN_PERMANENT')}>Khóa vĩnh viễn</button></li>
                             </>
                           )}
                         </ul>

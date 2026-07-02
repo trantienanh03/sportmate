@@ -51,8 +51,11 @@ const AdminMatches: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchMatches();
-  }, [page, statusFilter]);
+    const timer = setTimeout(() => {
+      fetchMatches();
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [keyword, page, statusFilter]);
 
   const [confirmCancelId, setConfirmCancelId] = useState<number | null>(null);
 
@@ -99,7 +102,10 @@ const AdminMatches: React.FC = () => {
               className="form-control me-2" 
               placeholder="Tìm theo tiêu đề trận đấu..." 
               value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+              onChange={(e) => {
+                setKeyword(e.target.value);
+                setPage(0);
+              }}
             />
             <button className="btn btn-primary" type="submit">Tìm kiếm</button>
           </form>
@@ -170,16 +176,15 @@ const AdminMatches: React.FC = () => {
                   <td>{m.currentParticipants} / {m.maxParticipants}</td>
                   <td>{getStatusBadge(m.status)}</td>
                   <td className="text-end">
-                    <Link to={`/matches/${m.id}`} className="btn btn-sm btn-outline-primary me-2" title="Xem chi tiết">
-                      <i className="fa-solid fa-eye"></i>
+                    <Link to={`/matches/${m.id}`} className="btn btn-sm btn-outline-secondary me-2 fw-medium">
+                      Chi tiết
                     </Link>
                     {(m.status === 'open' || m.status === 'full') && (
                       <button 
-                        className="btn btn-sm btn-danger"
-                        title="Hủy trận đấu"
+                        className="btn btn-sm btn-danger fw-medium"
                         onClick={() => setConfirmCancelId(m.id)}
                       >
-                        <i className="fa-solid fa-ban"></i>
+                        Hủy trận
                       </button>
                     )}
                   </td>
