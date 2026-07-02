@@ -196,6 +196,22 @@ export const authService = {
 
     return response.text();
   },
+  submitAppeal: async (payload: { email: string; title: string; details: string }) => {
+    const response = await fetch(`${API_URL}/appeal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => response.statusText);
+      throw new Error(text || "Gửi đơn kháng cáo thất bại");
+    }
+
+    return response.text();
+  },
+
   getCachedProfile: (id: number): any | undefined => cachedProfiles[id],
   hasCachedProfile: (id: number): boolean => cachedProfiles[id] !== undefined,
 };

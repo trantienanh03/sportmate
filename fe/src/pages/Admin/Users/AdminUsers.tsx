@@ -27,7 +27,7 @@ const AdminUsers: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("user"); // Mặc định hiển thị tab User
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -88,9 +88,49 @@ const AdminUsers: React.FC = () => {
 
   return (
     <div className="admin-users bg-white p-4 rounded shadow-sm">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h5 className="fw-bold mb-0">Quản Lý Người Dùng</h5>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5 className="fw-bold mb-0">Quản Lý Người Dùng & Quản Trị Viên</h5>
       </div>
+
+      {/* Nav Tabs chia theo Role */}
+      <ul className="nav nav-tabs mb-4">
+        <li className="nav-item">
+          <button 
+            className={`nav-link fw-semibold px-4 ${roleFilter === 'user' ? 'active text-primary border-bottom border-primary border-2' : 'text-muted'}`}
+            onClick={() => {
+              setRoleFilter('user');
+              setPage(0);
+            }}
+          >
+            <i className="fa-solid fa-users me-2"></i>
+            Người Dùng (Users)
+          </button>
+        </li>
+        <li className="nav-item">
+          <button 
+            className={`nav-link fw-semibold px-4 ${roleFilter === 'admin' ? 'active text-primary border-bottom border-primary border-2' : 'text-muted'}`}
+            onClick={() => {
+              setRoleFilter('admin');
+              setPage(0);
+            }}
+          >
+            <i className="fa-solid fa-user-shield me-2"></i>
+            Quản Trị Viên (Admins)
+          </button>
+        </li>
+        <li className="nav-item">
+          <button 
+            className={`nav-link fw-semibold px-4 ${roleFilter === '' ? 'active text-primary border-bottom border-primary border-2' : 'text-muted'}`}
+            onClick={() => {
+              setRoleFilter('');
+              setPage(0);
+            }}
+          >
+            <i className="fa-solid fa-list me-2"></i>
+            Tất Cả
+          </button>
+        </li>
+      </ul>
 
       {error && (
         <div className="alert alert-danger d-flex align-items-center mb-3" role="alert">
@@ -100,7 +140,7 @@ const AdminUsers: React.FC = () => {
       )}
 
       <div className="row mb-3 g-2">
-        <div className="col-md-5">
+        <div className="col-md-6">
           <form className="d-flex" onSubmit={handleSearch}>
             <input 
               type="text" 
@@ -109,24 +149,12 @@ const AdminUsers: React.FC = () => {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
             />
-            <button className="btn btn-primary" type="submit">Tìm</button>
+            <button className="btn btn-primary px-3" type="submit">
+              <i className="fa-solid fa-magnifying-glass me-1"></i> Tìm
+            </button>
           </form>
         </div>
-        <div className="col-md-3">
-          <select 
-            className="form-select" 
-            value={roleFilter}
-            onChange={(e) => {
-              setRoleFilter(e.target.value);
-              setPage(0);
-            }}
-          >
-            <option value="">Tất cả vai trò</option>
-            <option value="admin">Quản trị viên (Admin)</option>
-            <option value="user">Người dùng (User)</option>
-          </select>
-        </div>
-        <div className="col-md-4">
+        <div className="col-md-4 ms-auto">
           <select 
             className="form-select" 
             value={statusFilter}
@@ -142,8 +170,9 @@ const AdminUsers: React.FC = () => {
         </div>
       </div>
 
-      <div className="table-responsive">
-        <table className="table table-hover align-middle">
+      {/* Container đảm bảo Dropdown menu không bị cắt bởi scroll */}
+      <div className="table-responsive" style={{ minHeight: '340px', paddingBottom: '90px' }}>
+        <table className="table table-hover align-middle mb-0">
           <thead className="table-light">
             <tr>
               <th>ID</th>
@@ -162,7 +191,7 @@ const AdminUsers: React.FC = () => {
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-4">Không tìm thấy người dùng nào</td>
+                <td colSpan={7} className="text-center py-4 text-muted">Không tìm thấy tài khoản nào</td>
               </tr>
             ) : (
               users.map(u => (
@@ -204,19 +233,20 @@ const AdminUsers: React.FC = () => {
                       <i className="fa-solid fa-eye"></i>
                     </button>
                     {u.role !== 'admin' && (
-                      <div className="btn-group">
+                      <div className="btn-group dropdown">
                         <button type="button" className={`btn btn-sm ${u.isBanned ? 'btn-success' : 'btn-danger'} dropdown-toggle`} data-bs-toggle="dropdown" aria-expanded="false" title={u.isBanned ? 'Mở khóa' : 'Khóa tài khoản'}>
-                          <i className={`fa-solid ${u.isBanned ? 'fa-unlock' : 'fa-lock'}`}></i>
+                          <i className={`fa-solid ${u.isBanned ? 'fa-unlock me-1' : 'fa-lock me-1'}`}></i>
+                          {u.isBanned ? 'Mở khóa' : 'Khóa'}
                         </button>
-                        <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                        <ul className="dropdown-menu dropdown-menu-end shadow-lg border-0" style={{ zIndex: 1060 }}>
                           {u.isBanned ? (
-                            <li><button className="dropdown-item text-success fw-bold" onClick={() => handleToggleBanClick(u.id, 'UNBAN')}><i className="fa-solid fa-unlock me-2"></i>Mở khóa ngay</button></li>
+                            <li><button className="dropdown-item text-success fw-bold py-2" onClick={() => handleToggleBanClick(u.id, 'UNBAN')}><i className="fa-solid fa-unlock me-2"></i>Mở khóa ngay</button></li>
                           ) : (
                             <>
-                              <li><button className="dropdown-item" onClick={() => handleToggleBanClick(u.id, 'BAN_7_DAYS')}><i className="fa-solid fa-calendar-week me-2"></i>Khóa 7 ngày</button></li>
-                              <li><button className="dropdown-item" onClick={() => handleToggleBanClick(u.id, 'BAN_30_DAYS')}><i className="fa-solid fa-calendar-days me-2"></i>Khóa 30 ngày</button></li>
+                              <li><button className="dropdown-item py-2" onClick={() => handleToggleBanClick(u.id, 'BAN_7_DAYS')}><i className="fa-solid fa-calendar-week me-2"></i>Khóa 7 ngày</button></li>
+                              <li><button className="dropdown-item py-2" onClick={() => handleToggleBanClick(u.id, 'BAN_30_DAYS')}><i className="fa-solid fa-calendar-days me-2"></i>Khóa 30 ngày</button></li>
                               <li><hr className="dropdown-divider" /></li>
-                              <li><button className="dropdown-item text-danger fw-bold" onClick={() => handleToggleBanClick(u.id, 'BAN_PERMANENT')}><i className="fa-solid fa-ban me-2"></i>Khóa vĩnh viễn</button></li>
+                              <li><button className="dropdown-item text-danger fw-bold py-2" onClick={() => handleToggleBanClick(u.id, 'BAN_PERMANENT')}><i className="fa-solid fa-ban me-2"></i>Khóa vĩnh viễn</button></li>
                             </>
                           )}
                         </ul>
@@ -259,8 +289,8 @@ const AdminUsers: React.FC = () => {
       {/* Confirm Modal */}
       {confirmConfig && (
         <>
-          <div className="modal-backdrop fade show" style={{ zIndex: 1060 }}></div>
-          <div className="modal fade show d-block" tabIndex={-1} style={{ zIndex: 1065 }}>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1070 }}></div>
+          <div className="modal fade show d-block" tabIndex={-1} style={{ zIndex: 1075 }}>
             <div className="modal-dialog modal-sm modal-dialog-centered">
               <div className="modal-content border-0 shadow">
                 <div className="modal-header border-bottom-0 pb-0">

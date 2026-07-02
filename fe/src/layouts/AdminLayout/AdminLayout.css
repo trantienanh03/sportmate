@@ -103,3 +103,13 @@
   background-color: #f8f9fa;
   overflow-y: auto;
 }
+
+.table-responsive {
+  min-height: 280px;
+  padding-bottom: 70px;
+}
+
+.table-responsive .dropdown-menu {
+  z-index: 1050;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
