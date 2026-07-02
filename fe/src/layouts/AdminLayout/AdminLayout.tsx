@@ -58,12 +58,12 @@ const AdminLayout: React.FC = () => {
   }, [user]);
 
   const menuItems = [
-    { path: "/admin/dashboard", label: "Tổng Quan", icon: "fa-solid fa-chart-pie" },
-    { path: "/admin/users", label: "Người Dùng", icon: "fa-solid fa-users" },
-    { path: "/admin/matches", label: "Trận Đấu", icon: "fa-solid fa-futbol" },
-    { path: "/admin/reports", label: "Báo Cáo", icon: "fa-solid fa-flag" },
-    { path: "/admin/categories", label: "Danh Mục Sân & Môn", icon: "fa-solid fa-layer-group" },
-    { path: "/admin/bills", label: "Chia Tiền Sân", icon: "fa-solid fa-file-invoice-dollar" },
+    { path: "/admin/dashboard", label: "Tổng Quan" },
+    { path: "/admin/users", label: "Quản Lý Người Dùng" },
+    { path: "/admin/matches", label: "Quản Lý Trận Đấu" },
+    { path: "/admin/reports", label: "Báo Cáo & Tố Cáo" },
+    { path: "/admin/categories", label: "Danh Mục Sân & Môn" },
+    { path: "/admin/bills", label: "Chia Tiền Sân" },
   ];
 
   return (
@@ -85,7 +85,6 @@ const AdminLayout: React.FC = () => {
                   to={item.path}
                   className={`menu-link ${location.pathname.startsWith(item.path) ? "active" : ""}`}
                 >
-                  <i className={`${item.icon} menu-icon`}></i>
                   {item.label}
                 </Link>
               </li>
@@ -94,7 +93,6 @@ const AdminLayout: React.FC = () => {
         </div>
         <div className="sidebar-footer">
           <a href="#" className="menu-link text-danger" onClick={handleLogout}>
-            <i className="fa-solid fa-arrow-right-from-bracket menu-icon"></i>
             Đăng xuất
           </a>
         </div>
@@ -105,12 +103,9 @@ const AdminLayout: React.FC = () => {
         {/* Header */}
         <header className="admin-header shadow-sm d-flex justify-content-between align-items-center px-4 py-3">
           <div className="header-title">
-            <h5 className="mb-0 fw-bold">Admin Dashboard</h5>
+            <h5 className="mb-0 fw-bold">Trang Quản Trị Hệ Thống</h5>
           </div>
           <div className="header-actions d-flex align-items-center gap-3">
-            <button className="btn btn-light rounded-circle shadow-sm">
-              <i className="fa-regular fa-bell"></i>
-            </button>
             <div className="dropdown">
               <a
                 className="d-flex align-items-center text-decoration-none dropdown-toggle"
@@ -149,7 +144,7 @@ const AdminLayout: React.FC = () => {
           <div key={toast.id} className="toast show align-items-center text-bg-warning border-0 mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
             <div className="d-flex">
               <div className="toast-body">
-                <strong><i className="fa-solid fa-bell me-2"></i>{toast.title}</strong>
+                <strong>{toast.title}</strong>
                 <p className="mb-0 mt-1">{toast.content}</p>
                 <small className="text-muted d-block mt-1">{toast.time}</small>
               </div>

@@ -80,7 +80,6 @@ const AdminDashboard: React.FC = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        <i className="fa-solid fa-triangle-exclamation me-2"></i>
         {error}
       </div>
     );
@@ -111,8 +110,8 @@ const AdminDashboard: React.FC = () => {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card stat-card shadow-sm border-0 h-100" data-custom-tooltip={`Đăng ký mới hôm nay: ${data?.newUsersToday || 0} | Tuần này: ${data?.newUsersThisWeek || 0}`}>
             <div className="card-body d-flex align-items-center">
-              <div className="stat-icon bg-primary-subtle text-primary me-3">
-                <i className="fa-solid fa-users"></i>
+              <div className="stat-icon bg-primary-subtle text-primary me-3 fw-bold rounded px-3 py-2">
+                User
               </div>
               <div>
                 <h6 className="text-muted mb-1">Tổng Số User</h6>
@@ -126,8 +125,8 @@ const AdminDashboard: React.FC = () => {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card stat-card shadow-sm border-0 h-100" data-custom-tooltip={`Tạo hôm nay: ${data?.matchesToday || 0} | Đã hoàn thành: ${data?.completedMatchesToday || 0}`}>
             <div className="card-body d-flex align-items-center">
-              <div className="stat-icon bg-success-subtle text-success me-3">
-                <i className="fa-solid fa-futbol"></i>
+              <div className="stat-icon bg-success-subtle text-success me-3 fw-bold rounded px-3 py-2">
+                Trận
               </div>
               <div>
                 <h6 className="text-muted mb-1">Trận Mở Hôm Nay</h6>
@@ -141,8 +140,8 @@ const AdminDashboard: React.FC = () => {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card stat-card shadow-sm border-0 h-100" data-custom-tooltip="Số thành viên tham gia trung bình trên mỗi trận đấu">
             <div className="card-body d-flex align-items-center">
-              <div className="stat-icon bg-info-subtle text-info me-3">
-                <i className="fa-solid fa-person-running"></i>
+              <div className="stat-icon bg-info-subtle text-info me-3 fw-bold rounded px-3 py-2">
+                Tỷ lệ
               </div>
               <div>
                 <h6 className="text-muted mb-1">Tham Gia Trung Bình</h6>
@@ -156,8 +155,8 @@ const AdminDashboard: React.FC = () => {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card stat-card shadow-sm border-0 h-100" data-custom-tooltip={`Báo cáo mới hôm nay: ${data?.newReportsToday || 0}`}>
             <div className="card-body d-flex align-items-center">
-              <div className="stat-icon bg-danger-subtle text-danger me-3">
-                <i className="fa-solid fa-flag"></i>
+              <div className="stat-icon bg-danger-subtle text-danger me-3 fw-bold rounded px-3 py-2">
+                Tố cáo
               </div>
               <div>
                 <h6 className="text-muted mb-1">Báo Cáo Chờ Duyệt</h6>
@@ -252,12 +251,12 @@ const AdminDashboard: React.FC = () => {
                         <tr key={index}>
                           <td className="ps-4 py-3">
                             <div className="d-flex align-items-center">
-                              <div className="activity-icon-wrapper rounded-circle me-3 d-flex align-items-center justify-content-center" 
+                              <div className="activity-icon-wrapper rounded-circle me-3 d-flex align-items-center justify-content-center fw-bold small" 
                                    style={{ width: '40px', height: '40px', backgroundColor: activity.type === 'NEW_USER' ? '#eef4ff' : '#ebfef6', color: activity.type === 'NEW_USER' ? '#3b82f6' : '#10b981' }}>
                                 {activity.avatarUrl ? (
                                   <img src={activity.avatarUrl} alt="avatar" className="rounded-circle w-100 h-100 object-fit-cover" />
                                 ) : (
-                                  <i className={`fa-solid ${activity.type === 'NEW_USER' ? 'fa-user' : 'fa-futbol'}`}></i>
+                                  activity.name.charAt(0)
                                 )}
                               </div>
                               <div>

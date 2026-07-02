@@ -150,8 +150,8 @@ const AdminBills: React.FC = () => {
                   </td>
                   <td>
                     {b.matchId ? (
-                      <Link to={`/matches/${b.matchId}`} className="text-decoration-none small">
-                        <i className="fa-solid fa-futbol me-1"></i>#{b.matchId}
+                      <Link to={`/matches/${b.matchId}`} className="text-decoration-none small fw-semibold">
+                        Trận #{b.matchId}
                       </Link>
                     ) : <span className="text-muted">—</span>}
                   </td>
@@ -162,11 +162,10 @@ const AdminBills: React.FC = () => {
                   <td><small>{new Date(b.createdAt).toLocaleDateString('vi-VN')}</small></td>
                   <td className="text-end">
                     <button
-                      className="btn btn-sm btn-outline-primary"
-                      title="Xem chi tiết thanh toán"
+                      className="btn btn-sm btn-outline-secondary fw-medium"
                       onClick={() => openDetailModal(b)}
                     >
-                      <i className="fa-solid fa-eye"></i>
+                      Chi tiết
                     </button>
                   </td>
                 </tr>

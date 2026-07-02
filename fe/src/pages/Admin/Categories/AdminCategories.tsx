@@ -123,11 +123,11 @@ const AdminCategories: React.FC = () => {
         <h5 className="fw-bold mb-0">Quản Lý Danh Mục Sân & Môn</h5>
         {activeTab === "sports" ? (
           <button className="btn btn-primary btn-sm fw-bold" onClick={() => openSportModal()}>
-            <i className="fa-solid fa-plus me-1"></i> Thêm Môn Thể Thao
+            + Thêm Môn Thể Thao
           </button>
         ) : (
           <button className="btn btn-primary btn-sm fw-bold" onClick={() => openVenueModal()}>
-            <i className="fa-solid fa-plus me-1"></i> Thêm Sân Bãi
+            + Thêm Sân Bãi
           </button>
         )}
       </div>
@@ -135,12 +135,12 @@ const AdminCategories: React.FC = () => {
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item">
           <button className={`nav-link ${activeTab === 'sports' ? 'active fw-bold' : 'text-muted'}`} onClick={() => setActiveTab('sports')}>
-            <i className="fa-solid fa-futbol me-1"></i> Môn Thể Thao ({sports.length})
+            Môn Thể Thao ({sports.length})
           </button>
         </li>
         <li className="nav-item">
           <button className={`nav-link ${activeTab === 'venues' ? 'active fw-bold' : 'text-muted'}`} onClick={() => setActiveTab('venues')}>
-            <i className="fa-solid fa-location-dot me-1"></i> Địa Điểm Sân Bãi ({venues.length})
+            Địa Điểm Sân Bãi ({venues.length})
           </button>
         </li>
       </ul>
@@ -181,8 +181,8 @@ const AdminCategories: React.FC = () => {
                       : <span className="badge bg-secondary">Ẩn</span>}
                   </td>
                   <td className="text-end">
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => openSportModal(s)} title="Sửa">
-                      <i className="fa-solid fa-pen"></i>
+                    <button className="btn btn-sm btn-outline-secondary fw-medium" onClick={() => openSportModal(s)}>
+                      Sửa
                     </button>
                   </td>
                 </tr>
@@ -215,7 +215,7 @@ const AdminCategories: React.FC = () => {
                   <td>
                     {v.lat && v.lng ? (
                       <a href={`https://maps.google.com/?q=${v.lat},${v.lng}`} target="_blank" rel="noreferrer" className="text-decoration-none small">
-                        <i className="fa-solid fa-map-location-dot me-1"></i>{v.lat.toFixed(4)}, {v.lng.toFixed(4)}
+                        {v.lat.toFixed(4)}, {v.lng.toFixed(4)}
                       </a>
                     ) : <span className="text-muted">—</span>}
                   </td>
@@ -226,15 +226,14 @@ const AdminCategories: React.FC = () => {
                       : <span className="badge bg-warning text-dark">Đang ẩn</span>}
                   </td>
                   <td className="text-end d-flex gap-2 justify-content-end">
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => openVenueModal(v)} title="Sửa">
-                      <i className="fa-solid fa-pen"></i>
+                    <button className="btn btn-sm btn-outline-secondary fw-medium" onClick={() => openVenueModal(v)}>
+                      Sửa
                     </button>
                     <button
-                      className={`btn btn-sm ${v.verified ? 'btn-outline-warning' : 'btn-outline-success'}`}
+                      className={`btn btn-sm ${v.verified ? 'btn-outline-warning' : 'btn-outline-success'} fw-medium`}
                       onClick={() => toggleVenueVisibility(v.id)}
-                      title={v.verified ? 'Ẩn sân' : 'Hiện sân'}
                     >
-                      <i className={`fa-solid ${v.verified ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      {v.verified ? 'Ẩn' : 'Hiện'}
                     </button>
                   </td>
                 </tr>

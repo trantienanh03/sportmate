@@ -70,7 +70,7 @@ const AdminUserDetailModal: React.FC<AdminUserDetailModalProps> = ({ userId, isO
         <div className="modal-dialog modal-lg modal-dialog-centered">
           <div className="modal-content border-0 shadow-lg">
             <div className="modal-header border-bottom-0 pb-0">
-              <h5 className="modal-title fw-bold">Hồ sơ chi tiết User #{userId}</h5>
+              <h5 className="modal-title fw-bold">Hồ sơ chi tiết Người dùng #{userId}</h5>
               <button type="button" className="btn-close" onClick={onClose}></button>
             </div>
             <div className="modal-body pt-2">
@@ -99,7 +99,9 @@ const AdminUserDetailModal: React.FC<AdminUserDetailModalProps> = ({ userId, isO
                         <img src={data.profile.avatarUrl || 'https://via.placeholder.com/150'} alt="Avatar" className="rounded-circle mb-3 object-fit-cover" width="120" height="120" />
                         <h5 className="fw-bold mb-1">{data.profile.fullName}</h5>
                         <p className="text-muted small">{data.profile.email}</p>
-                        <span className={`badge ${data.profile.role === 'admin' ? 'bg-danger' : 'bg-secondary'} mb-3`}>{data.profile.role.toUpperCase()}</span>
+                        <span className={`badge ${data.profile.role === 'admin' ? 'bg-danger' : 'bg-secondary'} mb-3`}>
+                          {data.profile.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
+                        </span>
                       </div>
                       <div className="col-md-8">
                         <div className="card border-0 shadow-sm">
