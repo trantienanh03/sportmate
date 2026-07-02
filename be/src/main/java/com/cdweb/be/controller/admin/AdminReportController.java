@@ -22,18 +22,23 @@ import org.springframework.web.bind.annotation.*;
 public class AdminReportController extends AdminBaseController {
 
     private final ReportRepository reportRepository;
-
     private final com.cdweb.be.service.NotificationService notificationService;
     private final com.cdweb.be.repository.UserStatRepository userStatRepository;
+    private final com.cdweb.be.repository.MatchRepository matchRepository;
+    private final com.cdweb.be.repository.MatchParticipantRepository matchParticipantRepository;
 
     public AdminReportController(UserRepository userRepository, 
                                  ReportRepository reportRepository,
                                  com.cdweb.be.service.NotificationService notificationService,
-                                 com.cdweb.be.repository.UserStatRepository userStatRepository) {
+                                 com.cdweb.be.repository.UserStatRepository userStatRepository,
+                                 com.cdweb.be.repository.MatchRepository matchRepository,
+                                 com.cdweb.be.repository.MatchParticipantRepository matchParticipantRepository) {
         super(userRepository);
         this.reportRepository = reportRepository;
         this.notificationService = notificationService;
         this.userStatRepository = userStatRepository;
+        this.matchRepository = matchRepository;
+        this.matchParticipantRepository = matchParticipantRepository;
     }
 
     @GetMapping
@@ -70,7 +75,7 @@ public class AdminReportController extends AdminBaseController {
     public ResponseEntity<String> executeReportAction(
             HttpServletRequest request,
             @PathVariable Long id,
-            @RequestParam String action, // DISMISS, WARN, PENALTY, BAN
+            @RequestParam String action, // DISMISS, WARN, PENALTY, BAN, CANCEL_MATCH, LOCK_MATCH, WARN_HOST, BAN_HOST
             @RequestParam(required = false) Integer penaltyScore
     ) {
         requireAdminId(request);
@@ -83,14 +88,58 @@ public class AdminReportController extends AdminBaseController {
         }
 
         com.cdweb.be.entity.User reportedUser = report.getReportedUser();
+        com.cdweb.be.entity.Match reportedMatch = report.getReportedMatch();
         
         if ("DISMISS".equalsIgnoreCase(action)) {
             report.setStatus("DISMISSED");
-            // Thông báo cho người gửi báo cáo biết báo cáo bị bác bỏ
             notificationService.sendNotification(report.getReporter().getId(), null,
                 "Báo cáo của bạn đã được xem xét",
                 "Báo cáo của bạn (lý do: " + report.getReason() + ") đã được xem xét và bác bỏ vì không đủ căn cứ.",
                 com.cdweb.be.enums.NotificationType.SYSTEM, null);
+        } else if ("CANCEL_MATCH".equalsIgnoreCase(action) || "LOCK_MATCH".equalsIgnoreCase(action)) {
+            if (reportedMatch == null) {
+                throw new AppException(HttpStatus.BAD_REQUEST, "Hành động 'Hủy/Khóa trận' chỉ áp dụng cho báo cáo trận đấu");
+            }
+            reportedMatch.setStatus(com.cdweb.be.enums.MatchStatus.cancelled);
+            matchRepository.save(reportedMatch);
+
+            try {
+                java.util.List<com.cdweb.be.entity.MatchParticipant> participants = matchParticipantRepository.findByMatch_Id(reportedMatch.getId());
+                for (com.cdweb.be.entity.MatchParticipant p : participants) {
+                    notificationService.sendNotification(
+                        p.getUser().getId(), null,
+                        "Trận đấu bị khóa do bị báo cáo",
+                        "Trận đấu [" + reportedMatch.getTitle() + "] bạn tham gia đã bị Ban Quản Trị khóa/hủy do vi phạm quy định.",
+                        com.cdweb.be.enums.NotificationType.MATCH_CANCELLED,
+                        reportedMatch.getId()
+                    );
+                }
+            } catch (Exception e) {
+                log.error("Lỗi gửi thông báo hủy trận cho thành viên", e);
+            }
+            report.setStatus("RESOLVED");
+        } else if ("WARN_HOST".equalsIgnoreCase(action)) {
+            if (reportedMatch == null || reportedMatch.getHost() == null) {
+                throw new AppException(HttpStatus.BAD_REQUEST, "Hành động chỉ áp dụng cho báo cáo trận đấu có thông tin người tạo trận");
+            }
+            notificationService.sendNotification(reportedMatch.getHost().getId(), null,
+                "Cảnh cáo từ Ban Quản Trị về Trận Đấu",
+                "Trận đấu [" + reportedMatch.getTitle() + "] của bạn đã bị báo cáo vì lý do: " + report.getReason() + ". Vui lòng tuân thủ quy định.",
+                com.cdweb.be.enums.NotificationType.SYSTEM, null);
+            report.setStatus("RESOLVED");
+        } else if ("BAN_HOST".equalsIgnoreCase(action)) {
+            if (reportedMatch == null || reportedMatch.getHost() == null) {
+                throw new AppException(HttpStatus.BAD_REQUEST, "Hành động chỉ áp dụng cho báo cáo trận đấu có thông tin người tạo trận");
+            }
+            com.cdweb.be.entity.User host = reportedMatch.getHost();
+            host.setIsBanned(true);
+            host.setIsActive(false);
+            host.setBannedUntil(null);
+            userRepository.save(host);
+
+            reportedMatch.setStatus(com.cdweb.be.enums.MatchStatus.cancelled);
+            matchRepository.save(reportedMatch);
+            report.setStatus("RESOLVED");
         } else if ("WARN".equalsIgnoreCase(action)) {
             if (reportedUser == null) throw new AppException(HttpStatus.BAD_REQUEST, "Hành động 'Cảnh cáo' chỉ áp dụng cho báo cáo người dùng");
             report.setStatus("RESOLVED");
@@ -119,6 +168,7 @@ public class AdminReportController extends AdminBaseController {
         } else if ("BAN".equalsIgnoreCase(action)) {
             if (reportedUser == null) throw new AppException(HttpStatus.BAD_REQUEST, "Hành động 'Khóa tài khoản' chỉ áp dụng cho báo cáo người dùng");
             reportedUser.setIsBanned(true);
+            reportedUser.setIsActive(false);
             reportedUser.setBannedUntil(null); // Ban vĩnh viễn
             userRepository.save(reportedUser);
             

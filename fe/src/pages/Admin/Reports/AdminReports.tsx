@@ -60,6 +60,14 @@ const AdminReports: React.FC = () => {
     fetchReports();
   };
 
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedDetailReport, setSelectedDetailReport] = useState<AdminReport | null>(null);
+
+  const openDetailModal = (report: AdminReport) => {
+    setSelectedDetailReport(report);
+    setDetailModalOpen(true);
+  };
+
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [selectedReport, setSelectedReport] = useState<AdminReport | null>(null);
@@ -69,7 +77,11 @@ const AdminReports: React.FC = () => {
   const openActionModal = (report: AdminReport) => {
     setSelectedReportId(report.id);
     setSelectedReport(report);
-    setSelectedAction("DISMISS");
+    if (report.reportedMatchId) {
+      setSelectedAction("CANCEL_MATCH");
+    } else {
+      setSelectedAction("WARN");
+    }
     setPenaltyScore(10);
     setActionModalOpen(true);
   };
@@ -85,7 +97,6 @@ const AdminReports: React.FC = () => {
       );
       
       const newStatus = selectedAction === "DISMISS" ? "DISMISSED" : "RESOLVED";
-      // Nếu đang lọc theo PENDING, xóa dòng khỏi bảng ngay (không cần đợi reload)
       if (statusFilter === "PENDING") {
         setReports(reports.filter(r => r.id !== selectedReportId));
       } else {
@@ -140,7 +151,7 @@ const AdminReports: React.FC = () => {
             <option value="">Tất cả trạng thái</option>
             <option value="PENDING">Chờ xử lý</option>
             <option value="RESOLVED">Đã giải quyết</option>
-            <option value="DISMISSED">Đã bỏ qua</option>
+            <option value="DISMISSED">Đã bác bỏ</option>
           </select>
         </div>
       </div>
@@ -172,32 +183,37 @@ const AdminReports: React.FC = () => {
                 <tr key={r.id}>
                   <td>#{r.id}</td>
                   <td>
-                    <Link to={`/profile/${r.reporterId}`} className="text-decoration-none">
+                    <Link to={`/profile/${r.reporterId}`} className="text-decoration-none fw-semibold">
                       {r.reporterName}
                     </Link>
                   </td>
                   <td>
                     {r.reportedUserId ? (
                       <div>
-                        User: <Link to={`/profile/${r.reportedUserId}`} className="text-decoration-none text-danger fw-semibold">{r.reportedUserName}</Link>
+                        <span className="badge bg-light text-dark border me-1">User</span>
+                        <Link to={`/profile/${r.reportedUserId}`} className="text-decoration-none text-danger fw-semibold">{r.reportedUserName}</Link>
                       </div>
                     ) : r.reportedMatchId ? (
                       <div>
-                        Trận đấu: <Link to={`/matches/${r.reportedMatchId}`} className="text-decoration-none text-danger fw-semibold">{r.reportedMatchTitle}</Link>
+                        <span className="badge bg-light text-dark border me-1">Trận đấu</span>
+                        <Link to={`/matches/${r.reportedMatchId}`} className="text-decoration-none text-danger fw-semibold">{r.reportedMatchTitle}</Link>
                       </div>
                     ) : (
                       <span className="text-muted">Không xác định</span>
                     )}
                   </td>
                   <td>
-                    <div className="fw-semibold">{r.reason}</div>
-                    <small className="text-muted text-truncate d-inline-block" style={{maxWidth: '200px'}}>
-                      {r.details}
+                    <div className="fw-semibold text-dark">{r.reason}</div>
+                    <small className="text-muted text-truncate d-inline-block" style={{maxWidth: '220px'}}>
+                      {r.details || 'Không có mô tả thêm'}
                     </small>
                   </td>
                   <td>{new Date(r.createdAt).toLocaleDateString('vi-VN')}</td>
                   <td>{getStatusBadge(r.status)}</td>
                   <td className="text-end">
+                    <button className="btn btn-sm btn-outline-secondary me-2" title="Xem chi tiết lý do & bằng chứng" onClick={() => openDetailModal(r)}>
+                      <i className="fa-solid fa-eye me-1"></i> Chi tiết
+                    </button>
                     {r.status === 'PENDING' && (
                       <button className="btn btn-sm btn-primary fw-bold" onClick={() => openActionModal(r)}>
                         <i className="fa-solid fa-gavel me-1"></i> Xử lý
@@ -229,8 +245,86 @@ const AdminReports: React.FC = () => {
         </div>
       )}
 
+      {/* Detail Modal */}
+      {detailModalOpen && selectedDetailReport && (
+        <>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1060 }}></div>
+          <div className="modal fade show d-block" tabIndex={-1} style={{ zIndex: 1065 }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content border-0 shadow-lg">
+                <div className="modal-header border-bottom-0 pb-0">
+                  <h5 className="modal-title fw-bold">Chi Tiết Báo Cáo #{selectedDetailReport.id}</h5>
+                  <button type="button" className="btn-close" onClick={() => setDetailModalOpen(false)}></button>
+                </div>
+                <div className="modal-body py-3">
+                  <div className="d-flex align-items-center justify-content-between mb-3 p-2 bg-light rounded border">
+                    <div>
+                      <span className="text-muted small me-2">Trạng thái:</span>
+                      {getStatusBadge(selectedDetailReport.status)}
+                    </div>
+                    <span className="text-muted small">
+                      <i className="fa-regular fa-clock me-1"></i>
+                      {new Date(selectedDetailReport.createdAt).toLocaleString('vi-VN')}
+                    </span>
+                  </div>
+
+                  <div className="mb-3 p-3 bg-light rounded border">
+                    <div className="mb-2">
+                      <strong>Người gửi báo cáo:</strong>{' '}
+                      <Link to={`/profile/${selectedDetailReport.reporterId}`} className="text-decoration-none fw-semibold">
+                        {selectedDetailReport.reporterName}
+                      </Link>
+                    </div>
+                    <div>
+                      <strong>Đối tượng bị báo cáo:</strong>{' '}
+                      {selectedDetailReport.reportedUserId ? (
+                        <span className="text-danger fw-semibold">
+                          Người dùng: {selectedDetailReport.reportedUserName}
+                        </span>
+                      ) : selectedDetailReport.reportedMatchId ? (
+                        <span className="text-danger fw-semibold">
+                          Trận đấu: {selectedDetailReport.reportedMatchTitle}
+                        </span>
+                      ) : (
+                        <span className="text-muted">Không xác định</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-bold text-dark mb-1">Lý do báo cáo:</label>
+                    <div className="p-2.5 bg-warning-subtle text-dark rounded border border-warning-subtle fw-semibold">
+                      {selectedDetailReport.reason}
+                    </div>
+                  </div>
+
+                  <div className="mb-2">
+                    <label className="form-label fw-bold text-dark mb-1">Mô tả chi tiết / Bằng chứng:</label>
+                    <div className="p-3 bg-light rounded border text-secondary" style={{ whiteSpace: 'pre-wrap', maxHeight: '180px', overflowY: 'auto' }}>
+                      {selectedDetailReport.details || 'Không có mô tả chi tiết.'}
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer border-top-0 pt-0">
+                  <button type="button" className="btn btn-light" onClick={() => setDetailModalOpen(false)}>Đóng</button>
+                  {selectedDetailReport.status === 'PENDING' && (
+                    <button type="button" className="btn btn-primary fw-bold" onClick={() => {
+                      const r = selectedDetailReport;
+                      setDetailModalOpen(false);
+                      openActionModal(r);
+                    }}>
+                      <i className="fa-solid fa-gavel me-1"></i> Xử lý ngay
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Action Modal */}
-      {actionModalOpen && (
+      {actionModalOpen && selectedReport && (
         <>
           <div className="modal-backdrop fade show" style={{ zIndex: 1070 }}></div>
           <div className="modal fade show d-block" tabIndex={-1} style={{ zIndex: 1075 }}>
@@ -241,14 +335,13 @@ const AdminReports: React.FC = () => {
                   <button type="button" className="btn-close" onClick={() => setActionModalOpen(false)}></button>
                 </div>
                 <div className="modal-body py-4">
-                  {selectedReport && (
-                    <div className="alert alert-light border mb-3 py-2">
-                      <small className="text-muted">
-                        <strong>Đối tượng:</strong>{' '}
-                        {selectedReport.reportedUserId ? `Người dùng: ${selectedReport.reportedUserName}` : `Trận đấu: ${selectedReport.reportedMatchTitle}`}
-                      </small>
-                    </div>
-                  )}
+                  <div className="alert alert-light border mb-3 py-2">
+                    <small className="text-muted">
+                      <strong>Đối tượng:</strong>{' '}
+                      {selectedReport.reportedUserId ? `Người dùng: ${selectedReport.reportedUserName}` : `Trận đấu: ${selectedReport.reportedMatchTitle}`}
+                    </small>
+                  </div>
+
                   <div className="mb-3">
                     <label className="form-label fw-semibold">Hành động xử lý:</label>
                     <select 
@@ -256,12 +349,19 @@ const AdminReports: React.FC = () => {
                       value={selectedAction}
                       onChange={(e) => setSelectedAction(e.target.value)}
                     >
-                      <option value="DISMISS">Bác bỏ (Tố cáo sai/hiểu lầm)</option>
-                      {selectedReport?.reportedUserId && (
+                      {selectedReport.reportedMatchId ? (
+                        <>
+                          <option value="CANCEL_MATCH">Hủy / Khóa trận đấu bị tố cáo (Đổi trạng thái & gửi thông báo)</option>
+                          <option value="WARN_HOST">Cảnh cáo Người tạo trận (Host)</option>
+                          <option value="BAN_HOST">Khóa tài khoản Host & Hủy trận đấu</option>
+                          <option value="DISMISS">Bác bỏ (Tố cáo sai/hiểu lầm)</option>
+                        </>
+                      ) : (
                         <>
                           <option value="WARN">Cảnh cáo (Gửi thông báo nhắc nhở)</option>
                           <option value="PENALTY">Trừ điểm uy tín</option>
                           <option value="BAN">Khóa tài khoản vĩnh viễn (Vi phạm nghiêm trọng)</option>
+                          <option value="DISMISS">Bác bỏ (Tố cáo sai/hiểu lầm)</option>
                         </>
                       )}
                     </select>
@@ -282,10 +382,10 @@ const AdminReports: React.FC = () => {
                     </div>
                   )}
 
-                  {selectedAction === "BAN" && (
-                    <div className="alert alert-danger mt-3 mb-0" role="alert">
+                  {(selectedAction === "BAN" || selectedAction === "BAN_HOST" || selectedAction === "CANCEL_MATCH") && (
+                    <div className="alert alert-warning mt-3 mb-0" role="alert">
                       <i className="fa-solid fa-triangle-exclamation me-2"></i>
-                      <strong>Cảnh báo:</strong> Hành động này sẽ lập tức khóa tài khoản của người dùng. Họ sẽ không thể đăng nhập hoặc sử dụng hệ thống.
+                      <strong>Lưu ý:</strong> Xử lý này sẽ lập tức tác động lên cơ sở dữ liệu và tự động gửi thông báo cho các bên liên quan.
                     </div>
                   )}
                 </div>
