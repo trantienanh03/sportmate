@@ -3,7 +3,7 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import type { MessageDto } from "../services/chatService";
 
-const WS_URL = "http://localhost:8080/ws";
+const WS_URL = "/ws";
 
 export const useWebSocket = (
   roomId: number | null,
@@ -76,3 +76,4 @@ export const useWebSocket = (
 
   return { sendMessage, isConnected };
 };
+

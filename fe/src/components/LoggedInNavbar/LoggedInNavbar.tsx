@@ -623,6 +623,13 @@ const LoggedInNavbar: React.FC = () => {
                       Cài đặt
                     </Link>
                   </li>
+                  {user?.role === 'admin' && (
+                    <li>
+                      <Link className="dropdown-item fw-bold text-primary" to="/admin">
+                        <i className="fa-solid fa-shield-halved me-2"></i>Quản trị hệ thống
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <hr className="dropdown-divider" />
                   </li>

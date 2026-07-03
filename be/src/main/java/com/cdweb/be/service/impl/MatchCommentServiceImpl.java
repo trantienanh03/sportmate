@@ -138,7 +138,10 @@ public class MatchCommentServiceImpl implements MatchCommentService {
         MatchComment comment = matchCommentRepository.findById(commentId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Comment not found with id " + commentId));
                 
-        if (!comment.getUser().getId().equals(userId)) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (!comment.getUser().getId().equals(userId) && currentUser.getRole() != com.cdweb.be.enums.UserRole.admin) {
             throw new AppException(HttpStatus.FORBIDDEN, "You do not have permission to delete this comment");
         }
         

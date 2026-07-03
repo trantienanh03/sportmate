@@ -47,6 +47,7 @@ public class AuthController {
 
         HttpSession session = httpRequest.getSession();
         session.setAttribute("userId", response.getId());
+        session.setAttribute("role", response.getRole());
 
         if (Boolean.TRUE.equals(request.getKeepLoggedIn())) {
             String token = UUID.randomUUID().toString();
@@ -137,5 +138,19 @@ public class AuthController {
     public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
         return ResponseEntity.ok("Đặt lại mật khẩu thành công");
+    }
+
+    @PostMapping("/appeal")
+    public ResponseEntity<String> submitAppeal(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        String title = body.get("title");
+        String details = body.get("details");
+
+        if (email == null || email.isBlank() || title == null || title.isBlank()) {
+            throw new com.cdweb.be.exception.AppException(org.springframework.http.HttpStatus.BAD_REQUEST, "Vui lòng nhập email và tiêu đề kháng cáo");
+        }
+
+        authService.submitAppeal(email, title, details);
+        return ResponseEntity.ok("Gửi đơn kháng cáo thành công. Ban Quản Trị sẽ xem xét và phản hồi lại bạn.");
     }
 }

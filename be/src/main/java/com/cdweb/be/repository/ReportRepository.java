@@ -20,4 +20,19 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     @Query("SELECT r.reportedUser.id, COUNT(r) FROM Report r WHERE r.reportedUser.id IN :userIds GROUP BY r.reportedUser.id")
     List<Object[]> countReportsByUserIds(@Param("userIds") List<Integer> userIds);
+
+    long countByStatus(String status);
+
+    @Query("SELECT r FROM Report r " +
+           "LEFT JOIN r.reportedUser ru " +
+           "LEFT JOIN r.reportedMatch rm " +
+           "WHERE (:keyword IS NULL OR :keyword = '' OR " +
+           "LOWER(r.reporter.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "(ru IS NOT NULL AND LOWER(ru.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "(rm IS NOT NULL AND LOWER(rm.title) LIKE LOWER(CONCAT('%', :keyword, '%')))) AND " +
+           "(:status IS NULL OR :status = '' OR r.status = :status)")
+    org.springframework.data.domain.Page<Report> searchReportsAdmin(@Param("keyword") String keyword, @Param("status") String status, org.springframework.data.domain.Pageable pageable);
+
+    @Query(value = "SELECT COUNT(*) FROM reports WHERE DATE(created_at) = CURRENT_DATE", nativeQuery = true)
+    long countReportsCreatedToday();
 }
