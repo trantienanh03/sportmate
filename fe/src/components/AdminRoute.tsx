@@ -15,7 +15,7 @@ export const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }
     );
   }
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role?.toLowerCase() !== 'admin') {
     // If not logged in, or not admin, redirect to home
     return <Navigate to="/" replace />;
   }
