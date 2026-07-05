@@ -118,7 +118,7 @@ const UserHome: React.FC = () => {
                   </div>
                   <div>
                     <h6 className="fw-bold mb-0">{user?.fullName || 'User'}</h6>
-                    <small className="text-muted">TP. Hồ Chí Minh</small>
+                    <small className="text-muted">{user?.district || 'TP. Hồ Chí Minh'}</small>
                   </div>
                   <i className="fa-solid fa-chevron-right ms-auto text-muted"></i>
                 </div>
@@ -178,12 +178,12 @@ const UserHome: React.FC = () => {
               <div className="sidebar-card mb-4 p-3">
                 <div className="sidebar-card-header mb-4">
                   <h6 className="fw-bold mb-0">Nhóm của bạn <span className="text-muted fw-normal ms-1">0</span></h6>
-                  <a href="#" className="text-primary text-decoration-none small fw-bold">Xem tất cả</a>
+                  <Link to="/explore" className="text-primary text-decoration-none small fw-bold">Xem tất cả</Link>
                 </div>
                 <div className="text-center">
                   <h6 className="fw-bold mb-2">Tìm kiếm những người bạn mới?</h6>
                   <p className="text-muted small mb-3">Tham gia một nhóm có chung đam mê với bạn và bắt đầu kết nối ngay hôm nay.</p>
-                  <button className="btn btn-outline-dark rounded-pill px-4 py-2 fw-bold w-100">
+                  <button className="btn btn-outline-dark rounded-pill px-4 py-2 fw-bold w-100" onClick={() => navigate('/explore')}>
                     Khám phá nhóm
                   </button>
                 </div>
@@ -218,7 +218,7 @@ const UserHome: React.FC = () => {
                     <div className="mb-5">
                       <div className="section-header d-flex justify-content-between align-items-center mb-4">
                         <h4 className="fw-bold m-0">Trận đấu của bạn</h4>
-                        <a href="#" className="text-primary text-decoration-none fw-bold">Xem tất cả</a>
+                        <Link to="/my-rooms" className="text-primary text-decoration-none fw-bold">Xem tất cả</Link>
                       </div>
                       <div className="row g-4">
                         {hostMatches.map((match) => (
@@ -280,7 +280,7 @@ const UserHome: React.FC = () => {
                   <div>
                     <div className="section-header d-flex justify-content-between align-items-center mb-4">
                       <h4 className="fw-bold m-0">Trận đấu dành cho bạn</h4>
-                      <a href="#" className="text-primary text-decoration-none fw-bold">Xem tất cả</a>
+                      <Link to="/explore" className="text-primary text-decoration-none fw-bold">Xem tất cả</Link>
                     </div>
                     {otherMatches.length === 0 ? (
                       <div className="text-center py-4 text-muted small bg-light rounded p-3">
@@ -367,7 +367,7 @@ const UserHome: React.FC = () => {
                 </div>
                 <h5 className="fw-bold mb-2">Các nhóm của bạn hiện đang im ắng</h5>
                 <p className="text-muted mb-4">Hãy khám phá các hoạt động mới mẻ và giữ kết nối<br />với những gì đang diễn ra quanh bạn.</p>
-                <button className="btn btn-dark rounded-pill px-4 py-2 fw-bold">
+                <button className="btn btn-dark rounded-pill px-4 py-2 fw-bold" onClick={() => navigate('/explore')}>
                   Khám phá sự kiện
                 </button>
               </div>

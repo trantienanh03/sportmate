@@ -272,21 +272,16 @@ const Messages: React.FC = () => {
     return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
   };
 
-  const getSportIcon = (sport?: string) => {
-    if (!sport) return "fa-comment";
-    switch (sport.toLowerCase()) {
-      case "football":
-      case "soccer":
-        return "fa-futbol";
-      case "badminton":
-        return "fa-table-tennis-paddle-ball";
-      case "tennis":
-        return "fa-baseball";
-      case "basketball":
-        return "fa-basketball";
-      default:
-        return "fa-futbol";
-    }
+  const getSportIcon = (sportOrName?: string) => {
+    if (!sportOrName) return "fa-comments";
+    const s = sportOrName.toLowerCase();
+    if (s.includes("bóng đá") || s.includes("football") || s.includes("soccer")) return "fa-futbol";
+    if (s.includes("cầu lông") || s.includes("badminton") || s.includes("pickleball")) return "fa-table-tennis-paddle-ball";
+    if (s.includes("tennis") || s.includes("quần vợt")) return "fa-baseball";
+    if (s.includes("bóng rổ") || s.includes("basketball")) return "fa-basketball";
+    if (s.includes("bóng chuyền") || s.includes("volleyball")) return "fa-volleyball";
+    if (s.includes("bóng bàn") || s.includes("table tennis")) return "fa-table-tennis-paddle-ball";
+    return "fa-comments";
   };
 
   return (
@@ -347,7 +342,7 @@ const Messages: React.FC = () => {
                       <div className="conversation-avatar-wrap">
                         <i
                           className={`fa-solid ${getSportIcon(
-                            "football"
+                            convo.name
                           )} conversation-avatar-icon`}
                         ></i>
                       </div>
@@ -402,7 +397,7 @@ const Messages: React.FC = () => {
                     </button>
 
                     <div className="header-avatar">
-                      <i className={`fa-solid ${getSportIcon("football")}`}></i>
+                      <i className={`fa-solid ${getSportIcon(activeConvo.name)}`}></i>
                     </div>
                     <div className="header-text-details">
                       <h3 className="header-chat-title">{activeConvo.name}</h3>
