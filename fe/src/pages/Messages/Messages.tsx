@@ -410,12 +410,6 @@ const Messages: React.FC = () => {
                   </div>
 
                   <div className="chat-header-actions">
-                    <button className="header-action-btn" title="Bắt đầu cuộc gọi thoại">
-                      <i className="fa-solid fa-phone"></i>
-                    </button>
-                    <button className="header-action-btn" title="Bắt đầu cuộc gọi video">
-                      <i className="fa-solid fa-video"></i>
-                    </button>
                     <button
                       className={`header-action-btn ${showRoomSidebar ? "active" : ""}`}
                       title="Tư liệu phòng"
@@ -570,12 +564,6 @@ const Messages: React.FC = () => {
 
                 <footer className="chat-input-bar">
                   <div className="chat-input-actions-group">
-                    <button className="input-action-btn" title="Thêm emoji">
-                      <i className="fa-regular fa-face-smile"></i>
-                    </button>
-                    <button className="input-action-btn" title="Đính kèm ảnh hoặc tệp">
-                      <i className="fa-regular fa-image"></i>
-                    </button>
                     {activeConvo.type === "GROUP" && isHost && (
                       <button
                         className="input-action-btn split-bill-btn"
