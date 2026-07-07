@@ -2,10 +2,12 @@ package com.cdweb.be.config;
 
 import com.cdweb.be.security.CustomAccessDeniedHandler;
 import com.cdweb.be.security.CustomAuthenticationEntryPoint;
+import com.cdweb.be.security.SessionAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,6 +28,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final RememberMeFilter rememberMeFilter;
+    private final SessionAuthenticationFilter sessionAuthenticationFilter;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
 
@@ -40,12 +43,32 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .addFilterBefore(rememberMeFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(sessionAuthenticationFilter, RememberMeFilter.class)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/check-email",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password",
+                                "/api/auth/appeal"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/profile/{id:[0-9]+}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/matches").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/matches/explore").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/matches/{id:[0-9]+}").permitAll()
+
+                        // Admin endpoints
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // All other APIs must be authenticated
+                        .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 );
 
