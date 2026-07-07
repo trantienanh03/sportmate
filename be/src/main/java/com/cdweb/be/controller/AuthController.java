@@ -6,7 +6,9 @@ import com.cdweb.be.dto.request.ForgotPasswordRequest;
 import com.cdweb.be.dto.request.ResetPasswordRequest;
 import com.cdweb.be.dto.request.UpdateProfileRequestDto;
 import com.cdweb.be.dto.response.AuthResponseDto;
+import com.cdweb.be.security.CustomUserDetailsService;
 import com.cdweb.be.service.AuthService;
+import com.cdweb.be.util.SecurityUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,6 +16,9 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -25,6 +30,7 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
+    private final CustomUserDetailsService userDetailsService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterRequestDto request) {
@@ -48,6 +54,12 @@ public class AuthController {
         HttpSession session = httpRequest.getSession();
         session.setAttribute("userId", response.getId());
         session.setAttribute("role", response.getRole());
+
+        // Set Authentication in SecurityContextHolder
+        UserDetails userDetails = userDetailsService.loadUserById(response.getId());
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         if (Boolean.TRUE.equals(request.getKeepLoggedIn())) {
             String token = UUID.randomUUID().toString();
@@ -79,6 +91,9 @@ public class AuthController {
             session.invalidate();
         }
 
+        // Clear Authentication in SecurityContextHolder
+        SecurityContextHolder.clearContext();
+
         Cookie[] cookies = httpRequest.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
@@ -99,12 +114,11 @@ public class AuthController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<AuthResponseDto> getUserProfile(HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
+    public ResponseEntity<AuthResponseDto> getUserProfile() {
+        Integer userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-        Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(authService.getProfile(userId));
     }
 
@@ -116,15 +130,12 @@ public class AuthController {
 
     @PutMapping("/profile")
     public ResponseEntity<AuthResponseDto> updateUserProfile(
-            @Valid @RequestBody UpdateProfileRequestDto request,
-            HttpServletRequest httpRequest
+            @Valid @RequestBody UpdateProfileRequestDto request
     ) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
+        Integer userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-
-        Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(authService.updateProfile(userId, request));
     }
 
