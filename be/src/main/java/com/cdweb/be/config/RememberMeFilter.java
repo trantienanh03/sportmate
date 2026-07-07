@@ -26,23 +26,7 @@ public class RememberMeFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpSession session = httpRequest.getSession(false);
 
-        if (session != null && session.getAttribute("userId") != null) {
-            Integer userId = (Integer) session.getAttribute("userId");
-            userRepository.findById(userId).ifPresent(user -> {
-                if (Boolean.TRUE.equals(user.getIsBanned())) {
-                    if (user.getBannedUntil() != null && user.getBannedUntil().isBefore(LocalDateTime.now())) {
-                        user.setIsBanned(false);
-                        user.setIsActive(true);
-                        user.setBannedUntil(null);
-                        userRepository.save(user);
-                    } else {
-                        session.invalidate();
-                    }
-                } else if (!Boolean.TRUE.equals(user.getIsActive())) {
-                    session.invalidate();
-                }
-            });
-        } else {
+        if (session == null || session.getAttribute("userId") == null) {
             // Tự động khôi phục session (auto-login) từ cookie remember_me nếu session RAM đã bị xoá
             Cookie[] cookies = httpRequest.getCookies();
             if (cookies != null) {
