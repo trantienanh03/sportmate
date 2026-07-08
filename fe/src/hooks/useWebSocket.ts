@@ -21,8 +21,9 @@ export const useWebSocket = (
   useEffect(() => {
     if (!roomId) return;
 
+    const token = localStorage.getItem("token");
     const client = new Client({
-      webSocketFactory: () => new SockJS(WS_URL),
+      webSocketFactory: () => new SockJS(token ? `${WS_URL}?token=${encodeURIComponent(token)}` : WS_URL),
       connectHeaders: {},
       debug: (_str) => {},
       reconnectDelay: 5000,

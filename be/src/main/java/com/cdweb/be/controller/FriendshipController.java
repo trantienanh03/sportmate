@@ -21,11 +21,7 @@ public class FriendshipController {
     private final FriendshipService friendshipService;
 
     private Integer getUserIdFromSession(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            return null;
-        }
-        return (Integer) session.getAttribute("userId");
+        return com.cdweb.be.util.SecurityUtils.getCurrentUserId();
     }
 
     @PostMapping("/request/{userId}")
