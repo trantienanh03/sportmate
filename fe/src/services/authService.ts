@@ -9,7 +9,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -25,7 +24,11 @@ export const authService = {
       throw new Error(message);
     }
 
-    return response.json();
+    const res = await response.json();
+    if (res.token) {
+      localStorage.setItem("token", res.token);
+    }
+    return res;
   },
 
   register: async (data: any) => {
@@ -34,7 +37,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -50,7 +52,11 @@ export const authService = {
       throw new Error(message);
     }
 
-    return response.json();
+    const res = await response.json();
+    if (res.token) {
+      localStorage.setItem("token", res.token);
+    }
+    return res;
   },
 
   checkEmailExists: async (email: string): Promise<boolean> => {
@@ -137,8 +143,9 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
     });
+
+    localStorage.removeItem("token");
 
     if (!response.ok) {
       throw new Error("Logout failed");

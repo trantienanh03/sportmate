@@ -151,3 +151,39 @@
   justify-content: center;
   margin: 0 auto;
 }
+
+/* ExplorePage Responsive styling */
+@media (max-width: 991.98px) {
+  .explore-main {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  .explore-main h3 {
+    font-size: 1.5rem !important;
+    text-align: center;
+    width: 100%;
+  }
+
+  .explore-main .d-flex.justify-content-between {
+    flex-direction: column;
+    align-items: center !important;
+    gap: 12px;
+    margin-bottom: 20px !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .event-title {
+    font-size: 1rem !important;
+  }
+
+  .explore-event-card {
+    border-radius: var(--radius-sm) !important;
+  }
+
+  .event-details {
+    padding: 12px !important;
+  }
+}
+

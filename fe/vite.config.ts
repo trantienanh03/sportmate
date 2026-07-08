@@ -11,6 +11,11 @@ export default defineConfig({
       devOptions: {
         enabled: false
       },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,ico,txt,json}'],
+        navigateFallback: '/index.html',
+        cleanupOutdatedCaches: true
+      },
       manifest: {
         name: 'SportMate',
         short_name: 'SportMate',
@@ -18,6 +23,8 @@ export default defineConfig({
         theme_color: '#1a1a1a',
         background_color: '#ffffff',
         display: 'standalone',
+        start_url: '/',
+        scope: '/',
         icons: [
           {
             src: 'logo.svg',
