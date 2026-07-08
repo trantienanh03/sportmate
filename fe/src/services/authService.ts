@@ -67,7 +67,6 @@ export const authService = {
         "Cache-Control": "no-cache",
         "Pragma": "no-cache"
       },
-      credentials: "include",
     });
 
     if (!response.ok) {
@@ -83,7 +82,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
     });
 
     if (!response.ok) {
@@ -100,7 +98,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
     });
 
     if (!response.ok) {
@@ -118,7 +115,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -160,7 +156,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify({ email }),
     });
 
@@ -185,7 +180,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify({ token, newPassword }),
     });
 
@@ -207,7 +201,6 @@ export const authService = {
     const response = await fetch(`${API_URL}/appeal`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify(payload),
     });
 

@@ -29,8 +29,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     /**
-     * Load user by ID — used by SessionAuthenticationFilter to restore authentication
-     * from session or remember-me cookie on each request.
+     * Load user by ID — used by JwtAuthenticationFilter on every authenticated request.
+     * This DB lookup ensures that banned or deactivated accounts are denied access
+     * even if their JWT token has not yet expired.
      */
     @Transactional(readOnly = true)
     public UserDetails loadUserById(Integer id) {
