@@ -6,9 +6,8 @@ import com.cdweb.be.dto.response.MatchDetailDto;
 import com.cdweb.be.entity.Match;
 import com.cdweb.be.enums.MatchStatus;
 import com.cdweb.be.service.MatchService;
+import com.cdweb.be.util.SecurityUtils;
 import java.util.List;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,99 +25,79 @@ public class MatchController {
     private final com.cdweb.be.service.GeminiService geminiService;
 
     @GetMapping
-    public ResponseEntity<List<MatchDetailDto>> getMatches(HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
+    public ResponseEntity<List<MatchDetailDto>> getMatches() {
+        Integer userId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(matchService.getMatches(userId));
     }
 
     @GetMapping("/explore")
     public ResponseEntity<List<MatchDetailDto>> exploreMatches(
-            @ModelAttribute ExploreMatchRequest request,
-            HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
+            @ModelAttribute ExploreMatchRequest request) {
+        Integer userId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(matchService.exploreMatches(request, userId));
     }
 
-    // API lấy lịch trình cá nhân của người dùng (các trận đấu tham gia hoặc làm host)
+    // API lấy lịch trình cá nhân của người dùng (các trận đấu tham gia hoặc làm
+    // host)
     @GetMapping("/schedule")
-    public ResponseEntity<List<MatchDetailDto>> getUserSchedule(HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
+    public ResponseEntity<List<MatchDetailDto>> getUserSchedule() {
+        Integer userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(matchService.getUserSchedule(userId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MatchDetailDto> getMatch(
-            @PathVariable Integer id,
-            HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
+    public ResponseEntity<MatchDetailDto> getMatch(@PathVariable Integer id) {
+        Integer userId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(matchService.getMatchDetail(id, userId));
     }
 
     @PostMapping("/{id}/join")
-    public ResponseEntity<MatchDetailDto> joinMatch(
-            @PathVariable Integer id,
-            HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).build();
+    public ResponseEntity<MatchDetailDto> joinMatch(@PathVariable Integer id) {
+        Integer userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(matchService.joinMatch(id, userId));
     }
 
     @DeleteMapping("/{id}/join")
-    public ResponseEntity<MatchDetailDto> leaveMatch(
-            @PathVariable Integer id,
-            HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).build();
+    public ResponseEntity<MatchDetailDto> leaveMatch(@PathVariable Integer id) {
+        Integer userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(matchService.leaveMatch(id, userId));
     }
 
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<MatchDetailDto> cancelMatch(
-            @PathVariable Integer id,
-            HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).build();
+    public ResponseEntity<MatchDetailDto> cancelMatch(@PathVariable Integer id) {
+        Integer userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(matchService.cancelMatch(id, userId));
     }
 
     @PostMapping("/{id}/resume")
-    public ResponseEntity<MatchDetailDto> resumeMatch(
-            @PathVariable Integer id,
-            HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).build();
+    public ResponseEntity<MatchDetailDto> resumeMatch(@PathVariable Integer id) {
+        Integer userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(matchService.resumeMatch(id, userId));
     }
 
     @PostMapping("/{id}/participants/{participantId}/approve")
     public ResponseEntity<MatchDetailDto> approveParticipant(
             @PathVariable Integer id,
-            @PathVariable Integer participantId,
-            HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).build();
+            @PathVariable Integer participantId) {
+        Integer hostId = SecurityUtils.getCurrentUserId();
+        if (hostId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Integer hostId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(matchService.approveParticipant(id, participantId, hostId));
     }
 
@@ -126,53 +105,45 @@ public class MatchController {
     public ResponseEntity<MatchDetailDto> rejectParticipant(
             @PathVariable Integer id,
             @PathVariable Integer participantId,
-            @RequestBody Map<String, String> payload,
-            HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).build();
+            @RequestBody Map<String, String> payload) {
+        Integer hostId = SecurityUtils.getCurrentUserId();
+        if (hostId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Integer hostId = (Integer) session.getAttribute("userId");
         String reason = payload.get("reason");
         return ResponseEntity.ok(matchService.rejectParticipant(id, participantId, hostId, reason));
     }
 
     @PostMapping
-    public ResponseEntity<?> createMatch(
-            @Valid @RequestBody CreateMatchRequest request,
-            HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
+    public ResponseEntity<?> createMatch(@Valid @RequestBody CreateMatchRequest request) {
+        Integer hostId = SecurityUtils.getCurrentUserId();
+        if (hostId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Bạn cần đăng nhập để thực hiện chức năng này"));
         }
-        Integer hostId = (Integer) session.getAttribute("userId");
         Match match = matchService.createMatch(request, hostId);
         return ResponseEntity.ok(match);
     }
 
     @GetMapping("/my-rooms")
-    public ResponseEntity<?> getMyRooms(HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
+    public ResponseEntity<?> getMyRooms() {
+        Integer userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Bạn cần đăng nhập để thực hiện chức năng này"));
         }
-        Integer userId = (Integer) session.getAttribute("userId");
         return ResponseEntity.ok(matchService.getMyCreatedMatches(userId));
     }
 
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateMatchStatus(
             @PathVariable Integer id,
-            @RequestBody Map<String, String> payload,
-            HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
+            @RequestBody Map<String, String> payload) {
+        Integer userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Bạn cần đăng nhập để thực hiện chức năng này"));
         }
-        Integer userId = (Integer) session.getAttribute("userId");
         String statusStr = payload.get("status");
         if (statusStr == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -189,9 +160,9 @@ public class MatchController {
     }
 
     @PostMapping("/generate-description")
-    public ResponseEntity<?> generateDescription(@RequestBody Map<String, Object> payload, HttpServletRequest httpRequest) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
+    public ResponseEntity<?> generateDescription(@RequestBody Map<String, Object> payload) {
+        Integer userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Bạn cần đăng nhập để thực hiện chức năng này"));
         }

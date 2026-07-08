@@ -21,11 +21,11 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     private Integer requireUserId(HttpServletRequest req) {
-        HttpSession session = req.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
+        Integer userId = com.cdweb.be.util.SecurityUtils.getCurrentUserId();
+        if (userId == null) {
             throw new AppException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập");
         }
-        return (Integer) session.getAttribute("userId");
+        return userId;
     }
 
     @GetMapping
