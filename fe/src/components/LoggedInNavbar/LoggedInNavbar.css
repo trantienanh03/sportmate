@@ -602,3 +602,79 @@
 .notification-footer a:hover {
   color: var(--primary) !important;
 }
+
+/* ==========================================
+   Responsive Styles (Unified Breakpoints)
+   ========================================== */
+
+/* Tablet & Laptop nhỏ (dưới 991.98px) */
+@media (max-width: 991.98px) {
+  .logged-in-nav {
+    padding: 8px 0;
+  }
+
+  .search-form-container {
+    max-width: 100%;
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+
+  .search-location {
+    display: none !important; /* Ẩn vị trí trên màn hình nhỏ để tránh quá dài */
+  }
+
+  .notification-dropdown {
+    width: calc(100vw - 32px) !important;
+    max-width: 360px !important;
+    position: absolute !important;
+    right: 0 !important;
+    left: auto !important;
+  }
+
+  .advanced-filter-panel {
+    position: static;
+    width: 100%;
+    margin-top: 8px;
+    box-shadow: none !important;
+    border: 1px solid var(--border);
+  }
+
+  .logged-in-nav .navbar-collapse {
+    padding-top: 8px;
+  }
+
+  .logged-in-nav .navbar-nav {
+    flex-direction: row !important; /* Giữ icon nằm ngang thay vì dọc */
+    justify-content: space-around;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .logged-in-nav .navbar-nav .nav-item {
+    margin: 0 !important;
+  }
+}
+
+/* Mobile (dưới 575.98px) */
+@media (max-width: 575.98px) {
+  .logged-in-nav .navbar-brand {
+    font-size: 1.2rem;
+  }
+
+  .notification-dropdown {
+    width: calc(100vw - 20px) !important;
+    right: -10px !important;
+  }
+
+  .search-input {
+    font-size: 0.9rem;
+    padding: 8px 12px;
+  }
+
+  .search-btn {
+    width: 34px;
+    height: 34px;
+  }
+}

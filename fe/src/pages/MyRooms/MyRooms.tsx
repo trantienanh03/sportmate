@@ -350,7 +350,7 @@ const MyRooms: React.FC = () => {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  alert("Mở bảng điều khiển quản lý trận đấu...");
+                                  navigate(`/matches/${match.id}`);
                                 }}
                               >
                                 <i className="fa-solid fa-users-gear me-2"></i>

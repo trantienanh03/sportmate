@@ -79,3 +79,46 @@
   box-shadow: 0 4px 20px rgba(37,99,235,0.45);
   color: #fff !important;
 }
+
+/* Guest Navbar Mobile Responsive */
+@media (max-width: 991.98px) {
+  .sportmatcher-nav {
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 10px 0;
+    box-shadow: var(--shadow-md);
+  }
+
+  .navbar-collapse {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    margin-top: 15px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+  }
+
+  .nav-link-custom {
+    padding: 10px 16px !important;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .navbar-collapse .d-flex {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px !important;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-nav-login,
+  .btn-nav-signup {
+    width: 100%;
+    text-align: center;
+    padding: 10px 0;
+  }
+}
+

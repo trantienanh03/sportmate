@@ -6,6 +6,24 @@ import './styles/global.css'
 import App from './App.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+// Cấu hình interceptor cho global fetch để tự động đính kèm JWT token vào request header
+const originalFetch = window.fetch;
+window.fetch = async (input, init) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    const url = typeof input === "string" ? input : input instanceof Request ? input.url : "";
+    if (url.startsWith("/api") || url.includes("/api/")) {
+      init = init || {};
+      const headers = new Headers(init.headers || {});
+      if (!headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      init.headers = headers;
+    }
+  }
+  return originalFetch(input, init);
+};
+
 // Khởi tạo QueryClient quản lý cache server-state cho toàn bộ ứng dụng
 const queryClient = new QueryClient({
   defaultOptions: {

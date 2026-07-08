@@ -17,7 +17,12 @@ const AdminLayout: React.FC = () => {
   };
 
   const [adminToasts, setAdminToasts] = useState<any[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const clientRef = useRef<Client | null>(null);
+
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!user || user.role?.toLowerCase() !== 'admin') return;
@@ -68,8 +73,13 @@ const AdminLayout: React.FC = () => {
 
   return (
     <div className="admin-layout d-flex">
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="sidebar-overlay d-lg-none" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="admin-sidebar shadow-sm">
+      <aside className={`admin-sidebar shadow-sm ${isSidebarOpen ? "open" : ""}`}>
         <div className="sidebar-header">
           <Link className="navbar-brand fw-bold" to="/home">
             <span className="brand-sport">Sport</span>
@@ -102,8 +112,17 @@ const AdminLayout: React.FC = () => {
       <div className="admin-main flex-grow-1 d-flex flex-column">
         {/* Header */}
         <header className="admin-header shadow-sm d-flex justify-content-between align-items-center px-4 py-3">
-          <div className="header-title">
-            <h5 className="mb-0 fw-bold">Trang Quản Trị Hệ Thống</h5>
+          <div className="d-flex align-items-center">
+            <button
+              className="btn btn-link d-lg-none p-0 text-dark fs-4 me-3"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              type="button"
+            >
+              <i className="fa-solid fa-bars"></i>
+            </button>
+            <div className="header-title">
+              <h5 className="mb-0 fw-bold">Trang Quản Trị Hệ Thống</h5>
+            </div>
           </div>
           <div className="header-actions d-flex align-items-center gap-3">
             <div className="dropdown">

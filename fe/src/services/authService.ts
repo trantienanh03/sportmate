@@ -9,7 +9,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -25,7 +24,11 @@ export const authService = {
       throw new Error(message);
     }
 
-    return response.json();
+    const res = await response.json();
+    if (res.token) {
+      localStorage.setItem("token", res.token);
+    }
+    return res;
   },
 
   register: async (data: any) => {
@@ -34,7 +37,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -50,7 +52,11 @@ export const authService = {
       throw new Error(message);
     }
 
-    return response.json();
+    const res = await response.json();
+    if (res.token) {
+      localStorage.setItem("token", res.token);
+    }
+    return res;
   },
 
   checkEmailExists: async (email: string): Promise<boolean> => {
@@ -61,7 +67,6 @@ export const authService = {
         "Cache-Control": "no-cache",
         "Pragma": "no-cache"
       },
-      credentials: "include",
     });
 
     if (!response.ok) {
@@ -77,7 +82,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
     });
 
     if (!response.ok) {
@@ -94,7 +98,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
     });
 
     if (!response.ok) {
@@ -112,7 +115,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -137,8 +139,9 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
     });
+
+    localStorage.removeItem("token");
 
     if (!response.ok) {
       throw new Error("Logout failed");
@@ -153,7 +156,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify({ email }),
     });
 
@@ -178,7 +180,6 @@ export const authService = {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify({ token, newPassword }),
     });
 
@@ -200,7 +201,6 @@ export const authService = {
     const response = await fetch(`${API_URL}/appeal`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify(payload),
     });
 

@@ -30,4 +30,5 @@ public class AuthResponseDto {
     private Boolean isBanned;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String token;
 }

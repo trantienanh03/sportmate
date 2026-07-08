@@ -134,10 +134,6 @@ const ExplorePage: React.FC = () => {
                             Cách {match.distance} km
                           </div>
                         )}
-                        
-                        <button className="like-btn" onClick={(e) => e.preventDefault()}>
-                          <i className="fa-regular fa-heart"></i>
-                        </button>
                       </div>
                       
                       <div className="event-details p-3">

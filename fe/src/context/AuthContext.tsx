@@ -52,6 +52,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const checkAuth = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
       try {
         const userData = await authService.getProfile();
         if (userData.isBanned || userData.isActive === false) {
@@ -62,6 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       } catch (error) {
         setUser(null);
+        localStorage.removeItem("token");
       } finally {
         setIsLoading(false);
       }

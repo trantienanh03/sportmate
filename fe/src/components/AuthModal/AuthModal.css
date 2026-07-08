@@ -333,3 +333,35 @@
 .auth-password-criteria li.invalid {
   color: #dc3545;
 }
+
+/* Auth Modal Mobile Responsive */
+@media (max-width: 575.98px) {
+  .auth-modal-content {
+    padding: 24px 20px !important;
+    width: 90% !important;
+    max-width: 380px !important;
+    margin: 0 auto;
+  }
+
+  .auth-modal-title {
+    font-size: 20px !important;
+    margin-bottom: 18px !important;
+  }
+
+  .auth-social-btn {
+    padding: 8px 12px !important;
+    font-size: 0.85rem !important;
+    margin-bottom: 8px !important;
+  }
+
+  .auth-form-input {
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+  }
+
+  .auth-submit-btn {
+    padding: 10px !important;
+    font-size: 15px !important;
+  }
+}
+
