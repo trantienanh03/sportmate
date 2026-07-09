@@ -24,15 +24,17 @@ public class GeminiService {
             return "Vui lòng cấu hình GEMINI_API_KEY trong file .env để sử dụng tính năng này.";
         }
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=" + geminiApiKey;
+        String url = "https://generativelanguage.googleapis.com/v1/models/gemini-3.1-flash-lite:generateContent?key="
+                + geminiApiKey;
         RestTemplate restTemplate = new RestTemplate();
-        
+
         String prompt = "Bạn là một người yêu thể thao đang cần tìm đồng đội. " +
                 "Dựa vào các thông tin sau, hãy viết một đoạn mô tả (khoảng 2-3 câu) " +
                 "ngắn gọn, thu hút, thân thiện để rủ mọi người tham gia trận đấu:\n" +
                 "Môn thể thao: " + matchInfo.get("sport") + "\n" +
                 "Địa điểm: " + matchInfo.get("location") + "\n" +
-                "Thời gian: " + matchInfo.get("date") + " từ " + matchInfo.get("startTime") + " đến " + matchInfo.get("endTime") + "\n" +
+                "Thời gian: " + matchInfo.get("date") + " từ " + matchInfo.get("startTime") + " đến "
+                + matchInfo.get("endTime") + "\n" +
                 "Trình độ yêu cầu: " + matchInfo.get("skillLevel") + "\n" +
                 "Số người cần: " + matchInfo.get("maxPlayers") + "\n" +
                 "Lưu ý: Viết thật tự nhiên như người bình thường đang nhắn tin rủ bạn bè đi tập. Chỉ trả về đoạn văn bản, không thêm các tiền tố giới thiệu.";
@@ -40,10 +42,10 @@ public class GeminiService {
         Map<String, Object> requestBody = new HashMap<>();
         Map<String, Object> parts = new HashMap<>();
         parts.put("text", prompt);
-        
+
         Map<String, Object> content = new HashMap<>();
         content.put("parts", List.of(parts));
-        
+
         requestBody.put("contents", List.of(content));
 
         HttpHeaders headers = new HttpHeaders();
