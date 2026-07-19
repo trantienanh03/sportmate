@@ -195,6 +195,31 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
             <div className="auth-divider">hoặc</div>
 
+            <div className="d-flex justify-content-center gap-2 mb-3">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary py-2 px-3 fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1"
+                style={{ fontSize: '13px', borderRadius: '8px' }}
+                onClick={() => {
+                  setEmail("user@sportmate.com");
+                  setPassword("user123");
+                }}
+              >
+                <i className="fas fa-user"></i> Tài khoản User
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger py-2 px-3 fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1"
+                style={{ fontSize: '13px', borderRadius: '8px' }}
+                onClick={() => {
+                  setEmail("admin@sportmate.com");
+                  setPassword("admin123");
+                }}
+              >
+                <i className="fas fa-user-shield"></i> Tài khoản Admin
+              </button>
+            </div>
+
             {error && <div className="alert alert-danger p-2 mb-3" style={{ fontSize: '14px' }}>{error}</div>}
 
             <form onSubmit={handleLoginSubmit}>
@@ -263,7 +288,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         ) : mode === 'forgot' ? (
           <>
             {error && <div className="alert alert-danger p-2 mb-3" style={{ fontSize: '14px' }}>{error}</div>}
-            
+
             {!isForgotSuccess ? (
               <form onSubmit={handleForgotSubmit}>
                 <p className="text-muted text-center mb-4" style={{ fontSize: '14px', lineHeight: '1.5' }}>
@@ -303,7 +328,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 </div>
                 <h4 className="fw-bold mb-3">Yêu cầu đã được gửi!</h4>
                 <p className="text-muted mb-4" style={{ fontSize: '14px', lineHeight: '1.6' }}>
-                  Một email khôi phục mật khẩu đã được gửi đến địa chỉ <strong>{forgotEmail}</strong>. 
+                  Một email khôi phục mật khẩu đã được gửi đến địa chỉ <strong>{forgotEmail}</strong>.
                   Vui lòng kiểm tra hộp thư đến (và hộp thư rác/spam nếu không tìm thấy) để tiếp tục.
                 </p>
                 <button
