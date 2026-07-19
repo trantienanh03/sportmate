@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { WS_BASE_URL } from '../../config';
 import LoggedInNavbar from '../../components/LoggedInNavbar/LoggedInNavbar';
 import { useAuth } from '../../context/AuthContext';
 import { matchService, type MatchDetail as MatchDetailType } from '../../services/matchService';
@@ -272,7 +273,7 @@ const MatchDetail: React.FC = () => {
 
     // WebSocket Connection
     const client = new Client({
-      webSocketFactory: () => new SockJS("/ws"),
+      webSocketFactory: () => new SockJS(WS_BASE_URL),
       connectHeaders: {},
       debug: () => {}, 
       reconnectDelay: 5000,

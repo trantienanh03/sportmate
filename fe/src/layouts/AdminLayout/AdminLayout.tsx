@@ -3,6 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { WS_BASE_URL } from "../../config";
 import "./AdminLayout.css";
 
 const AdminLayout: React.FC = () => {
@@ -28,7 +29,7 @@ const AdminLayout: React.FC = () => {
     if (!user || user.role?.toLowerCase() !== 'admin') return;
 
     const client = new Client({
-      webSocketFactory: () => new SockJS("/ws"),
+      webSocketFactory: () => new SockJS(WS_BASE_URL),
       connectHeaders: {},
       debug: () => {},
       reconnectDelay: 5000,

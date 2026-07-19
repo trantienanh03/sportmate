@@ -4,9 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import { matchService, type MatchComment } from '../../services/matchService';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { WS_BASE_URL } from '../../config';
 import './MatchComments.css';
 
-const WS_URL = "/ws";
+const WS_URL = WS_BASE_URL;
 
 interface MatchCommentsProps {
   matchId: number;

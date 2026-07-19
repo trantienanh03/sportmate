@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { WS_BASE_URL } from "../config";
 import type { MessageDto } from "../services/chatService";
 
-const WS_URL = "/ws";
+const WS_URL = WS_BASE_URL;
 
 export const useWebSocket = (
   roomId: number | null,
