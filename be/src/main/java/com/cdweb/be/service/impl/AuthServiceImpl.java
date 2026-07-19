@@ -44,7 +44,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserStatRepository userStatRepository;
     private final ReportRepository reportRepository;
 
-    @Value("${FRONTEND_URL:http://localhost:5173}")
+    @Value("${FRONTEND_URL}")
     private String frontendUrl;
 
     @Override
