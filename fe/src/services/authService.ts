@@ -1,6 +1,6 @@
 const API_URL = "/api/auth";
 
-let cachedProfiles: Record<number, any> = {};
+const cachedProfiles: Record<number, any> = {};
 
 export const authService = {
   login: async (data: any) => {
