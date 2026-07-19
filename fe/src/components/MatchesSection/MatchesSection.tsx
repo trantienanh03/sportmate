@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './MatchesSection.css';
 
 interface MatchCardProps {
@@ -35,7 +36,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ image, badge, title, date, locati
 
 const MatchesSection: React.FC = () => {
   return (
-    <section className="matches-section py-5 bg-light">
+    <section id="matches" className="matches-section py-5 bg-light">
       <div className="container py-4">
         <div className="d-flex flex-column flex-md-row align-items-md-end justify-content-between mb-5 gap-3">
           <div>
@@ -50,7 +51,7 @@ const MatchesSection: React.FC = () => {
             </div>
             <p className="text-muted fw-medium mb-0 mt-2">Tìm trận đấu yêu thích tiếp theo của bạn diễn ra trong tuần này.</p>
           </div>
-          <button className="btn btn-link text-primary fw-bold text-decoration-none p-0">Xem tất cả sự kiện</button>
+          <Link to="/explore" className="btn btn-link text-primary fw-bold text-decoration-none p-0">Xem tất cả sự kiện</Link>
         </div>
 
         <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4 mb-5">

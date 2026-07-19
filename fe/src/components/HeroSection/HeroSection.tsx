@@ -2,7 +2,11 @@ import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import './HeroSection.css';
 
-const HeroSection: React.FC = () => {
+interface HeroSectionProps {
+  onSignupClick: () => void;
+}
+
+const HeroSection: React.FC<HeroSectionProps> = ({ onSignupClick }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,9 +68,9 @@ const HeroSection: React.FC = () => {
           <p className="hero-sub">
             Dù là bóng đá, bóng rổ, cầu lông hay tennis, luôn có hàng ngàn người chơi sẵn sàng chia sẻ đam mê trên SportMate. Tham gia chơi ngay!
           </p>
-          <a href="" className="btn btn-hero-primary">
+          <button className="btn btn-hero-primary" onClick={onSignupClick}>
             Tham gia SportMate
-          </a>
+          </button>
         </div>
 
         <div className="hero-right-images">
