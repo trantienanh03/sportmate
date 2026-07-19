@@ -81,10 +81,10 @@ const Navbar: React.FC = () => {
                 <a className="nav-link nav-link-custom" href="#how-it-works">Cách hoạt động</a>
               </li>
               <li className="nav-item nav-item-anim">
-                <a className="nav-link nav-link-custom" href="#categories">Danh mục</a>
+                <a className="nav-link nav-link-custom" href="#matches">Sự kiện</a>
               </li>
               <li className="nav-item nav-item-anim">
-                <a className="nav-link nav-link-custom" href="#matches">Đội nhóm</a>
+                <a className="nav-link nav-link-custom" href="#steps">Cộng đồng</a>
               </li>
             </ul>
 

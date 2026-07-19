@@ -19,7 +19,7 @@ const StepCard: React.FC<StepCardProps> = ({ image, title, description }) => (
 
 const StepsSection: React.FC = () => {
   return (
-    <section className="steps-section py-5">
+    <section id="steps" className="steps-section py-5">
       <div className="container position-relative z-1">
         <div className="text-center mb-5">
           <h2 className="display-5 fw-bold mb-3">Tình bạn bắt đầu từ SportMate</h2>
