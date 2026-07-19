@@ -4,6 +4,7 @@ import { useAuth } from "./AuthContext";
 import { notificationService, type NotificationDto } from "../services/notificationService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { WS_BASE_URL } from "../config";
 import "../components/NotificationToast/NotificationToast.css";
 
 interface ToastMessage {
@@ -27,7 +28,7 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-const WS_URL = "/ws";
+const WS_URL = WS_BASE_URL;
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();

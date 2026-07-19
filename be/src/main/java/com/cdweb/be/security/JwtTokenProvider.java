@@ -22,7 +22,7 @@ public class JwtTokenProvider {
     private final long jwtExpirationInMs;
 
     public JwtTokenProvider(
-            @Value("${JWT_SECRET:9a2f98282136132832812831823182312381283128318231823182318231823}") String jwtSecret,
+            @Value("${JWT_SECRET}") String jwtSecret,
             @Value("${JWT_EXPIRATION_MS:86400000}") long jwtExpirationInMs) {
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         this.jwtExpirationInMs = jwtExpirationInMs;
